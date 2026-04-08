@@ -1,6 +1,6 @@
 #!name=uBO Core Scripted for Surge
 #!desc=GitHub-hosted export from this repository. Includes core rules and a remote JavaScript companion for Privacy Sandbox header hardening.
-#!arguments=SCRIPT_URL=https://raw.githubusercontent.com/USER/REPO/BRANCH/dist/surge/github/ublock-privacy-sandbox.js
+#!arguments=SCRIPT_URL=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-privacy-sandbox.js
 
 # Generated from uBlock Origin assets in this repository.
 # Notes:
