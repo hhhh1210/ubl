@@ -18,8 +18,8 @@ RULE-SET,UBlockRejectURLs,REJECT
 
 
 [Script]
-uBO Privacy Sandbox Request = type=http-request, pattern=^https?://, script-path=%SCRIPT_URL%, script-update-interval=86400, timeout=5, argument=phase=request, engine=jsc
-uBO Privacy Sandbox Response = type=http-response, pattern=^https?://, script-path=%SCRIPT_URL%, script-update-interval=86400, timeout=5, argument=phase=response, engine=jsc
+uBO Privacy Sandbox Request = type=http-request, pattern=^https?://, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-privacy-sandbox.js, script-update-interval=86400, timeout=5, argument=phase=request, engine=jsc
+uBO Privacy Sandbox Response = type=http-response, pattern=^https?://, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-privacy-sandbox.js, script-update-interval=86400, timeout=5, argument=phase=response, engine=jsc
 
 [Map Local]
 ^https?:\/\/([^/]+\.)?a\.magsrv\.com/ad-provider\.js data-type=text data="" status-code=200 header="Content-Type:application/javascript; charset=utf-8"
