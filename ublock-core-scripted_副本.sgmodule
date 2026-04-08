@@ -1,5 +1,6 @@
 #!name=uBO Core Scripted for Surge
-#!desc=GitHub-hosted export from this repository. Includes core rules and a remote JavaScript companion for Privacy Sandbox header hardening.
+#!desc=GitHub-hosted export from this repository. Includes core rules and remote JavaScript companions for Privacy Sandbox header hardening and selected site cleanup.
+
 # Generated from uBlock Origin assets in this repository.
 # Notes:
 # - DOMAIN rules work without MITM.
@@ -18,6 +19,7 @@ RULE-SET,UBlockRejectURLs,REJECT
 [Script]
 uBO Privacy Sandbox Request = type=http-request, pattern=^https?://, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-privacy-sandbox.js, script-update-interval=86400, timeout=5, argument=phase=request, engine=jsc
 uBO Privacy Sandbox Response = type=http-response, pattern=^https?://, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-privacy-sandbox.js, script-update-interval=86400, timeout=5, argument=phase=response, engine=jsc
+uBO HJW01 Clean = type=http-response, pattern=^https?:\/\/(?:www\.)?(?:hjw01|hjwang9)\.com\/archives\/\d+\/?(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/hjw01-clean.js, script-update-interval=86400, requires-body=true, max-size=-1, timeout=10, engine=jsc
 
 [Map Local]
 ^https?:\/\/([^/]+\.)?a\.magsrv\.com/ad-provider\.js data-type=text data="" status-code=200 header="Content-Type:application/javascript; charset=utf-8"
