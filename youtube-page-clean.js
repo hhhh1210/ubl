@@ -341,15 +341,15 @@ try {
 
   if (!shouldHandle(body, contentType)) {
     done({});
+  } else {
+    const nonce = extractNonce(body);
+    const nonceAttr = nonce ? ` nonce="${nonce}"` : '';
+    const marker = '<!-- codex-youtube-page-clean -->';
+    const block = `${marker}<style id="codex-youtube-clean-style"${nonceAttr}>${buildCss()}</style><script id="codex-youtube-clean-script"${nonceAttr}>${buildInlineScript()}</script>`;
+    const nextBody = injectBlock(body, block, marker);
+
+    done(nextBody === body ? {} : { body: nextBody });
   }
-
-  const nonce = extractNonce(body);
-  const nonceAttr = nonce ? ` nonce="${nonce}"` : '';
-  const marker = '<!-- codex-youtube-page-clean -->';
-  const block = `${marker}<style id="codex-youtube-clean-style"${nonceAttr}>${buildCss()}</style><script id="codex-youtube-clean-script"${nonceAttr}>${buildInlineScript()}</script>`;
-  const nextBody = injectBlock(body, block, marker);
-
-  done(nextBody === body ? {} : { body: nextBody });
 } catch (error) {
   console.log('uBO youtube page clean failed:', error && error.message ? error.message : String(error));
   done({});

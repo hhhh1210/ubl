@@ -145,33 +145,29 @@ function cleanNode(node, state) {
 }
 
 try {
-  if (shouldSkipUrl($request && $request.url)) {
-    done({});
-  }
-
   const response = typeof $response === 'object' && $response !== null ? $response : {};
   const headers = response.headers || {};
   const body = typeof response.body === 'string' ? response.body : '';
   const contentType = String(headers['Content-Type'] || headers['content-type'] || '');
 
-  if (!shouldHandle(body, contentType)) {
+  if (shouldSkipUrl($request && $request.url) || !shouldHandle(body, contentType)) {
     done({});
+  } else {
+    const { prefix, jsonText } = splitXssiPrefix(body);
+    const parsed = JSON.parse(jsonText);
+    const state = { removedKeys: 0, dropped: 0 };
+    const cleaned = cleanNode(parsed, state);
+
+    if (cleaned === parsed && state.removedKeys === 0 && state.dropped === 0) {
+      done({});
+    } else {
+      const nextBody = `${prefix}${JSON.stringify(cleaned)}`;
+      console.log(
+        `uBO youtube json clean: removedKeys=${state.removedKeys} dropped=${state.dropped} url=${$request.url}`
+      );
+      done(nextBody === body ? {} : { body: nextBody });
+    }
   }
-
-  const { prefix, jsonText } = splitXssiPrefix(body);
-  const parsed = JSON.parse(jsonText);
-  const state = { removedKeys: 0, dropped: 0 };
-  const cleaned = cleanNode(parsed, state);
-
-  if (cleaned === parsed && state.removedKeys === 0 && state.dropped === 0) {
-    done({});
-  }
-
-  const nextBody = `${prefix}${JSON.stringify(cleaned)}`;
-  console.log(
-    `uBO youtube json clean: removedKeys=${state.removedKeys} dropped=${state.dropped} url=${$request.url}`
-  );
-  done(nextBody === body ? {} : { body: nextBody });
 } catch (error) {
   console.log('uBO youtube json clean failed:', error && error.message ? error.message : String(error));
   done({});
