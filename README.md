@@ -9,8 +9,11 @@ Files:
 - `ublock-privacy-sandbox.js`: companion script used by the scripted module.
 - `hjw01-clean.js`: companion site cleanup script for uBO HJW01 Clean v3.
 - `html-style-clean.js`: companion site cleanup script for uBO myTVSUPER Live Clean.
+- `youtube-page-lite-clean.js`: companion site cleanup script for uBO YouTube Page Lite Clean.
 - `youtube-page-clean.js`: companion site cleanup script for uBO YouTube Desktop Clean.
 - `youtube-json-clean.js`: companion site cleanup script for uBO YouTube JSON Clean.
+- `youtube-player-request-clean.js`: companion site cleanup script for uBO YouTube Player Request Clean.
+- `youtube-player-clean.js`: companion site cleanup script for uBO YouTube Player JSON Clean.
 
 Recommended install order:
 1. Upload all module and companion script files to GitHub.
@@ -24,13 +27,17 @@ Example raw URLs after upload:
 - `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-privacy-sandbox.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/hjw01-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/html-style-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-page-lite-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-page-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-json-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-player-request-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-player-clean.js`
 
 Validation note:
 - `surge-cli --check` validates files as full profiles and will complain that rules must end with `FINAL`. That warning also appears for already-installed third-party `.sgmodule` files, so do not use it as the final installability test for modules.
 
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.
-- The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, youtube.com, *.youtube.com.
+- The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, www.youtube.com, *.googlevideo.com.
+- YouTube scripted export includes the same conservative ad transport rejects and abnormal `googlevideo` stream rules used by the local tested module.
 - Cosmetic filters, scriptlets, HTML filtering, `removeparam=`, `urlskip=`, and source-domain constrained rules are not part of this export, except for a small set of hand-authored or templated site-specific response scripts.

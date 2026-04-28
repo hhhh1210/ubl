@@ -2,10 +2,6 @@ function done(payload) {
   $done(payload || {});
 }
 
-function isPlainObject(value) {
-  return Object.prototype.toString.call(value) === '[object Object]';
-}
-
 function shouldHandle(body, contentType) {
   if (typeof body !== 'string' || body === '') {
     return false;
@@ -14,6 +10,10 @@ function shouldHandle(body, contentType) {
     return true;
   }
   return /^[\s\r\n]*[\[{]/.test(body) || /^[\s\r\n]*\)\]\}'/.test(body);
+}
+
+function isPlainObject(value) {
+  return Object.prototype.toString.call(value) === '[object Object]';
 }
 
 function splitXssiPrefix(body) {
@@ -27,15 +27,20 @@ function splitXssiPrefix(body) {
   };
 }
 
-function shouldSkipUrl(url) {
-  return /\/youtubei\/v1\/player(?:[/?#]|$)/i.test(String(url || ''));
+function renameAdFieldsText(body) {
+  return String(body)
+    .replace(/"adPlacements"/g, '"no_ads"')
+    .replace(/"adSlots"/g, '"no_ads"')
+    .replace(/"playerAds"/g, '"no_ads"')
+    .replace(/"adBreakHeartbeatParams"/g, '"no_ads"')
+    .replace(/"legacyImportant"/g, '"no_ads"');
 }
 
 const DROP = Symbol('drop');
 const REMOVE_KEYS = new Set([
   'adPlacements',
-  'playerAds',
   'adSlots',
+  'playerAds',
   'adBreakHeartbeatParams',
   'legacyImportant',
 ]);
@@ -48,14 +53,9 @@ const DROP_RENDERER_KEYS = new Set([
   'mastheadAdRenderer',
   'playerLegacyDesktopWatchAdsRenderer',
   'inFeedAdLayoutRenderer',
+  'promotedSparklesTextSearchRenderer',
+  'carouselAdRenderer',
 ]);
-
-function containsAdRenderer(container) {
-  if (!isPlainObject(container)) {
-    return false;
-  }
-  return Object.keys(container).some(key => DROP_RENDERER_KEYS.has(key));
-}
 
 function cleanNode(node, state) {
   if (Array.isArray(node)) {
@@ -83,16 +83,7 @@ function cleanNode(node, state) {
   if (node.adClientParams?.isAd === true) {
     return DROP;
   }
-
   if (node.command?.reelWatchEndpoint?.adClientParams?.isAd === true) {
-    return DROP;
-  }
-
-  if (node.richItemRenderer?.content && containsAdRenderer(node.richItemRenderer.content)) {
-    return DROP;
-  }
-
-  if (node.richSectionRenderer?.content && containsAdRenderer(node.richSectionRenderer.content)) {
     return DROP;
   }
 
@@ -121,7 +112,6 @@ function cleanNode(node, state) {
       state.dropped += 1;
       continue;
     }
-
     if (cleaned !== value) {
       if (out === null) {
         out = { ...node };
@@ -130,19 +120,19 @@ function cleanNode(node, state) {
     }
   }
 
-  const candidate = out === null ? node : out;
+  return out === null ? node : out;
+}
 
-  if (candidate.richItemRenderer?.content && isPlainObject(candidate.richItemRenderer.content) &&
-      Object.keys(candidate.richItemRenderer.content).length === 0) {
-    return DROP;
-  }
-
-  if (candidate.richSectionRenderer?.content && isPlainObject(candidate.richSectionRenderer.content) &&
-      Object.keys(candidate.richSectionRenderer.content).length === 0) {
-    return DROP;
-  }
-
-  return candidate;
+function cleanJsonBody(body) {
+  const { prefix, jsonText } = splitXssiPrefix(body);
+  const parsed = JSON.parse(jsonText);
+  const state = { removedKeys: 0, dropped: 0 };
+  const cleaned = cleanNode(parsed, state);
+  return {
+    body: `${prefix}${JSON.stringify(cleaned === DROP ? {} : cleaned)}`,
+    removedKeys: state.removedKeys,
+    dropped: state.dropped,
+  };
 }
 
 try {
@@ -151,25 +141,31 @@ try {
   const body = typeof response.body === 'string' ? response.body : '';
   const contentType = String(headers['Content-Type'] || headers['content-type'] || '');
 
-  if (shouldSkipUrl($request && $request.url) || !shouldHandle(body, contentType)) {
+  if (!shouldHandle(body, contentType)) {
     done({});
   } else {
-    const { prefix, jsonText } = splitXssiPrefix(body);
-    const parsed = JSON.parse(jsonText);
-    const state = { removedKeys: 0, dropped: 0 };
-    const cleaned = cleanNode(parsed, state);
+    let result;
+    try {
+      result = cleanJsonBody(body);
+    } catch (error) {
+      const nextBody = renameAdFieldsText(body);
+      result = {
+        body: nextBody,
+        removedKeys: nextBody === body ? 0 : -1,
+        dropped: 0,
+      };
+    }
 
-    if (cleaned === parsed && state.removedKeys === 0 && state.dropped === 0) {
+    if (result.body === body) {
       done({});
     } else {
-      const nextBody = `${prefix}${JSON.stringify(cleaned)}`;
       console.log(
-        `uBO youtube json clean: removedKeys=${state.removedKeys} dropped=${state.dropped} url=${$request.url}`
+        `uBO youtube player clean: removedKeys=${result.removedKeys} dropped=${result.dropped} url=${$request.url}`
       );
-      done(nextBody === body ? {} : { body: nextBody });
+      done({ body: result.body });
     }
   }
 } catch (error) {
-  console.log('uBO youtube json clean failed:', error && error.message ? error.message : String(error));
+  console.log('uBO youtube player clean failed:', error && error.message ? error.message : String(error));
   done({});
 }

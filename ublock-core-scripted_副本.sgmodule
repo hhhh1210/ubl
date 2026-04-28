@@ -12,19 +12,38 @@
 [Rule]
 RULE-SET,UBlockAllowDomains,DIRECT
 RULE-SET,UBlockAllowURLs,DIRECT
+# Conservative YouTube ad transport rules.
+AND,((DOMAIN-SUFFIX,googlevideo.com), (PROTOCOL,UDP)),REJECT
+AND,((DOMAIN,youtubei.googleapis.com), (PROTOCOL,UDP)),REJECT
+URL-REGEX,^https?:\/\/www\.youtube\.com\/youtubei\/v1\/player\/ad_break(?:[?#/]|$),REJECT
+URL-REGEX,^https?:\/\/www\.youtube\.com\/pagead\/,REJECT
+URL-REGEX,^https?:\/\/www\.youtube\.com\/api\/stats\/ads(?:[?#]|$),REJECT
+URL-REGEX,^https?:\/\/www\.youtube\.com\/pcs\/activeview\?,REJECT
+URL-REGEX,^https?:\/\/www\.youtube\.com\/ptracking\?.*(?:[?&](?:pltype=adpromoted|ptk=youtube_host|pltype=adhost)(?:&|$)),REJECT
+URL-REGEX,^https?:\/\/[\w-]+\.googlevideo\.com\/videoplayback\?expire=(?:[02-9]+|1[1-68-9]\d+|17[1-48-9]\d+)&,REJECT
+URL-REGEX,^https?:\/\/[\w-]+\.googlevideo\.com\/videoplayback\?expire=\d{10}&.*[?&]itag=18&.*[?&]ratebypass=yes&dur=\d{7,}(?:&|$),REJECT
+DOMAIN,ad.doubleclick.net,REJECT
+DOMAIN,static.doubleclick.net,REJECT
+DOMAIN,ade.googlesyndication.com,REJECT
+# Observed YouTube ad-only domains from live capture.
+DOMAIN,googleads.g.doubleclick.net,REJECT
+DOMAIN,www.googleadservices.com,REJECT
+DOMAIN,pagead2.googlesyndication.com,REJECT
 RULE-SET,UBlockRejectDomains,REJECT
 RULE-SET,UBlockRejectURLs,REJECT
-
 
 [Script]
 uBO Privacy Sandbox Request = type=http-request, pattern=^https?://, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-privacy-sandbox.js, script-update-interval=86400, timeout=5, argument=phase=request, engine=jsc
 uBO Privacy Sandbox Response = type=http-response, pattern=^https?:\/\/(?!(?:[^\/]+\.)?(?:hjw01\.com|hjwang9\.com|mytvsuper\.com|youtube\.com)(?:\/|$)), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-privacy-sandbox.js, script-update-interval=86400, timeout=5, argument=phase=response, engine=jsc
 uBO HJW01 Clean v3 = type=http-response, pattern=^https?:\/\/(?:www\.)?(?:hjw01|hjwang9)\.com(?:\/?(?:\?.*)?$|\/(?:archives\/\d+\/?|tag\/[^?#]+\/?|tags\/?|category\/[^?#]+\/?|author\/\d+\/new\/?|authors(?:_[^\/?#]+)?(?:\/post-\d+\/?)?|communitys\/?|consumers\/?|follow\/?|date\/?|history\/search\/?|my\/\d+\/?|order\/hot\/?|ai\/?|[^\/?#]+\.html)(?:\?.*)?$), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/hjw01-clean.js, script-update-interval=86400, requires-body=true, max-size=-1, timeout=10, debug=true, engine=jsc
 uBO myTVSUPER Live Clean = type=http-response, pattern=^https?:\/\/www\.mytvsuper\.com\/tc\/live\/[^?#]+(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/html-style-clean.js, script-update-interval=86400, argument=styleId=codex-mytvsuper-live-clean&selectors=.Ads_wsky_slider__lMDmm%7C%7C.Ads_wsky__tRVcV%7C%7C.Ads_sb___BrnI%7C%7C.Ads_bn__xsPya%7C%7C%5Bid%5E%3D%22div-gpt-ad-prebid-wsky-%22%5D%7C%7C%5Bid%5E%3D%22div-gpt-ad-prebid-sb-%22%5D%7C%7C%5Bid%5E%3D%22google_ads_iframe_%2F7299%2Fmytvs.pc.web.prod%2Flive_%22%5D%7C%7Ciframe%5Bid%5E%3D%22google_ads_iframe_%2F7299%2Fmytvs.pc.web.prod%2Flive_%22%5D%7C%7C%23google_ads_top_frame%7C%7C%23goog_plcm_frame%7C%7C%23adContainer&css=.main-wrap.with-wsky+%7B+justify-content%3A+center+%21important%3B+gap%3A+0+%21important%3B+%7D%0A.main-wrap.with-wsky+%3E+.content-wrap+%7B+margin-inline%3A+auto+%21important%3B+%7D%0A.Prompt_player_wrap__nGiax+.desktop-only%3Ahas%28.Ads_sb___BrnI%29%2C+.Prompt_player_wrap__nGiax+.mobile-only%3Ahas%28.Ads_bn__xsPya%29+%7B+display%3A+none+%21important%3B+%7D, requires-body=true, max-size=-1, timeout=10, debug=true, engine=jsc
-uBO YouTube Desktop Clean = type=http-response, pattern=^https?:\/\/www\.youtube\.com(?:\/.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-page-clean.js, script-update-interval=60, requires-body=true, max-size=-1, timeout=10, debug=true, engine=jsc
-uBO YouTube JSON Clean = type=http-response, pattern=^https?:\/\/www\.youtube\.com\/(?:youtubei\/v1\/(?:browse|next|search|reel\/[^/?#]+|reel_watch_sequence)|playlist\?|get_watch\?), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-json-clean.js, script-update-interval=60, requires-body=true, max-size=-1, timeout=10, debug=true, engine=jsc
+uBO YouTube Page Lite Clean = type=http-response, pattern=^https?:\/\/www\.youtube\.com(?:$|\/?\?(?:.*)?$|\/(?:$|watch\?(?:.*)?$|playlist\?(?:.*)?$|results\?(?:.*)?$|feed(?:\/[^?#]*)?(?:\?.*)?$|shorts\/[^?#]+(?:\?.*)?$|live\/[^?#]+(?:\?.*)?$|@[^?#\/]+(?:\/[^?#]*)?(?:\?.*)?$|channel\/[^?#\/]+(?:\/[^?#]*)?(?:\?.*)?$)), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-page-lite-clean.js, script-update-interval=60, requires-body=true, max-size=-1, timeout=10, debug=true, engine=jsc
+uBO YouTube JSON Clean = type=http-response, pattern=^https?:\/\/www\.youtube\.com\/(?:youtubei\/v1\/(?:browse|next|search|get_watch|reel\/[^/?#]+|reel_watch_sequence)|playlist\?|get_watch\?), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-json-clean.js, script-update-interval=60, requires-body=true, max-size=-1, timeout=10, debug=true, engine=jsc
+uBO YouTube Player Request Clean = type=http-request, pattern=^https?:\/\/www\.youtube\.com\/youtubei\/v1\/player(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-player-request-clean.js, script-update-interval=60, requires-body=true, max-size=-1, timeout=10, debug=true, engine=jsc
+uBO YouTube Player JSON Clean = type=http-response, pattern=^https?:\/\/www\.youtube\.com\/youtubei\/v1\/player(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-player-clean.js, script-update-interval=60, requires-body=true, max-size=-1, timeout=10, debug=true, engine=jsc
 
 [Map Local]
+^https?:\/\/[\w-]+\.googlevideo\.com\/initplayback.+&oad data-type=text data="" status-code=200
 ^https?:\/\/([^/]+\.)?a\.magsrv\.com/ad-provider\.js data-type=text data="" status-code=200 header="Content-Type:application/javascript; charset=utf-8"
 ^https?:\/\/([^/]+\.)?a\.realsrv\.com/nativeads-v2\.js data-type=text data="" status-code=200
 ^https?:\/\/([^/]+\.)?acacdn\.com data-type=text data="" status-code=200 header="Content-Type:application/javascript; charset=utf-8"
@@ -3350,7 +3369,7 @@ URL-REGEX,voz\.vn/b/image\.gif\?p=
 
 
 [General]
-force-http-engine-hosts = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, youtube.com, *.youtube.com
+force-http-engine-hosts = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, www.youtube.com
 
 [MITM]
-hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, youtube.com, *.youtube.com
+hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, www.youtube.com, *.googlevideo.com
