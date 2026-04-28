@@ -18,8 +18,11 @@ RULE-SET,UBlockRejectURLs,REJECT
 
 [Script]
 uBO Privacy Sandbox Request = type=http-request, pattern=^https?://, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-privacy-sandbox.js, script-update-interval=86400, timeout=5, argument=phase=request, engine=jsc
-uBO Privacy Sandbox Response = type=http-response, pattern=^https?://, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-privacy-sandbox.js, script-update-interval=86400, timeout=5, argument=phase=response, engine=jsc
-uBO HJW01 Clean = type=http-response, pattern=^https?:\/\/(?:www\.)?(?:hjw01|hjwang9)\.com\/archives\/\d+\/?(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/hjw01-clean.js, script-update-interval=86400, requires-body=true, max-size=-1, timeout=10, engine=jsc
+uBO Privacy Sandbox Response = type=http-response, pattern=^https?:\/\/(?!(?:[^\/]+\.)?(?:hjw01\.com|hjwang9\.com|mytvsuper\.com|youtube\.com)(?:\/|$)), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-privacy-sandbox.js, script-update-interval=86400, timeout=5, argument=phase=response, engine=jsc
+uBO HJW01 Clean v3 = type=http-response, pattern=^https?:\/\/(?:www\.)?(?:hjw01|hjwang9)\.com(?:\/?(?:\?.*)?$|\/(?:archives\/\d+\/?|tag\/[^?#]+\/?|tags\/?|category\/[^?#]+\/?|author\/\d+\/new\/?|authors(?:_[^\/?#]+)?(?:\/post-\d+\/?)?|communitys\/?|consumers\/?|follow\/?|date\/?|history\/search\/?|my\/\d+\/?|order\/hot\/?|ai\/?|[^\/?#]+\.html)(?:\?.*)?$), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/hjw01-clean.js, script-update-interval=86400, requires-body=true, max-size=-1, timeout=10, debug=true, engine=jsc
+uBO myTVSUPER Live Clean = type=http-response, pattern=^https?:\/\/www\.mytvsuper\.com\/tc\/live\/[^?#]+(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/html-style-clean.js, script-update-interval=86400, argument=styleId=codex-mytvsuper-live-clean&selectors=.Ads_wsky_slider__lMDmm%7C%7C.Ads_wsky__tRVcV%7C%7C.Ads_sb___BrnI%7C%7C.Ads_bn__xsPya%7C%7C%5Bid%5E%3D%22div-gpt-ad-prebid-wsky-%22%5D%7C%7C%5Bid%5E%3D%22div-gpt-ad-prebid-sb-%22%5D%7C%7C%5Bid%5E%3D%22google_ads_iframe_%2F7299%2Fmytvs.pc.web.prod%2Flive_%22%5D%7C%7Ciframe%5Bid%5E%3D%22google_ads_iframe_%2F7299%2Fmytvs.pc.web.prod%2Flive_%22%5D%7C%7C%23google_ads_top_frame%7C%7C%23goog_plcm_frame%7C%7C%23adContainer&css=.main-wrap.with-wsky+%7B+justify-content%3A+center+%21important%3B+gap%3A+0+%21important%3B+%7D%0A.main-wrap.with-wsky+%3E+.content-wrap+%7B+margin-inline%3A+auto+%21important%3B+%7D%0A.Prompt_player_wrap__nGiax+.desktop-only%3Ahas%28.Ads_sb___BrnI%29%2C+.Prompt_player_wrap__nGiax+.mobile-only%3Ahas%28.Ads_bn__xsPya%29+%7B+display%3A+none+%21important%3B+%7D, requires-body=true, max-size=-1, timeout=10, debug=true, engine=jsc
+uBO YouTube Desktop Clean = type=http-response, pattern=^https?:\/\/www\.youtube\.com(?:\/.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-page-clean.js, script-update-interval=86400, requires-body=true, max-size=-1, timeout=10, debug=true, engine=jsc
+uBO YouTube JSON Clean = type=http-response, pattern=^https?:\/\/www\.youtube\.com\/(?:youtubei\/v1\/(?:player|browse|next|search|reel\/[^/?#]+)|playlist\?|get_watch\?), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-json-clean.js, script-update-interval=86400, requires-body=true, max-size=-1, timeout=10, debug=true, engine=jsc
 
 [Map Local]
 ^https?:\/\/([^/]+\.)?a\.magsrv\.com/ad-provider\.js data-type=text data="" status-code=200 header="Content-Type:application/javascript; charset=utf-8"
@@ -3344,3 +3347,10 @@ URL-REGEX,tlr\.stripocdn\.email%2fcontent%2fguids%2f
 URL-REGEX,tlr\.stripocdn\.email/content/guids/
 URL-REGEX,voz\.vn%2fb%2fimage\.gif%3fp%3d
 URL-REGEX,voz\.vn/b/image\.gif\?p=
+
+
+[General]
+force-http-engine-hosts = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, youtube.com, *.youtube.com
+
+[MITM]
+hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, youtube.com, *.youtube.com

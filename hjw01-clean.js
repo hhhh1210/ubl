@@ -10,6 +10,20 @@ function removeBlocks(body, patterns) {
   return next;
 }
 
+function injectStyle(body, css, marker) {
+  const styleBlock = `${marker}<style id="codex-hjw01-clean-v3">${css}</style>`;
+  if (body.includes('id="codex-hjw01-clean-v3"')) {
+    return body;
+  }
+  if (body.includes('</head>')) {
+    return body.replace('</head>', `${styleBlock}</head>`);
+  }
+  if (body.includes('<body')) {
+    return body.replace(/<body([^>]*)>/i, `<body$1>${styleBlock}`);
+  }
+  return `${styleBlock}${body}`;
+}
+
 try {
   const response = typeof $response === 'object' && $response !== null ? $response : {};
   const headers = response.headers || {};
@@ -20,7 +34,7 @@ try {
     done({});
   }
 
-  const patterns = [
+  const removePatterns = [
     /<!--\s*广告banner start\s*-->[\s\S]*?<!--\s*广告banner end\s*-->\s*/g,
     /<div class="tags-group">[\s\S]*?<\/div>\s*<!--\s*标签组 end\s*-->/g,
     /<div class="text-wrap">\s*<blockquote>[\s\S]*?海角网最新地址[\s\S]*?<\/blockquote>\s*<\/div>\s*/g,
@@ -32,12 +46,22 @@ try {
     /<div class="van-overlay hidden"><\/div>\s*/g,
   ];
 
-  const nextBody = removeBlocks(body, patterns)
+  const css = [
+    '.xqbj-list-rows:has(> .xqbj-list-rows-placard) { display: none !important; }',
+    '.xqbj-list-rows-placard { display: none !important; }',
+    '.xqbj-component-advertises, .xqbj-component-advertises-0, .xqbj-component-advertises-1 { display: none !important; }',
+    '.van-overlay, .van-overlay.hidden { display: none !important; }',
+    'body.fixbody { overflow: auto !important; position: static !important; }',
+  ].join('');
+
+  let nextBody = removeBlocks(body, removePatterns);
+  nextBody = injectStyle(nextBody, css, '<!-- codex-hjw01-clean-v3 -->');
+  nextBody = nextBody
     .replace(/\n{3,}/g, '\n\n')
     .replace(/>\s{2,}</g, '><');
 
   done(nextBody === body ? {} : { body: nextBody });
 } catch (error) {
-  console.log('uBO HJW01 clean script failed:', error && error.message ? error.message : String(error));
+  console.log('uBO HJW01 clean v3 script failed:', error && error.message ? error.message : String(error));
   done({});
 }
