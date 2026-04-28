@@ -195,7 +195,7 @@ function buildInlineScript() {
   }
 
   function shouldPatchUrl(url) {
-    return /\/youtubei\/v1\/(?:player|browse|next|search|reel\/|reel_watch_sequence)|\/playlist\?|\/get_watch\?/i.test(String(url || ''));
+    return /\/youtubei\/v1\/(?:browse|next|search|reel\/|reel_watch_sequence)|\/playlist\?|\/get_watch\?/i.test(String(url || ''));
   }
 
   function splitPrefix(text) {
@@ -304,7 +304,6 @@ function buildInlineScript() {
   }
 
   patchInitialObject('ytInitialData');
-  patchInitialObject('ytInitialPlayerResponse');
 
   function stripDomAds() {
     document.querySelectorAll(AD_SELECTORS).forEach(el => el.remove());

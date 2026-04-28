@@ -27,6 +27,10 @@ function splitXssiPrefix(body) {
   };
 }
 
+function shouldSkipUrl(url) {
+  return /\/youtubei\/v1\/player(?:[/?#]|$)/i.test(String(url || ''));
+}
+
 const DROP = Symbol('drop');
 const REMOVE_KEYS = new Set([
   'adPlacements',
@@ -141,6 +145,10 @@ function cleanNode(node, state) {
 }
 
 try {
+  if (shouldSkipUrl($request && $request.url)) {
+    done({});
+  }
+
   const response = typeof $response === 'object' && $response !== null ? $response : {};
   const headers = response.headers || {};
   const body = typeof response.body === 'string' ? response.body : '';
