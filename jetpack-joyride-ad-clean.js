@@ -140,6 +140,14 @@ function isBidMachineInit(urlInfo) {
   return urlInfo.host === 'api.bidmachine.io' && urlInfo.path === '/auction/init';
 }
 
+function isJetpackVungle(headers) {
+  return /^com\.halfbrick\.jetpack$/i.test(String(getHeaderCaseInsensitive(headers, 'x-vungle-bundle-id') || ''));
+}
+
+function isVungleMetrics(urlInfo) {
+  return urlInfo.host === 'logs.ads.vungle.com' && urlInfo.path === '/sdk/metrics';
+}
+
 function noContent(reason) {
   const headers = cloneHeaders($response && $response.headers);
   deleteHeaderCaseInsensitive(headers, 'Content-Encoding');
@@ -184,6 +192,15 @@ try {
     (bodyHasJetpackMarker(request.body) || bodyHasJetpackMarker(response.body))
   ) {
     noContent('BidMachine Jetpack auction response suppressed');
+    handled = true;
+  }
+
+  if (
+    handled === false &&
+    isVungleMetrics(urlInfo) &&
+    isJetpackVungle(headers)
+  ) {
+    noContent('Vungle Jetpack ad metrics response suppressed');
     handled = true;
   }
 
