@@ -53,9 +53,9 @@ Huaxiaozhu iOS summary:
 - `sdk.e.qq.com/launch`, login, risk-control, Omega telemetry, safety shield, update, and weather/static UI assets are intentionally allowed. The remaining sub-4-second relaunch white screen is app cache lifecycle behavior, not an ad source.
 
 Yidong iOS summary:
-- The request script disables the observed China Mobile PSIE SDK entry and strategy endpoints with successful disabled/no-data payloads, scoped to ChinaMobile/leadeon app headers, including captures where the host is written with explicit `:443`.
+- The request script disables the observed China Mobile PSIE SDK entry and strategy endpoints with successful disabled/no-data payloads, scoped to ChinaMobile/leadeon/IPUSDK app headers, including captures where the host is written with explicit `:443`.
 - The response script keeps the same no-data transform as a fallback for clients where request short-circuiting is unavailable.
-- The startup toast/detainment endpoints and the follow-up SDK plugin list observed after the first launch are returned as 204: `getDelayTime`, `getToastRule`, `toast/august/getPages`, `detainment/august/getPages`, and `sdkPlug/getSdkList`.
+- The startup toast/detainment endpoints are returned as 204: `getDelayTime`, `getToastRule`, `toast/august/getPages`, and `detainment/august/getPages`.
 - `Map Local` suppresses verified startup JPG splash materials and cached remote config under `res.app.coc.10086.cn`, plus direct `qwhdcdn.cmcc-cs.cn` material paths. Login, push, AMap, ShareSDK, and encrypted core `client.app.coc.10086.cn` APIs outside the startup shell probes are intentionally left alone.
 
 Note:

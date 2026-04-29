@@ -50,7 +50,7 @@ function parseUrl(url) {
 
 function isChinaMobileApp(headers) {
   const ua = String(getHeaderCaseInsensitive(headers, 'User-Agent') || '');
-  if (/ChinaMobile\/|leadeon\/|CMCCIT/i.test(ua)) {
+  if (/ChinaMobile\/|leadeon\/|CMCCIT|IPUSDK\//i.test(ua)) {
     return true;
   }
   return getHeaderCaseInsensitive(headers, 'equipmentinformation') !== '';
@@ -72,7 +72,7 @@ function isStartupAdShellEndpoint(urlInfo) {
   if (urlInfo.host !== 'client.app.coc.10086.cn') {
     return false;
   }
-  return /^\/biz-orange\/(?:DN\/toast\/(?:getDelayTime|getToastRule)|DH\/toast\/august\/getPages|DN\/detainment\/august\/getPages|DH\/sdkPlug\/getSdkList)$/.test(urlInfo.path);
+  return /^\/biz-orange\/(?:DN\/toast\/(?:getDelayTime|getToastRule)|DH\/toast\/august\/getPages|DN\/detainment\/august\/getPages)$/.test(urlInfo.path);
 }
 
 function buildSuccessNoDataHeaders(baseHeaders, marker) {
@@ -206,9 +206,9 @@ try {
   } else if (isPsieSdkEndpoint(urlInfo)) {
     finishNoData('PSIE strategy response replaced with no-data');
   } else if (isStartupAdShellEndpoint(urlInfo) && /(?:^|&)phase=toast-request(?:&|$)/.test(argument)) {
-    directNoContent('startup ad-shell request suppressed', 'startup-shell-request-204-4');
+    directNoContent('startup ad-shell request suppressed', 'startup-shell-request-204-5');
   } else if (isStartupAdShellEndpoint(urlInfo)) {
-    finishNoContent('startup ad-shell response suppressed', 'startup-shell-response-204-4');
+    finishNoContent('startup ad-shell response suppressed', 'startup-shell-response-204-5');
   } else {
     done({});
   }
