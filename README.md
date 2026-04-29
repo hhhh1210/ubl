@@ -13,6 +13,7 @@ Files:
 - `youtube-json-clean.js`: companion cleanup script for uBO YouTube JSON Clean.
 - `youtube-player-request-clean.js`: companion cleanup script for uBO YouTube Player Request Clean.
 - `youtube-player-clean.js`: companion cleanup script for uBO YouTube Player JSON Clean.
+- `youtube-ios-watch-lite-clean.js`: companion cleanup script for uBO YouTube iOS Watch Lite Clean.
 - `jetpack-joyride-ad-clean.js`: companion cleanup script for uBO Jetpack Joyride iOS Ad Clean and uBO Jetpack Joyride BidMachine Request Clean and uBO Jetpack Joyride BidMachine Response Clean.
 - `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS GDT Request Empty Ads and uBO Huaxiaozhu iOS GDT Response Empty Ads.
 
@@ -32,6 +33,7 @@ Example raw URLs after upload:
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/youtube-json-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/youtube-player-request-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/youtube-player-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/main/youtube-ios-watch-lite-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/jetpack-joyride-ad-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/huaxiaozhu-ad-clean.js`
 
@@ -56,7 +58,7 @@ Yidong iOS diagnostic summary:
 - It intentionally does not restore the broader PSIE scripts, CDN image blocks, homepage data blocks, or `startInit` rewriting, because those either had no effect or risked app white screens in earlier testing.
 
 YouTube iOS playback note:
-- The YouTube iOS protobuf cleanup intentionally skips `get_watch` after a 2026-04-29 capture showed first-tap video pages stalling on a black/skeleton screen while large `get_watch` responses were being rewritten. Other YouTube iOS cleanup endpoints remain enabled.
+- The YouTube iOS protobuf cleanup uses a local lightweight `get_watch` handler after a 2026-04-29 capture showed first-tap video pages stalling on a black/skeleton screen while the upstream full `get_watch` handler rewrote large watch responses. The local handler cleans only player ad fields and skips next-feed traversal.
 
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.
