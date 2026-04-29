@@ -109,36 +109,8 @@ function extractGdtSlotId(body, payload) {
 const GDT_NO_FILL_CODE = 102006;
 const GDT_NO_FILL_MESSAGE = 'no ad';
 
-function clonePlainObject(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return undefined;
-  }
-  const out = {};
-  for (const key of Object.keys(value)) {
-    out[key] = value[key];
-  }
-  return out;
-}
-
-function buildNoAdSlot(originalSlot) {
+function buildNoAdSlot() {
   const slot = {};
-  const cfg = clonePlainObject(originalSlot && originalSlot.cfg);
-  const ctrlConfig = clonePlainObject(originalSlot && originalSlot.ctrl_config);
-  const dr = clonePlainObject(originalSlot && originalSlot.dr);
-
-  if (cfg) {
-    slot.cfg = cfg;
-  }
-  if (ctrlConfig) {
-    slot.ctrl_config = ctrlConfig;
-  }
-  if (dr) {
-    slot.dr = dr;
-  }
-  if (originalSlot && originalSlot.is_encrypted !== undefined) {
-    slot.is_encrypted = originalSlot.is_encrypted;
-  }
-
   slot.list = [];
   slot.msg = GDT_NO_FILL_MESSAGE;
   slot.ret = GDT_NO_FILL_CODE;
@@ -148,7 +120,7 @@ function buildNoAdSlot(originalSlot) {
 function buildNoFillGdtPayload(body, originalPayload) {
   const slotId = extractGdtSlotId(body, originalPayload);
   const payload = {
-    ret: 0,
+    ret: GDT_NO_FILL_CODE,
     msg: GDT_NO_FILL_MESSAGE,
     data: {},
     ip_ping_url: '',
@@ -158,8 +130,7 @@ function buildNoFillGdtPayload(body, originalPayload) {
   if (originalPayload && originalPayload.seq !== undefined) {
     payload.seq = originalPayload.seq;
   }
-  const originalSlot = originalPayload && originalPayload.data && originalPayload.data[slotId];
-  payload.data[slotId] = buildNoAdSlot(originalSlot);
+  payload.data[slotId] = buildNoAdSlot();
   return payload;
 }
 
