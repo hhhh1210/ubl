@@ -45,6 +45,31 @@ function queryValue(query, key) {
   }
 }
 
+function hasQueryFlag(query, key) {
+  return new RegExp(`(?:^|&)${key}(?:=|&|$)`).test(String(query || ''));
+}
+
+function isColdStartAdRedirect(urlInfo) {
+  if (urlInfo.host !== 'redirector.googlevideo.com') {
+    return false;
+  }
+  if (queryValue(urlInfo.query, 'id') === '000000000000266a') {
+    return false;
+  }
+  if (!queryValue(urlInfo.query, 'cpn')) {
+    return false;
+  }
+  return queryValue(urlInfo.query, 'rn') === '1'
+    && queryValue(urlInfo.query, 'opr') === '1'
+    && queryValue(urlInfo.query, 'ack') === '1'
+    && (
+      queryValue(urlInfo.query, 'por') === '1'
+      || hasQueryFlag(urlInfo.query, 'oad')
+      || hasQueryFlag(urlInfo.query, 'oaad')
+      || hasQueryFlag(urlInfo.query, 'oavd')
+    );
+}
+
 function readState() {
   try {
     const raw = store.read(STORE_KEY);
@@ -109,6 +134,12 @@ try {
     writeState(state);
     if (id === '000000000000266a') {
       noContent('blocked ad sentinel initplayback');
+    } else if (isColdStartAdRedirect(urlInfo)) {
+      if (cpn) {
+        state[cpn] = now;
+        writeState(state);
+      }
+      noContent(`blocked cold-start ad redirect cpn=${cpn || 'unknown'}`);
     } else if (cpn && state[cpn]) {
       noContent(`blocked ad initplayback cpn=${cpn}`);
     } else {
