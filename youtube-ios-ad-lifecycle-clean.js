@@ -91,28 +91,6 @@ function hasMediaStarted(state, cpn) {
   return Boolean(cpn && state[`media:${cpn}`]);
 }
 
-function rememberInitCpn(state, now, id, cpn) {
-  if (!id || !cpn || id === '000000000000266a') {
-    return '';
-  }
-  const key = `init:${id}`;
-  const raw = String(state[key] || '');
-  const prior = raw.includes('|') ? raw.slice(raw.indexOf('|') + 1) : '';
-  if (!prior) {
-    state[key] = `${now}|${cpn}`;
-  }
-  return prior;
-}
-
-function isSecondInitCpn(state, id, cpn) {
-  if (!id || !cpn || id === '000000000000266a') {
-    return false;
-  }
-  const raw = String(state[`init:${id}`] || '');
-  const prior = raw.includes('|') ? raw.slice(raw.indexOf('|') + 1) : '';
-  return Boolean(prior && prior !== cpn);
-}
-
 function noContent(reason) {
   console.log(`uBO youtube iOS ad lifecycle: ${reason}`);
   done({
@@ -163,15 +141,9 @@ try {
   } else if (phase === 'initplayback') {
     const cpn = queryValue(urlInfo.query, 'cpn');
     const id = queryValue(urlInfo.query, 'id');
-    const duplicateInitCpn = isSecondInitCpn(state, id, cpn);
-    rememberInitCpn(state, now, id, cpn);
     if (id === '000000000000266a') {
       writeState(state);
       noContent('blocked ad sentinel initplayback');
-    } else if (duplicateInitCpn) {
-      rememberAdCpn(state, now, cpn);
-      writeState(state);
-      noContent(`blocked duplicate ad initplayback cpn=${cpn}`);
     } else if (isAdCpn(state, cpn) && !hasMediaStarted(state, cpn)) {
       writeState(state);
       noContent(`blocked ad initplayback cpn=${cpn}`);
