@@ -13,7 +13,7 @@ Files:
 - `youtube-json-clean.js`: companion cleanup script for uBO YouTube JSON Clean.
 - `youtube-player-request-clean.js`: companion cleanup script for uBO YouTube Player Request Clean.
 - `youtube-player-clean.js`: companion cleanup script for uBO YouTube Player JSON Clean.
-- `youtube-ios-watch-lite-clean.js`: companion cleanup script for uBO YouTube iOS Watch Lite Clean.
+- `youtube-ios-watch-lite-clean.js`: companion cleanup script for uBO YouTube iOS Next Lite Clean and uBO YouTube iOS Watch Lite Clean.
 - `jetpack-joyride-ad-clean.js`: companion cleanup script for uBO Jetpack Joyride iOS Ad Clean and uBO Jetpack Joyride BidMachine Request Clean and uBO Jetpack Joyride BidMachine Response Clean.
 - `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS GDT Request Empty Ads and uBO Huaxiaozhu iOS GDT Response Empty Ads.
 
@@ -58,7 +58,7 @@ Yidong iOS diagnostic summary:
 - It intentionally does not restore the broader PSIE scripts, CDN image blocks, homepage data blocks, or `startInit` rewriting, because those either had no effect or risked app white screens in earlier testing.
 
 YouTube iOS playback note:
-- The YouTube iOS protobuf cleanup uses a local lightweight `get_watch` handler after 2026-04-29 captures showed first-tap video pages stalling on a black/skeleton screen while large watch responses still carried ad allocation state. The local handler cleans player ad fields, removes individual `richItemContents` cards with observed ad markers, and narrowly strips ad-bearing child records from `next` opaque field 14; deleting the whole unknown field is avoided because it caused black screens and gray placeholders on iOS.
+- The YouTube iOS protobuf cleanup uses a local lightweight `next`/`get_watch` handler after 2026-04-29 captures showed first-tap video pages stalling on a black/skeleton screen while large watch/next responses still carried ad allocation state. The local handler cleans player ad fields, removes individual `richItemContents` cards with observed ad markers, and narrowly strips ad-bearing child records from opaque `next` fields 14/15/42; deleting whole unknown fields is avoided because it caused black screens and gray placeholders on iOS.
 - YouTube ad impression/stat endpoints on `www.youtube.com` are completed with local 204 responses instead of hard REJECT, matching the web spinner workaround and avoiding clients waiting on failed ad lifecycle requests. Googlevideo `initplayback` is no longer broadly emptied; only the observed ad sentinel `id=000000000000266a` is locally completed so normal iOS video initialization can return its UMP body.
 
 Note:
