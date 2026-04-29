@@ -58,8 +58,22 @@ function isJetpackUserAgent(headers) {
   return /^jetpack\/1\./i.test(String(getHeaderCaseInsensitive(headers, 'User-Agent') || ''));
 }
 
+function bodyToText(body) {
+  if (typeof body === 'string') {
+    return body;
+  }
+  if (body && typeof body.length === 'number') {
+    let text = '';
+    for (let i = 0; i < body.length; i++) {
+      text += String.fromCharCode(body[i] & 0xff);
+    }
+    return text;
+  }
+  return '';
+}
+
 function bodyHasJetpackMarker(body) {
-  return /com\.halfbrick\.jetpack|halfbrick-jetpack-joyride|id457446957/.test(String(body || ''));
+  return /com\.halfbrick\.jetpack|halfbrick-jetpack-joyride|id457446957/.test(bodyToText(body));
 }
 
 function isJetpackApplovin(headers) {
@@ -80,32 +94,15 @@ function isAppLovinEndpoint(urlInfo) {
     return true;
   }
   if (urlInfo.host === 'ms.applovin.com' && (
-    urlInfo.path === '/5.0/i' ||
-    urlInfo.path === '/1.0/sdk/error'
-  )) {
-    return true;
-  }
-  if (urlInfo.host === 'prod-e.axon.ai' && /^\/1\.0\/event\//.test(urlInfo.path)) {
-    return true;
-  }
-  return false;
-}
-
-function isBidMachineEndpoint(urlInfo) {
-  if (urlInfo.host === 'api.bidmachine.io' && urlInfo.path === '/auction/init') {
-    return true;
-  }
-  if (/^api-[^.]+\.bidmachine\.io$/.test(urlInfo.host) && (
-    urlInfo.path === '/auction/rtb/v3' ||
-    urlInfo.path === '/track/sdk-event'
+    urlInfo.path === '/5.0/i'
   )) {
     return true;
   }
   return false;
 }
 
-function isVungleEndpoint(urlInfo) {
-  return urlInfo.host === 'logs.ads.vungle.com' && urlInfo.path === '/sdk/metrics';
+function isBidMachineInit(urlInfo) {
+  return urlInfo.host === 'api.bidmachine.io' && urlInfo.path === '/auction/init';
 }
 
 function noContent(reason) {
@@ -118,17 +115,36 @@ function noContent(reason) {
   done({ status: 204, headers, body: '' });
 }
 
+function directNoContent(reason) {
+  console.log(`uBO Jetpack Joyride ad clean: ${reason}`);
+  done({
+    response: {
+      status: 204,
+      headers: {},
+      body: '',
+    },
+  });
+}
+
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
   const headers = request.headers || {};
   const urlInfo = parseUrl(request.url);
-  const requestBody = typeof request.body === 'string' ? request.body : '';
-  const responseBody = typeof $response === 'object' && $response !== null && typeof $response.body === 'string'
-    ? $response.body
-    : '';
+  const scriptType = typeof $script === 'object' && $script !== null ? $script.type : '';
+  const argument = typeof $argument === 'string' ? $argument : '';
   let handled = false;
 
+  if (scriptType === 'http-request' || /(?:^|&)phase=bidmachine-request(?:&|$)/.test(argument)) {
+    if (isBidMachineInit(urlInfo) && bodyHasJetpackMarker(request.body)) {
+      directNoContent('BidMachine Jetpack auction request suppressed');
+    } else {
+      done({});
+    }
+    handled = true;
+  }
+
   if (
+    handled === false &&
     isAppLovinEndpoint(urlInfo) &&
     isJetpackApplovin(headers)
   ) {
@@ -147,20 +163,6 @@ try {
     isJetpackUnity(urlInfo, headers)
   )) {
     noContent('Unity mediation ad response suppressed');
-    handled = true;
-  }
-
-  if (handled === false && isBidMachineEndpoint(urlInfo)) {
-    noContent('BidMachine auction response suppressed');
-    handled = true;
-  }
-
-  if (
-    handled === false &&
-    isVungleEndpoint(urlInfo) &&
-    (isJetpackUserAgent(headers) || bodyHasJetpackMarker(requestBody) || bodyHasJetpackMarker(responseBody))
-  ) {
-    noContent('Vungle ad metrics response suppressed');
     handled = true;
   }
 
