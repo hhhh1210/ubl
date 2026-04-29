@@ -55,6 +55,9 @@ Yidong iOS diagnostic summary:
 - The second pass also returns empty PSIE ad-strategy payloads for `checkAppInfo`, `getSDKSwitch`, `getInitList`, `getOfflineFeature`, `getFeatures`, `getStrategyTouchcode`, and `getComplexCandidateColls` on `h.app.coc.10086.cn`, because the first diagnostic build already hit the toast endpoints but ads still appeared.
 - It intentionally does not restore the broader PSIE scripts, CDN image blocks, homepage data blocks, or `startInit` rewriting, because those either had no effect or risked app white screens in earlier testing.
 
+YouTube iOS playback note:
+- The YouTube iOS protobuf cleanup intentionally skips `get_watch` after a 2026-04-29 capture showed first-tap video pages stalling on a black/skeleton screen while large `get_watch` responses were being rewritten. Other YouTube iOS cleanup endpoints remain enabled.
+
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.
 - The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a4.applovin.com, d.applovin.com, ms.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, client.app.coc.10086.cn, h.app.coc.10086.cn, *.googlevideo.com.
