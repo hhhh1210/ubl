@@ -38,7 +38,7 @@ http-response ^https?:\/\/(?:www\.)?(?:hjw01|hjwang9)\.com(?:\/?(?:\?.*)?$|\/(?:
 hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a4.applovin.com, d.applovin.com, ms.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, client.app.coc.10086.cn, h.app.coc.10086.cn, *.googlevideo.com
 
 [Map Local]
-^https?:\/\/[\w-]+\.googlevideo\.com\/initplayback.+&oad data-type=text data="" status-code=200
+^https?:\/\/(?:[\w-]+\.|redirector\.)googlevideo\.com\/initplayback\?(?:[^#]*&)?id=000000000000266a(?:&|$).*$ data-type=text data="" status-code=204
 ^https?:\/\/www\.youtube\.com\/pagead\/[^?#]*(?:\?.*)?$ data-type=text data="" status-code=204
 ^https?:\/\/www\.youtube\.com\/api\/stats\/ads(?:[?#].*)?$ data-type=text data="" status-code=204
 ^https?:\/\/www\.youtube\.com\/pcs\/activeview\?(?:.*)$ data-type=text data="" status-code=204

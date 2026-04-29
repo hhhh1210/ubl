@@ -59,7 +59,7 @@ Yidong iOS diagnostic summary:
 
 YouTube iOS playback note:
 - The YouTube iOS protobuf cleanup uses a local lightweight `get_watch` handler after 2026-04-29 captures showed first-tap video pages stalling on a black/skeleton screen while large watch responses still carried ad allocation state. The local handler cleans player ad fields, removes individual `richItemContents` cards with observed ad markers, and narrowly strips ad-bearing child records from `next` opaque field 14; deleting the whole unknown field is avoided because it caused black screens and gray placeholders on iOS.
-- YouTube ad impression/stat endpoints on `www.youtube.com` are completed with local 204 responses instead of hard REJECT, matching the web spinner workaround and avoiding clients waiting on failed ad lifecycle requests.
+- YouTube ad impression/stat endpoints on `www.youtube.com` are completed with local 204 responses instead of hard REJECT, matching the web spinner workaround and avoiding clients waiting on failed ad lifecycle requests. Googlevideo `initplayback` is no longer broadly emptied; only the observed ad sentinel `id=000000000000266a` is locally completed so normal iOS video initialization can return its UMP body.
 
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.
