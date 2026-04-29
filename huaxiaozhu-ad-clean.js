@@ -106,6 +106,42 @@ function extractGdtSlotId(body, payload) {
   return '8156967880562298';
 }
 
+function clonePlainObject(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+  const out = {};
+  for (const key of Object.keys(value)) {
+    out[key] = value[key];
+  }
+  return out;
+}
+
+function buildNoAdSlot(originalSlot) {
+  const slot = {};
+  const cfg = clonePlainObject(originalSlot && originalSlot.cfg);
+  const ctrlConfig = clonePlainObject(originalSlot && originalSlot.ctrl_config);
+  const dr = clonePlainObject(originalSlot && originalSlot.dr);
+
+  if (cfg) {
+    slot.cfg = cfg;
+  }
+  if (ctrlConfig) {
+    slot.ctrl_config = ctrlConfig;
+  }
+  if (dr) {
+    slot.dr = dr;
+  }
+  if (originalSlot && originalSlot.is_encrypted !== undefined) {
+    slot.is_encrypted = originalSlot.is_encrypted;
+  }
+
+  slot.list = [];
+  slot.msg = '';
+  slot.ret = 0;
+  return slot;
+}
+
 function buildNoFillGdtPayload(body, originalPayload) {
   const slotId = extractGdtSlotId(body, originalPayload);
   const payload = {
@@ -114,16 +150,13 @@ function buildNoFillGdtPayload(body, originalPayload) {
     data: {},
     ip_ping_url: '',
     last_ads: {},
-    reqinterval: 3600,
+    reqinterval: 1,
   };
   if (originalPayload && originalPayload.seq !== undefined) {
     payload.seq = originalPayload.seq;
   }
-  payload.data[slotId] = {
-    ret: 0,
-    msg: '',
-    list: [],
-  };
+  const originalSlot = originalPayload && originalPayload.data && originalPayload.data[slotId];
+  payload.data[slotId] = buildNoAdSlot(originalSlot);
   return payload;
 }
 
@@ -133,6 +166,8 @@ function finishJson(reason, value) {
   deleteHeaderCaseInsensitive(headers, 'Content-Length');
   deleteHeaderCaseInsensitive(headers, 'Transfer-Encoding');
   setHeaderCaseInsensitive(headers, 'Cache-Control', 'no-store');
+  setHeaderCaseInsensitive(headers, 'Pragma', 'no-cache');
+  setHeaderCaseInsensitive(headers, 'Expires', '0');
   setHeaderCaseInsensitive(headers, 'Content-Type', 'application/json; charset=utf-8');
   console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
   done({
