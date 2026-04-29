@@ -59,6 +59,7 @@ Yidong iOS diagnostic summary:
 
 YouTube iOS playback note:
 - The YouTube iOS protobuf cleanup uses a local lightweight `get_watch` handler after a 2026-04-29 capture showed first-tap video pages stalling on a black/skeleton screen while the upstream full `get_watch` handler rewrote large watch responses. The local handler cleans player ad fields and only removes individual `richItemContents` cards whose nested protobuf unknown fields contain observed ad markers; broader unknown-field cleanup is avoided because it caused black screens and gray placeholders on iOS.
+- YouTube ad impression/stat endpoints on `www.youtube.com` are completed with local 204 responses instead of hard REJECT, matching the web spinner workaround and avoiding clients waiting on failed ad lifecycle requests.
 
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.
