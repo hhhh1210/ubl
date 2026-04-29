@@ -197,17 +197,24 @@ function cleanNextAds(bytes) {
 
   const chunks = [];
   let changed = false;
+  const isLargeResponse = bytes.length > 200000;
+  const isSmallAdState = bytes.length <= 65536;
   for (const field of fields) {
     const data = field.wireType === 2 ? bytes.subarray(field.dataStart, field.dataEnd) : null;
+    const shouldDropNextField = isLargeResponse
+      ? (
+        (field.no === 7 && hasAdTransportMarker(data))
+        || (field.no === 14 && hasAdTransportMarker(data))
+        || (field.no === 777 && hasNextAdMarker(data))
+      )
+      : (
+        (isSmallAdState && (field.no === 14 || field.no === 15 || field.no === 42) && (hasAdTransportMarker(data) || hasNextAdMarker(data)))
+        || (field.no === 777 && hasNextAdMarker(data))
+      );
     if (
       field.wireType === 2
       && field.length > 32
-      && (
-        (field.no === 7 && hasAdTransportMarker(data))
-        ||
-        ((field.no === 14 || field.no === 15 || field.no === 42) && (hasAdTransportMarker(data) || hasNextAdMarker(data)))
-        || (field.no === 777 && hasNextAdMarker(data))
-      )
+      && shouldDropNextField
     ) {
       changed = true;
       continue;
