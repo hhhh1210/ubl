@@ -85,11 +85,54 @@ function isHuaxiaozhuGdtEndpoint(urlInfo) {
   return urlInfo.host === 'mi.gdt.qq.com' && urlInfo.path === '/server_bidding2';
 }
 
+function extractParam(text, key) {
+  const match = new RegExp(`(?:^|&)${key}=([^&]*)`).exec(String(text || ''));
+  return match ? decodeURIComponentSafe(match[1]) : '';
+}
+
+function extractGdtSlotId(body, payload) {
+  const bodyText = bodyToText(body);
+  const posid = extractParam(bodyText, 'posid');
+  if (posid) {
+    return posid;
+  }
+  const data = payload && payload.data;
+  if (data && typeof data === 'object') {
+    const keys = Object.keys(data);
+    if (keys.length !== 0) {
+      return keys[0];
+    }
+  }
+  return '8156967880562298';
+}
+
+function buildNoFillGdtPayload(body, originalPayload) {
+  const slotId = extractGdtSlotId(body, originalPayload);
+  const payload = {
+    ret: 0,
+    msg: '',
+    data: {},
+    ip_ping_url: '',
+    last_ads: {},
+    reqinterval: 3600,
+  };
+  if (originalPayload && originalPayload.seq !== undefined) {
+    payload.seq = originalPayload.seq;
+  }
+  payload.data[slotId] = {
+    ret: 0,
+    msg: '',
+    list: [],
+  };
+  return payload;
+}
+
 function finishJson(reason, value) {
   const headers = cloneHeaders($response && $response.headers);
   deleteHeaderCaseInsensitive(headers, 'Content-Encoding');
   deleteHeaderCaseInsensitive(headers, 'Content-Length');
   deleteHeaderCaseInsensitive(headers, 'Transfer-Encoding');
+  setHeaderCaseInsensitive(headers, 'Cache-Control', 'no-store');
   setHeaderCaseInsensitive(headers, 'Content-Type', 'application/json; charset=utf-8');
   console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
   done({
@@ -99,55 +142,52 @@ function finishJson(reason, value) {
   });
 }
 
-function emptyGdtAds(payload) {
-  let changed = false;
-  if (payload && payload.last_ads) {
-    payload.last_ads = {};
-    changed = true;
-  }
-  if (payload && typeof payload.ip_ping_url === 'string') {
-    payload.ip_ping_url = '';
-    changed = true;
-  }
-
-  const data = payload && payload.data;
-  if (data && typeof data === 'object') {
-    for (const key of Object.keys(data)) {
-      const slot = data[key];
-      if (!slot || typeof slot !== 'object') {
-        continue;
-      }
-      if (Array.isArray(slot.list) && slot.list.length !== 0) {
-        slot.list = [];
-        changed = true;
-      }
-      if (slot.ret === undefined) {
-        slot.ret = 0;
-      }
-      if (slot.msg === undefined) {
-        slot.msg = '';
-      }
-    }
-  }
-  return changed;
+function directJson(reason, value) {
+  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
+  done({
+    response: {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store',
+      },
+      body: JSON.stringify(value),
+    },
+  });
 }
 
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
-  const response = typeof $response === 'object' && $response !== null ? $response : {};
   const urlInfo = parseUrl(request.url);
+  const argument = typeof $argument === 'string' ? $argument : '';
   let handled = false;
 
+  if (/(?:^|&)phase=gdt-request(?:&|$)/.test(argument)) {
+    if (
+      isHuaxiaozhuGdtEndpoint(urlInfo) &&
+      isHuaxiaozhuGdtBody(request.body)
+    ) {
+      directJson(
+        'Tencent GDT Huaxiaozhu bidding request short-circuited',
+        buildNoFillGdtPayload(request.body, null)
+      );
+      handled = true;
+    }
+  }
+
   if (
+    handled === false &&
     isHuaxiaozhuGdtEndpoint(urlInfo) &&
     isHuaxiaozhuGdtBody(request.body)
   ) {
+    const response = typeof $response === 'object' && $response !== null ? $response : {};
     const text = bodyToText(response.body);
     const payload = JSON.parse(text);
-    if (emptyGdtAds(payload)) {
-      finishJson('Tencent GDT Huaxiaozhu bidding response emptied', payload);
-      handled = true;
-    }
+    finishJson(
+      'Tencent GDT Huaxiaozhu bidding response replaced with no-fill',
+      buildNoFillGdtPayload(request.body, payload)
+    );
+    handled = true;
   }
 
   if (handled === false) {
