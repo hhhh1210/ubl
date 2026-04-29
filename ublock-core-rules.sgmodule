@@ -31,7 +31,6 @@ URL-REGEX,^https?:\/\/file\.52papa\.tv\/download\/dl[^/?#]*\.php(?:[?#]|$),REJEC
 # Jetpack Joyride iOS app-scoped ad endpoints observed from Surge capture.
 # Huaxiaozhu iOS app-scoped startup and popup ad resources observed from Surge capture.
 # Yidong iOS app-scoped startup ad strategy and verified splash material suppressions.
-URL-REGEX,^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/init\/startInit(?:\?.*)?$,REJECT
 
 [Header Rewrite]
 http-request ^https?:\/\/(?:www\.)?(?:hjw01|hjwang9)\.com(?:\/?(?:\?.*)?$|\/(?:archives\/\d+\/?|tag\/[^?#]+\/?|tags\/?|category\/[^?#]+\/?|author\/\d+\/new\/?|authors(?:_[^\/?#]+)?(?:\/post-\d+\/?)?|communitys\/?|consumers\/?|follow\/?|date\/?|history\/search\/?|my\/\d+\/?|order\/hot\/?|ai\/?|[^\/?#]+\.html)(?:\?.*)?$) header-del Accept-Encoding

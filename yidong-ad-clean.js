@@ -37,7 +37,7 @@ function getHeaderCaseInsensitive(headers, target) {
 }
 
 function parseUrl(url) {
-  const match = String(url || '').match(/^https?:\/\/([^/?#:]+)([^?#]*)(?:\?([^#]*))?/i);
+  const match = String(url || '').match(/^https?:\/\/([^/?#:]+)(?::\d+)?([^?#]*)(?:\?([^#]*))?/i);
   if (!match) {
     return { host: '', path: '', query: '' };
   }
