@@ -58,7 +58,7 @@ Yidong iOS diagnostic summary:
 - It intentionally does not restore the broader PSIE scripts, CDN image blocks, homepage data blocks, or `startInit` rewriting, because those either had no effect or risked app white screens in earlier testing.
 
 YouTube iOS playback note:
-- The YouTube iOS protobuf cleanup uses a local lightweight `get_watch` handler after a 2026-04-29 capture showed first-tap video pages stalling on a black/skeleton screen while the upstream full `get_watch` handler rewrote large watch responses. The local handler cleans player ad fields and only removes individual `richItemContents` cards whose nested protobuf unknown fields contain observed ad markers; broader unknown-field cleanup is avoided because it caused black screens and gray placeholders on iOS.
+- The YouTube iOS protobuf cleanup uses a local lightweight `get_watch` handler after 2026-04-29 captures showed first-tap video pages stalling on a black/skeleton screen while large watch responses still carried ad allocation state. The local handler cleans player ad fields, removes individual `richItemContents` cards with observed ad markers, and narrowly strips ad-bearing child records from `next` opaque field 14; deleting the whole unknown field is avoided because it caused black screens and gray placeholders on iOS.
 - YouTube ad impression/stat endpoints on `www.youtube.com` are completed with local 204 responses instead of hard REJECT, matching the web spinner workaround and avoiding clients waiting on failed ad lifecycle requests.
 
 Note:
