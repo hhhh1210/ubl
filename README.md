@@ -14,6 +14,7 @@ Files:
 - `youtube-player-request-clean.js`: companion cleanup script for uBO YouTube Player Request Clean.
 - `youtube-player-clean.js`: companion cleanup script for uBO YouTube Player JSON Clean.
 - `youtube-ios-watch-lite-clean.js`: companion cleanup script for uBO YouTube iOS Next Lite Clean and uBO YouTube iOS Watch Lite Clean.
+- `youtube-ios-ad-lifecycle-clean.js`: companion cleanup script for uBO YouTube iOS Ad Stats State and uBO YouTube iOS Initplayback State.
 - `jetpack-joyride-ad-clean.js`: companion cleanup script for uBO Jetpack Joyride iOS Ad Clean and uBO Jetpack Joyride BidMachine Request Clean and uBO Jetpack Joyride BidMachine Response Clean.
 - `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS GDT Request Empty Ads and uBO Huaxiaozhu iOS GDT Response Empty Ads.
 
@@ -34,6 +35,7 @@ Example raw URLs after upload:
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/youtube-player-request-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/youtube-player-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/youtube-ios-watch-lite-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/main/youtube-ios-ad-lifecycle-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/jetpack-joyride-ad-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/huaxiaozhu-ad-clean.js`
 
@@ -59,10 +61,10 @@ Yidong iOS diagnostic summary:
 
 YouTube iOS playback note:
 - The YouTube iOS protobuf cleanup uses a local lightweight `next`/`get_watch` handler after 2026-04-29 captures showed first-tap video pages stalling on a black/skeleton screen while large watch/next responses still carried ad allocation state. The local handler cleans player ad fields, removes individual `richItemContents` cards with observed ad markers, and narrowly strips ad-bearing child records from opaque `next` fields 14/15/42; deleting whole unknown fields is avoided because it caused black screens and gray placeholders on iOS.
-- YouTube ad impression/stat endpoints on `www.youtube.com` are completed with local 204 responses instead of hard REJECT, matching the web spinner workaround and avoiding clients waiting on failed ad lifecycle requests. Googlevideo `initplayback` is no longer broadly emptied; only the observed ad sentinel `id=000000000000266a` is locally completed so normal iOS video initialization can return its UMP body.
+- YouTube ad impression/stat endpoints on `www.youtube.com` are completed with local 204 responses instead of hard REJECT, matching the web spinner workaround and avoiding clients waiting on failed ad lifecycle requests. iOS ad `cpn` values from `api/stats/ads` are stored briefly and used to complete only matching googlevideo `initplayback` requests; normal iOS video initialization can still return its UMP body.
 
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.
-- The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a4.applovin.com, d.applovin.com, ms.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, client.app.coc.10086.cn, h.app.coc.10086.cn, *.googlevideo.com.
+- The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, *.googlevideo.com, vg-new-ssplib-hb.mtgglobals.com, a4.applovin.com, d.applovin.com, ms.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, client.app.coc.10086.cn, h.app.coc.10086.cn.
 - This package intentionally excludes the broad uBO-derived rule dump. It keeps only verified hjw01, mytvsuper, coolinet, YouTube Web, YouTube iOS App, googlevideo, and app-scoped Jetpack Joyride/Huaxiaozhu/Yidong handling.
 - Cosmetic filters, scriptlets, HTML filtering, `removeparam=`, `urlskip=`, and source-domain constrained rules are not part of this lightweight export.
