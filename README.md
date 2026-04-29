@@ -14,7 +14,7 @@ Files:
 - `youtube-player-request-clean.js`: companion cleanup script for uBO YouTube Player Request Clean.
 - `youtube-player-clean.js`: companion cleanup script for uBO YouTube Player JSON Clean.
 - `jetpack-joyride-ad-clean.js`: companion cleanup script for uBO Jetpack Joyride iOS Ad Clean and uBO Jetpack Joyride BidMachine Request Clean and uBO Jetpack Joyride BidMachine Response Clean.
-- `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS GDT Request Clean and uBO Huaxiaozhu iOS Ad Clean.
+- `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS Ad Clean.
 
 Recommended install order:
 1. Upload all module and companion script files to GitHub.
@@ -45,8 +45,7 @@ Jetpack Joyride iOS summary:
 - Other pure telemetry observed in capture, such as AppsFlyer events, AppLovin SDK error, and Axon appkill, is intentionally not included.
 
 Huaxiaozhu iOS summary:
-- The request script short-circuits Tencent GDT bidding only when the request body contains the Huaxiaozhu bundle marker.
-- The response script replaces Tencent GDT bidding data with a minimal no-fill payload and removes cache-bearing fields such as `cfg` and `last_ads`.
+- The response script replaces Tencent GDT bidding data with a minimal no-fill payload only when the request body contains the Huaxiaozhu bundle marker, and removes cache-bearing fields such as `cfg` and `last_ads`.
 - `Map Local` suppresses verified Huaxiaozhu startup material under `img-ys011.didistatic.com/static/ad_oss/`, the `cpc-coupon-new` popup shell/assets, and the GDT SDK launch config used by cached splash ads.
 - Login, risk-control, Omega telemetry, safety shield, update, and weather/static UI assets are intentionally not included.
 

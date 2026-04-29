@@ -142,41 +142,12 @@ function finishJson(reason, value) {
   });
 }
 
-function directJson(reason, value) {
-  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
-  done({
-    response: {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Cache-Control': 'no-store',
-      },
-      body: JSON.stringify(value),
-    },
-  });
-}
-
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
   const urlInfo = parseUrl(request.url);
-  const argument = typeof $argument === 'string' ? $argument : '';
   let handled = false;
 
-  if (/(?:^|&)phase=gdt-request(?:&|$)/.test(argument)) {
-    if (
-      isHuaxiaozhuGdtEndpoint(urlInfo) &&
-      isHuaxiaozhuGdtBody(request.body)
-    ) {
-      directJson(
-        'Tencent GDT Huaxiaozhu bidding request short-circuited',
-        buildNoFillGdtPayload(request.body, null)
-      );
-      handled = true;
-    }
-  }
-
   if (
-    handled === false &&
     isHuaxiaozhuGdtEndpoint(urlInfo) &&
     isHuaxiaozhuGdtBody(request.body)
   ) {
