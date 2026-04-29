@@ -14,7 +14,7 @@ Files:
 - `youtube-player-request-clean.js`: companion cleanup script for uBO YouTube Player Request Clean.
 - `youtube-player-clean.js`: companion cleanup script for uBO YouTube Player JSON Clean.
 - `jetpack-joyride-ad-clean.js`: companion cleanup script for uBO Jetpack Joyride iOS Ad Clean and uBO Jetpack Joyride BidMachine Request Clean and uBO Jetpack Joyride BidMachine Response Clean.
-- `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS GDT Request No-Fill and uBO Huaxiaozhu iOS GDT Response Clean.
+- `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS GDT Request Empty Ads and uBO Huaxiaozhu iOS GDT Response Empty Ads.
 
 Recommended install order:
 1. Upload all module and companion script files to GitHub.
@@ -45,9 +45,10 @@ Jetpack Joyride iOS summary:
 - Other pure telemetry observed in capture, such as AppsFlyer events, AppLovin SDK error, and Axon appkill, is intentionally not included.
 
 Huaxiaozhu iOS summary:
-- The response script replaces Tencent GDT bidding data with a minimal no-fill payload only when the request body contains the Huaxiaozhu bundle marker, and removes cache-bearing fields such as `cfg` and `last_ads`.
-- `Map Local` suppresses verified Huaxiaozhu startup material under `img-ys011.didistatic.com/static/ad_oss/`, the `cpc-coupon-new` popup shell/assets, and the GDT SDK launch config used by cached splash ads.
-- Login, risk-control, Omega telemetry, safety shield, update, and weather/static UI assets are intentionally not included.
+- The request script short-circuits Tencent GDT `server_bidding2` only when the request body contains the Huaxiaozhu bundle marker, returning a successful empty-ad payload (`ret: 0`, `list: []`) with minimal GDT slot metadata so the SDK closes cleanly.
+- The response script keeps the same empty-ad transform as a fallback for clients where request-body short-circuiting is unavailable.
+- `Map Local` keeps only verified popup/material suppressions: `cpc-coupon-new` HTML/JS/CSS, Didi ad images, and cached GDT media files observed in captures.
+- `sdk.e.qq.com/launch`, login, risk-control, Omega telemetry, safety shield, update, and weather/static UI assets are intentionally allowed. The remaining sub-4-second relaunch white screen is app cache lifecycle behavior, not an ad source.
 
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.
