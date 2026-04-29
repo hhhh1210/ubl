@@ -13,7 +13,7 @@ Files:
 - `youtube-json-clean.js`: companion cleanup script for uBO YouTube JSON Clean.
 - `youtube-player-request-clean.js`: companion cleanup script for uBO YouTube Player Request Clean.
 - `youtube-player-clean.js`: companion cleanup script for uBO YouTube Player JSON Clean.
-- `youtube-ios-next-lite-clean.js`: companion cleanup script for uBO YouTube iOS Next Lite Clean.
+- `youtube-ios-next-lite-clean.js`: companion cleanup script for uBO YouTube iOS Next Lite Clean and uBO YouTube iOS Browse Lite Clean.
 - `youtube-ios-ad-lifecycle-clean.js`: companion cleanup script for uBO YouTube iOS Ad Stats State and uBO YouTube iOS Ad Signal State and uBO YouTube iOS Ad PTracking State and uBO YouTube iOS Initplayback State and uBO YouTube iOS Videoplayback State.
 - `youtube-ios-watch-lite-clean.js`: companion cleanup script for uBO YouTube iOS Watch Lite Clean.
 - `jetpack-joyride-ad-clean.js`: companion cleanup script for uBO Jetpack Joyride iOS Ad Clean and uBO Jetpack Joyride BidMachine Request Clean and uBO Jetpack Joyride BidMachine Response Clean.

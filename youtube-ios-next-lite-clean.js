@@ -62,6 +62,30 @@ function hasNextAdMarker(bytes) {
   ].some(marker => containsAscii(bytes, marker));
 }
 
+function hasAdTransportMarker(bytes) {
+  return [
+    'pagead',
+    'googleads',
+    'doubleclick',
+    'googlesyndication',
+    'adcontext',
+  ].some(marker => containsAscii(bytes, marker));
+}
+
+function hasBrowseAdMarker(bytes) {
+  return [
+    'simgad',
+    'googlesyndication',
+    'carousel_ad_card_metadata',
+  ].some(marker => containsAscii(bytes, marker));
+}
+
+function requestPath() {
+  const request = typeof $request === 'object' && $request !== null ? $request : {};
+  const match = String(request.url || '').match(/^https?:\/\/[^/?#]+([^?#]*)/i);
+  return match ? match[1] : '';
+}
+
 function readVarint(bytes, offset = 0) {
   let value = 0;
   let multiplier = 1;
@@ -153,8 +177,8 @@ function parseMessage(bytes) {
   return fields;
 }
 
-function cleanSmallNextAds(bytes) {
-  if (!bytes || bytes.length > 65536 || !hasNextAdMarker(bytes)) {
+function cleanNextAds(bytes) {
+  if (!bytes || !hasNextAdMarker(bytes)) {
     return null;
   }
   const fields = parseMessage(bytes);
@@ -174,11 +198,39 @@ function cleanSmallNextAds(bytes) {
   const chunks = [];
   let changed = false;
   for (const field of fields) {
+    const data = field.wireType === 2 ? bytes.subarray(field.dataStart, field.dataEnd) : null;
     if (
       field.wireType === 2
       && field.length > 32
-      && (field.no === 14 || field.no === 15 || field.no === 42 || field.no === 777)
+      && (
+        (field.no === 7 && hasAdTransportMarker(data))
+        ||
+        ((field.no === 14 || field.no === 15 || field.no === 42) && (hasAdTransportMarker(data) || hasNextAdMarker(data)))
+        || (field.no === 777 && hasNextAdMarker(data))
+      )
     ) {
+      changed = true;
+      continue;
+    }
+    chunks.push(bytes.subarray(field.start, field.end));
+  }
+  return changed ? concat(chunks) : null;
+}
+
+function cleanBrowseAds(bytes) {
+  if (!bytes || !hasBrowseAdMarker(bytes)) {
+    return null;
+  }
+  const fields = parseMessage(bytes);
+  if (!fields) {
+    return null;
+  }
+
+  const chunks = [];
+  let changed = false;
+  for (const field of fields) {
+    const data = field.wireType === 2 ? bytes.subarray(field.dataStart, field.dataEnd) : null;
+    if (field.wireType === 2 && field.no === 50 && field.length > 32 && hasBrowseAdMarker(data)) {
       changed = true;
       continue;
     }
@@ -189,9 +241,10 @@ function cleanSmallNextAds(bytes) {
 
 try {
   const body = readBodyBytes();
-  const cleaned = cleanSmallNextAds(body);
+  const path = requestPath();
+  const cleaned = /\/youtubei\/v1\/browse$/i.test(path) ? cleanBrowseAds(body) : cleanNextAds(body);
   if (cleaned) {
-    console.log(`uBO YouTube iOS next lite: stripped small ad state ${body.length} -> ${cleaned.length}`);
+    console.log(`uBO YouTube iOS next lite: stripped ad state ${body.length} -> ${cleaned.length}`);
     done({ body: cleaned });
   } else {
     done({});
