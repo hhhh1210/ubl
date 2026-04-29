@@ -106,22 +106,53 @@ function extractGdtSlotId(body, payload) {
   return '8156967880562298';
 }
 
-const GDT_NO_FILL_CODE = 102006;
-const GDT_NO_FILL_MESSAGE = 'no ad';
+const DEFAULT_GDT_SLOT_META = {
+  cfg: {
+    playcfg: {},
+    playmod: 1,
+  },
+  ctrl_config: {
+    app: {
+      acr_cfg: '{"1":0,"2":4,"3":1,"4":1,"n":6,"t":4}',
+    },
+  },
+  dr: 0,
+  is_encrypted: 0,
+};
 
-function buildNoAdSlot() {
+function clonePlainObject(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+  const out = {};
+  for (const key of Object.keys(value)) {
+    out[key] = value[key];
+  }
+  return out;
+}
+
+function buildNoAdSlot(originalSlot) {
   const slot = {};
+  const cfg = clonePlainObject(originalSlot && originalSlot.cfg) || DEFAULT_GDT_SLOT_META.cfg;
+  const ctrlConfig = clonePlainObject(originalSlot && originalSlot.ctrl_config) || DEFAULT_GDT_SLOT_META.ctrl_config;
+
+  slot.cfg = cfg;
+  slot.ctrl_config = ctrlConfig;
+  slot.dr = originalSlot && originalSlot.dr !== undefined ? originalSlot.dr : DEFAULT_GDT_SLOT_META.dr;
+  slot.is_encrypted = originalSlot && originalSlot.is_encrypted !== undefined
+    ? originalSlot.is_encrypted
+    : DEFAULT_GDT_SLOT_META.is_encrypted;
   slot.list = [];
-  slot.msg = GDT_NO_FILL_MESSAGE;
-  slot.ret = GDT_NO_FILL_CODE;
+  slot.msg = '';
+  slot.ret = 0;
   return slot;
 }
 
 function buildNoFillGdtPayload(body, originalPayload) {
   const slotId = extractGdtSlotId(body, originalPayload);
   const payload = {
-    ret: GDT_NO_FILL_CODE,
-    msg: GDT_NO_FILL_MESSAGE,
+    ret: 0,
+    msg: '',
     data: {},
     ip_ping_url: '',
     last_ads: {},
@@ -130,7 +161,8 @@ function buildNoFillGdtPayload(body, originalPayload) {
   if (originalPayload && originalPayload.seq !== undefined) {
     payload.seq = originalPayload.seq;
   }
-  payload.data[slotId] = buildNoAdSlot();
+  const originalSlot = originalPayload && originalPayload.data && originalPayload.data[slotId];
+  payload.data[slotId] = buildNoAdSlot(originalSlot);
   return payload;
 }
 
