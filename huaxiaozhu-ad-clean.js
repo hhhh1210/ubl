@@ -106,6 +106,9 @@ function extractGdtSlotId(body, payload) {
   return '8156967880562298';
 }
 
+const GDT_NO_FILL_CODE = 102006;
+const GDT_NO_FILL_MESSAGE = 'no ad';
+
 function clonePlainObject(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return undefined;
@@ -137,8 +140,8 @@ function buildNoAdSlot(originalSlot) {
   }
 
   slot.list = [];
-  slot.msg = '';
-  slot.ret = 0;
+  slot.msg = GDT_NO_FILL_MESSAGE;
+  slot.ret = GDT_NO_FILL_CODE;
   return slot;
 }
 
@@ -146,7 +149,7 @@ function buildNoFillGdtPayload(body, originalPayload) {
   const slotId = extractGdtSlotId(body, originalPayload);
   const payload = {
     ret: 0,
-    msg: '',
+    msg: GDT_NO_FILL_MESSAGE,
     data: {},
     ip_ping_url: '',
     last_ads: {},
