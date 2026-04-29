@@ -25,6 +25,7 @@ URL-REGEX,^https?:\/\/[\w-]+\.googlevideo\.com\/videoplayback\?expire=\d{10}&.*[
 DOMAIN,ad.doubleclick.net,REJECT
 DOMAIN,static.doubleclick.net,REJECT
 DOMAIN,ade.googlesyndication.com,REJECT
+DOMAIN,tpc.googlesyndication.com,REJECT
 # Observed YouTube ad-only domains from live capture.
 DOMAIN,googleads.g.doubleclick.net,REJECT
 DOMAIN,www.googleadservices.com,REJECT
@@ -40,7 +41,8 @@ uBO YouTube Page Lite Clean = type=http-response, pattern=^https?:\/\/www\.youtu
 uBO YouTube JSON Clean = type=http-response, pattern=^https?:\/\/www\.youtube\.com\/(?:youtubei\/v1\/(?:browse|next|search|get_watch|reel\/[^/?#]+|reel_watch_sequence)|playlist\?|get_watch\?), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-json-clean.js, script-update-interval=60, requires-body=true, max-size=-1, timeout=10, debug=true, engine=jsc
 uBO YouTube Player Request Clean = type=http-request, pattern=^https?:\/\/www\.youtube\.com\/youtubei\/v1\/player(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-player-request-clean.js, script-update-interval=60, requires-body=true, max-size=-1, timeout=10, debug=true, engine=jsc
 uBO YouTube Player JSON Clean = type=http-response, pattern=^https?:\/\/www\.youtube\.com\/youtubei\/v1\/player(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-player-clean.js, script-update-interval=60, requires-body=true, max-size=-1, timeout=10, debug=true, engine=jsc
-uBO Privacy Sandbox Response = type=http-response, pattern=^https?:\/\/(?!(?:[^\/]+\.)?(?:hjw01\.com|hjwang9\.com|mytvsuper\.com|youtube\.com)(?:\/|$)), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-privacy-sandbox.js, script-update-interval=86400, timeout=5, argument=phase=response, engine=jsc
+uBO YouTube iOS App Response Clean = type=http-response, pattern=^https?:\/\/youtubei\.googleapis\.com\/(?:youtubei\/v1\/(?:browse|next|player|search|reel\/reel_watch_sequence|guide|account\/get_setting|get_watch))(?:\?.*)?$, script-path=https://raw.githubusercontent.com/Maasea/sgmodule/master/Script/Youtube/youtube.response.js, script-update-interval=86400, argument="{"lyricLang":"off","captionLang":"off","blockUpload":true,"blockImmersive":true,"blockShorts":false,"debug":false}", requires-body=true, max-size=-1, binary-body-mode=1, timeout=10, debug=true, engine=jsc
+uBO Privacy Sandbox Response = type=http-response, pattern=^https?:\/\/(?!(?:[^\/]+\.)?(?:hjw01\.com|hjwang9\.com|mytvsuper\.com|youtube\.com|youtubei\.googleapis\.com)(?:\/|$)), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-privacy-sandbox.js, script-update-interval=86400, timeout=5, argument=phase=response, engine=jsc
 
 [Map Local]
 ^https?:\/\/[\w-]+\.googlevideo\.com\/initplayback.+&oad data-type=text data="" status-code=200
@@ -3369,7 +3371,7 @@ URL-REGEX,voz\.vn/b/image\.gif\?p=
 
 
 [General]
-force-http-engine-hosts = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, www.youtube.com
+force-http-engine-hosts = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, www.youtube.com, youtubei.googleapis.com
 
 [MITM]
-hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, www.youtube.com, *.googlevideo.com
+hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, www.youtube.com, youtubei.googleapis.com, *.googlevideo.com
