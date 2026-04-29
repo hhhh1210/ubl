@@ -56,5 +56,6 @@ hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsupe
 ^https?:\/\/pgdt\.ugdtimg\.com\/\d+\/\d+\/snscosdownload\/SZ\/reserved\/[^?#]+(?:\?.*)?$ data-type=text data="" status-code=204
 ^https?:\/\/adsmind\.ugdtimg\.com\/ads_svp_video__[^?#]+\.mp4(?:\?.*)?$ data-type=text data="" status-code=204
 ^https?:\/\/res\.app\.coc\.10086\.cn\/biz-orange\/DN\/config\/getData(?:\?.*)?$ data-type=text data="" status-code=204
-^https?:\/\/res\.app\.coc\.10086\.cn\/qwhdcdn_cmcc-cs_cn\/prd-mgcenter\/[a-f0-9]{32}\.(?:jpe?g)(?:\?fmt=webp)?$ data-type=tiny-gif status-code=200
-^https?:\/\/qwhdcdn\.cmcc-cs\.cn\/prd-mgcenter\/[a-f0-9]{32}\.(?:jpe?g)(?:\?fmt=webp)?$ data-type=tiny-gif status-code=200
+^https?:\/\/res\.app\.coc\.10086\.cn\/qwhdcdn_cmcc-cs_cn\/prd-mgcenter\/[a-f0-9]{32}\.(?:jpe?g|png|webp)(?:\?.*)?$ data-type=tiny-gif status-code=200
+^https?:\/\/qwhdcdn\.cmcc-cs\.cn\/prd-mgcenter\/[a-f0-9]{32}\.(?:jpe?g|png|webp)(?:\?.*)?$ data-type=tiny-gif status-code=200
+^https?:\/\/qwhdcdn\.cmcc-cs\.cn\/appcenter\/customer\/flowSlice\/[^?#]+\/getInfos\.json(?:\?.*)?$ data-type=text data="{\"code\":\"0\",\"errMsg\":null,\"data\":[],\"bean\":null,\"strategyRtnInfo\":null}" status-code=200 header="Content-Type:application/json"

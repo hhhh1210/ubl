@@ -65,7 +65,7 @@ function isPsieSdkEndpoint(urlInfo) {
   if (urlInfo.host !== 'h.app.coc.10086.cn') {
     return false;
   }
-  return /^\/ngpsie\/psieappaiddsdkserver\/(?:switch\/getSDKSwitch|init\/getInitList|feature\/getOfflineFeature|touchcode\/getStrategyTouchcode|product\/getComplexCandidateColls)$/.test(urlInfo.path);
+  return /^\/ngpsie\/psieappaiddsdkserver\/(?:switch\/getSDKSwitch|init\/getInitList|feature\/(?:getOfflineFeature|getFeatures)|model\/getModels|expirement\/qryExpirementList|strategy\/qryStrategyList|rulebase\/queryRuls|touchcode\/getStrategyTouchcode|product\/getComplexCandidateColls)$/.test(urlInfo.path);
 }
 
 function isToastDelayEndpoint(urlInfo) {
