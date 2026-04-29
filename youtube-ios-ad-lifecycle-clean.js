@@ -64,6 +64,9 @@ function writeState(state) {
 
 function pruneState(state, now) {
   for (const key of Object.keys(state)) {
+    if (key.indexOf('__') === 0) {
+      continue;
+    }
     const timestamp = Number(String(state[key] || '').split('|')[0]);
     if (!timestamp || now - timestamp > MAX_AGE_MS) {
       delete state[key];
@@ -73,13 +76,8 @@ function pruneState(state, now) {
 
 function rememberAdCpn(state, now, cpn) {
   if (cpn) {
+    state[cpn] = now;
     state[`ad:${cpn}`] = now;
-  }
-}
-
-function rememberMediaCpn(state, now, cpn) {
-  if (cpn) {
-    state[`media:${cpn}`] = now;
   }
 }
 
@@ -87,8 +85,46 @@ function isAdCpn(state, cpn) {
   return Boolean(cpn && (state[`ad:${cpn}`] || state[cpn]));
 }
 
-function hasMediaStarted(state, cpn) {
-  return Boolean(cpn && state[`media:${cpn}`]);
+function resetSession(state, now) {
+  state.__session = {
+    openedAt: now,
+    updatedAt: now,
+    initCount: 0,
+    initKeys: {},
+  };
+}
+
+function currentSession(state, now) {
+  const session = state.__session && typeof state.__session === 'object' ? state.__session : null;
+  if (!session || !session.openedAt || now - Number(session.updatedAt || session.openedAt) > SESSION_IDLE_MS) {
+    resetSession(state, now);
+  }
+  state.__session.updatedAt = now;
+  if (!state.__session.initKeys || typeof state.__session.initKeys !== 'object') {
+    state.__session.initKeys = {};
+  }
+  if (!Number.isFinite(Number(state.__session.initCount))) {
+    state.__session.initCount = 0;
+  }
+  return state.__session;
+}
+
+function countInitplayback(state, now, urlInfo, cpn, id) {
+  const session = currentSession(state, now);
+  if (urlInfo.path !== '/initplayback' || queryValue(urlInfo.query, 'rn') !== '1') {
+    return session.initCount;
+  }
+  const key = id || cpn;
+  if (key && !session.initKeys[key]) {
+    session.initKeys[key] = now;
+    session.initCount = Number(session.initCount || 0) + 1;
+  }
+  return session.initCount;
+}
+
+function inCompatWindow(state) {
+  const session = state.__session && typeof state.__session === 'object' ? state.__session : {};
+  return Number(session.initCount || 0) <= COMPAT_INITPLAYBACKS;
 }
 
 function noContent(reason) {
@@ -105,22 +141,10 @@ function noContent(reason) {
   });
 }
 
-function emptyMedia(reason) {
-  console.log(`uBO youtube iOS ad lifecycle: ${reason}`);
-  done({
-    response: {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/vnd.yt-ump',
-        'Cache-Control': 'no-store',
-      },
-      body: '',
-    },
-  });
-}
-
 const STORE_KEY = 'uBOYouTubeIOSAdCpns';
 const MAX_AGE_MS = 120000;
+const SESSION_IDLE_MS = 300000;
+const COMPAT_INITPLAYBACKS = 3;
 const store = getStore();
 
 try {
@@ -131,22 +155,29 @@ try {
   const state = readState();
   pruneState(state, now);
 
-  if (phase === 'stats' || phase === 'adstats') {
+  if (phase === 'session') {
+    resetSession(state, now);
+    writeState(state);
+    done({});
+  } else if (phase === 'stats' || phase === 'adstats') {
     const cpn = queryValue(urlInfo.query, 'cpn');
     const hostCpn = queryValue(urlInfo.query, 'host_cpn');
+    const adCpn = queryValue(urlInfo.query, 'ad_cpn');
     rememberAdCpn(state, now, cpn);
     rememberAdCpn(state, now, hostCpn);
+    rememberAdCpn(state, now, adCpn);
     writeState(state);
     noContent(cpn ? `stored ad cpn=${cpn}` : 'ads stats');
   } else if (phase === 'initplayback') {
     const cpn = queryValue(urlInfo.query, 'cpn');
     const id = queryValue(urlInfo.query, 'id');
+    countInitplayback(state, now, urlInfo, cpn, id);
     if (id === '000000000000266a') {
       writeState(state);
       noContent('blocked ad sentinel initplayback');
-    } else if (isAdCpn(state, cpn) && !hasMediaStarted(state, cpn)) {
+    } else if (isAdCpn(state, cpn) && inCompatWindow(state)) {
       writeState(state);
-      noContent(`blocked ad initplayback cpn=${cpn}`);
+      noContent(`compat blocked ad initplayback cpn=${cpn}`);
     } else {
       writeState(state);
       done({});
@@ -154,11 +185,9 @@ try {
   } else if (phase === 'videoplayback') {
     const cpn = queryValue(urlInfo.query, 'cpn');
     writeState(state);
-    if (isAdCpn(state, cpn) && !hasMediaStarted(state, cpn)) {
-      emptyMedia(`emptied ad videoplayback cpn=${cpn}`);
+    if (isAdCpn(state, cpn)) {
+      noContent(`blocked ad videoplayback cpn=${cpn}`);
     } else {
-      rememberMediaCpn(state, now, cpn);
-      writeState(state);
       done({});
     }
   } else {
