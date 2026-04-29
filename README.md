@@ -14,7 +14,7 @@ Files:
 - `youtube-player-request-clean.js`: companion cleanup script for uBO YouTube Player Request Clean.
 - `youtube-player-clean.js`: companion cleanup script for uBO YouTube Player JSON Clean.
 - `youtube-ios-watch-lite-clean.js`: companion cleanup script for uBO YouTube iOS Next Lite Clean and uBO YouTube iOS Watch Lite Clean.
-- `youtube-ios-ad-lifecycle-clean.js`: companion cleanup script for uBO YouTube iOS Ad Stats State and uBO YouTube iOS Ad Signal State and uBO YouTube iOS Initplayback State.
+- `youtube-ios-ad-lifecycle-clean.js`: companion cleanup script for uBO YouTube iOS Ad Stats State and uBO YouTube iOS Ad Signal State and uBO YouTube iOS Ad PTracking State and uBO YouTube iOS Initplayback State and uBO YouTube iOS Videoplayback State.
 - `jetpack-joyride-ad-clean.js`: companion cleanup script for uBO Jetpack Joyride iOS Ad Clean and uBO Jetpack Joyride BidMachine Request Clean and uBO Jetpack Joyride BidMachine Response Clean.
 - `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS GDT Request Empty Ads and uBO Huaxiaozhu iOS GDT Response Empty Ads.
 
@@ -61,7 +61,7 @@ Yidong iOS diagnostic summary:
 
 YouTube iOS playback note:
 - The YouTube iOS protobuf cleanup uses a local lightweight `next`/`get_watch` handler after 2026-04-29 captures showed first-tap video pages stalling on a black/skeleton screen while large watch/next responses still carried ad allocation state. The local handler cleans player ad fields, removes individual `richItemContents` cards with observed ad markers, and narrowly strips ad-bearing child records from opaque `next` fields 14/15/42; deleting whole unknown fields is avoided because it caused black screens and gray placeholders on iOS.
-- YouTube ad impression/stat endpoints are completed with local 204 responses instead of hard REJECT, matching the web spinner workaround and avoiding clients waiting on failed ad lifecycle requests. iOS ad `cpn` values from `api/stats/ads` and ad-marked `s.youtube.com/api/stats/*` signals are stored briefly and used to complete only matching googlevideo `initplayback` requests; normal video initialization can still return its UMP body.
+- YouTube ad impression/stat endpoints are completed with local 204 responses instead of hard REJECT, matching the web spinner workaround and avoiding clients waiting on failed ad lifecycle requests. iOS ad `cpn` values from `api/stats/ads`, ad-marked `s.youtube.com/api/stats/*` signals, and adhost `ptracking` are stored briefly and used to complete only matching googlevideo `initplayback` and `videoplayback` requests; normal video initialization can still return its UMP body.
 
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.

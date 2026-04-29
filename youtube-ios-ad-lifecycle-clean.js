@@ -120,6 +120,14 @@ try {
     } else {
       done({});
     }
+  } else if (phase === 'videoplayback') {
+    const cpn = queryValue(urlInfo.query, 'cpn');
+    writeState(state);
+    if (cpn && state[cpn]) {
+      noContent(`blocked ad videoplayback cpn=${cpn}`);
+    } else {
+      done({});
+    }
   } else {
     done({});
   }
