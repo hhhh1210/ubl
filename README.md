@@ -21,17 +21,17 @@ Recommended install order:
 3. Use `ublock-core-rules.sgmodule` only when scripts are not desired.
 
 Example raw URLs after upload:
-- `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-core-rules.sgmodule`
-- `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-core-scripted.sgmodule`
-- `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/ublock-core-scripted_副本.sgmodule`
-- `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/hjw01-clean.js`
-- `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/html-style-clean.js`
-- `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/generic-page-clean.js`
-- `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-page-lite-clean.js`
-- `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-json-clean.js`
-- `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-player-request-clean.js`
-- `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-player-clean.js`
-- `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/jetpack-joyride-ad-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/main/ublock-core-rules.sgmodule`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/main/ublock-core-scripted.sgmodule`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/main/ublock-core-scripted_副本.sgmodule`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/main/hjw01-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/main/html-style-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/main/generic-page-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/main/youtube-page-lite-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/main/youtube-json-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/main/youtube-player-request-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/main/youtube-player-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/main/jetpack-joyride-ad-clean.js`
 
 Validation note:
 - `surge-cli --check` validates files as full profiles and will complain that rules must end with `FINAL`. That warning also appears for already-installed third-party `.sgmodule` files, so do not use it as the final installability test for modules.
