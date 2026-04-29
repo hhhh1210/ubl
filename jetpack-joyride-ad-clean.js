@@ -58,24 +58,28 @@ function isJetpackUserAgent(headers) {
   return /^jetpack\/1\./i.test(String(getHeaderCaseInsensitive(headers, 'User-Agent') || ''));
 }
 
+function bytesToText(bytes) {
+  let text = '';
+  for (let i = 0; i < bytes.length; i++) {
+    text += String.fromCharCode(bytes[i] & 0xff);
+  }
+  return text;
+}
+
 function bodyToText(body) {
   if (typeof body === 'string') {
     return body;
   }
   if (typeof ArrayBuffer !== 'undefined') {
     if (body instanceof ArrayBuffer) {
-      return bodyToText(new Uint8Array(body));
+      return bytesToText(new Uint8Array(body));
     }
-    if (body && body.buffer instanceof ArrayBuffer && typeof body.byteLength === 'number') {
-      return bodyToText(new Uint8Array(body.buffer, body.byteOffset || 0, body.byteLength));
+    if (body && typeof ArrayBuffer.isView === 'function' && ArrayBuffer.isView(body)) {
+      return bytesToText(new Uint8Array(body.buffer, body.byteOffset || 0, body.byteLength));
     }
   }
   if (body && typeof body.length === 'number') {
-    let text = '';
-    for (let i = 0; i < body.length; i++) {
-      text += String.fromCharCode(body[i] & 0xff);
-    }
-    return text;
+    return bytesToText(body);
   }
   return '';
 }
