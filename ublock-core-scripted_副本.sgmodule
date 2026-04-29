@@ -1,8 +1,8 @@
 #!name=uBO Core Scripted for Surge
-#!desc=Lightweight verified export. Keeps tested cleanup hooks for selected sites/apps, YouTube Web, YouTube iOS App, and googlevideo.
+#!desc=Lightweight verified export. Keeps tested cleanup hooks for selected sites/apps, YouTube Web, YouTube iOS App, googlevideo, and verified iOS app ad handling.
 
 [General]
-force-http-engine-hosts = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a4.applovin.com, d.applovin.com, ms.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com
+force-http-engine-hosts = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a4.applovin.com, d.applovin.com, ms.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, h.app.coc.10086.cn, res.app.coc.10086.cn, qwhdcdn.cmcc-cs.cn
 
 [Rule]
 # Conservative YouTube ad transport rules.
@@ -30,6 +30,7 @@ DOMAIN-SUFFIX,sitetag.us,REJECT
 URL-REGEX,^https?:\/\/file\.52papa\.tv\/download\/dl[^/?#]*\.php(?:[?#]|$),REJECT
 # Jetpack Joyride iOS app-scoped ad endpoints observed from Surge capture.
 # Huaxiaozhu iOS app-scoped startup and popup ad resources observed from Surge capture.
+# Yidong iOS app-scoped startup ad strategy and verified splash material suppressions.
 
 [Header Rewrite]
 http-request ^https?:\/\/(?:www\.)?(?:hjw01|hjwang9)\.com(?:\/?(?:\?.*)?$|\/(?:archives\/\d+\/?|tag\/[^?#]+\/?|tags\/?|category\/[^?#]+\/?|author\/\d+\/new\/?|authors(?:_[^\/?#]+)?(?:\/post-\d+\/?)?|communitys\/?|consumers\/?|follow\/?|date\/?|history\/search\/?|my\/\d+\/?|order\/hot\/?|ai\/?|[^\/?#]+\.html)(?:\?.*)?$) header-del Accept-Encoding
@@ -49,10 +50,12 @@ uBO Jetpack Joyride BidMachine Request Clean = type=http-request, pattern=^https
 uBO Jetpack Joyride BidMachine Response Clean = type=http-response, pattern=^https?:\/\/api\.bidmachine\.io\/auction\/init(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/main/jetpack-joyride-ad-clean.js, script-update-interval=86400, requires-body=true, max-size=65536, timeout=5, debug=true, engine=jsc
 uBO Huaxiaozhu iOS GDT Request Empty Ads = type=http-request, pattern=^https?:\/\/mi\.gdt\.qq\.com\/server_bidding2(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/main/huaxiaozhu-ad-clean.js?v=huaxiaozhu-gdt-success-empty-1, script-update-interval=86400, argument=phase=gdt-request, requires-body=true, max-size=16384, timeout=5, engine=jsc
 uBO Huaxiaozhu iOS GDT Response Empty Ads = type=http-response, pattern=^https?:\/\/mi\.gdt\.qq\.com\/server_bidding2(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/main/huaxiaozhu-ad-clean.js?v=huaxiaozhu-gdt-success-empty-1, script-update-interval=86400, requires-body=true, max-size=65536, timeout=5, engine=jsc
+uBO Yidong iOS PSIE Request Empty Ads = type=http-request, pattern=^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaiddsdkserver\/(?:touchcode\/getStrategyTouchcode|product\/getComplexCandidateColls)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/main/yidong-ad-clean.js?v=yidong-psie-nodata-1, script-update-interval=86400, argument=phase=psie-request, timeout=5, engine=jsc
+uBO Yidong iOS PSIE Response Empty Ads = type=http-response, pattern=^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaiddsdkserver\/(?:touchcode\/getStrategyTouchcode|product\/getComplexCandidateColls)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/main/yidong-ad-clean.js?v=yidong-psie-nodata-1, script-update-interval=86400, timeout=5, engine=jsc
 uBO Generic Page Clean = type=http-response, pattern=^https?:\/\/(?:www\.)?coolinet\.net(?:\/|$), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/main/generic-page-clean.js, script-update-interval=86400, requires-body=true, max-size=524288, timeout=5, debug=true, engine=jsc
 
 [MITM]
-hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a4.applovin.com, d.applovin.com, ms.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, *.googlevideo.com
+hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a4.applovin.com, d.applovin.com, ms.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, h.app.coc.10086.cn, res.app.coc.10086.cn, qwhdcdn.cmcc-cs.cn, *.googlevideo.com
 
 [Map Local]
 ^https?:\/\/[\w-]+\.googlevideo\.com\/initplayback.+&oad data-type=text data="" status-code=200
@@ -69,3 +72,5 @@ hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsupe
 ^https?:\/\/img-ys011\.didistatic\.com\/static\/ad_oss\/[^?#]+\.(?:png|jpe?g|webp|gif)(?:\?.*)?$ data-type=tiny-gif status-code=200
 ^https?:\/\/pgdt\.ugdtimg\.com\/\d+\/\d+\/snscosdownload\/SZ\/reserved\/[^?#]+(?:\?.*)?$ data-type=text data="" status-code=204
 ^https?:\/\/adsmind\.ugdtimg\.com\/ads_svp_video__[^?#]+\.mp4(?:\?.*)?$ data-type=text data="" status-code=204
+^https?:\/\/res\.app\.coc\.10086\.cn\/qwhdcdn_cmcc-cs_cn\/prd-mgcenter\/[a-f0-9]{32}\.(?:jpe?g)(?:\?fmt=webp)?$ data-type=tiny-gif status-code=200
+^https?:\/\/qwhdcdn\.cmcc-cs\.cn\/prd-mgcenter\/[a-f0-9]{32}\.(?:jpe?g)(?:\?fmt=webp)?$ data-type=tiny-gif status-code=200

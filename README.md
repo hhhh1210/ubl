@@ -15,6 +15,7 @@ Files:
 - `youtube-player-clean.js`: companion cleanup script for uBO YouTube Player JSON Clean.
 - `jetpack-joyride-ad-clean.js`: companion cleanup script for uBO Jetpack Joyride iOS Ad Clean and uBO Jetpack Joyride BidMachine Request Clean and uBO Jetpack Joyride BidMachine Response Clean.
 - `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS GDT Request Empty Ads and uBO Huaxiaozhu iOS GDT Response Empty Ads.
+- `yidong-ad-clean.js`: companion cleanup script for uBO Yidong iOS PSIE Request Empty Ads and uBO Yidong iOS PSIE Response Empty Ads.
 
 Recommended install order:
 1. Upload all module and companion script files to GitHub.
@@ -34,6 +35,7 @@ Example raw URLs after upload:
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/youtube-player-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/jetpack-joyride-ad-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/huaxiaozhu-ad-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/main/yidong-ad-clean.js`
 
 Validation note:
 - `surge-cli --check` validates files as full profiles and will complain that rules must end with `FINAL`. That warning also appears for already-installed third-party `.sgmodule` files, so do not use it as the final installability test for modules.
@@ -50,8 +52,13 @@ Huaxiaozhu iOS summary:
 - `Map Local` keeps only verified popup/material suppressions: `cpc-coupon-new` HTML/JS/CSS, Didi ad images, and cached GDT media files observed in captures.
 - `sdk.e.qq.com/launch`, login, risk-control, Omega telemetry, safety shield, update, and weather/static UI assets are intentionally allowed. The remaining sub-4-second relaunch white screen is app cache lifecycle behavior, not an ad source.
 
+Yidong iOS summary:
+- The request script short-circuits the observed China Mobile PSIE touch/candidate strategy endpoints with a successful no-data payload, scoped to ChinaMobile/leadeon app headers.
+- The response script keeps the same no-data transform as a fallback for clients where request short-circuiting is unavailable.
+- `Map Local` suppresses verified startup JPG splash materials served through `res.app.coc.10086.cn` and direct `qwhdcdn.cmcc-cs.cn` material paths. Login, push, AMap, ShareSDK, and encrypted core `client.app.coc.10086.cn` APIs are intentionally left alone.
+
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.
-- The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a4.applovin.com, d.applovin.com, ms.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, *.googlevideo.com.
-- This package intentionally excludes the broad uBO-derived rule dump. It keeps only verified hjw01, mytvsuper, coolinet, YouTube Web, YouTube iOS App, googlevideo, and app-scoped Jetpack Joyride/Huaxiaozhu handling.
+- The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a4.applovin.com, d.applovin.com, ms.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, h.app.coc.10086.cn, res.app.coc.10086.cn, qwhdcdn.cmcc-cs.cn, *.googlevideo.com.
+- This package intentionally excludes the broad uBO-derived rule dump. It keeps only verified hjw01, mytvsuper, coolinet, YouTube Web, YouTube iOS App, googlevideo, and app-scoped Jetpack Joyride/Huaxiaozhu/Yidong handling.
 - Cosmetic filters, scriptlets, HTML filtering, `removeparam=`, `urlskip=`, and source-domain constrained rules are not part of this lightweight export.
