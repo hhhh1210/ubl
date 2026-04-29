@@ -2,7 +2,7 @@
 #!desc=Lightweight verified rules-only export. Keeps tested Surge rules for selected sites/apps, YouTube, and googlevideo.
 
 [General]
-force-http-engine-hosts = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a4.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, odf.app-ads-services.com, googleads.g.doubleclick.net, firebaseremoteconfig.googleapis.com
+force-http-engine-hosts = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a4.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, odf.app-ads-services.com, googleads.g.doubleclick.net, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com
 
 [Rule]
 # Conservative YouTube ad transport rules.
@@ -36,7 +36,7 @@ http-request ^https?:\/\/(?:www\.)?(?:hjw01|hjwang9)\.com(?:\/?(?:\?.*)?$|\/(?:a
 http-response ^https?:\/\/(?:www\.)?(?:hjw01|hjwang9)\.com(?:\/?(?:\?.*)?$|\/(?:archives\/\d+\/?|tag\/[^?#]+\/?|tags\/?|category\/[^?#]+\/?|author\/\d+\/new\/?|authors(?:_[^\/?#]+)?(?:\/post-\d+\/?)?|communitys\/?|consumers\/?|follow\/?|date\/?|history\/search\/?|my\/\d+\/?|order\/hot\/?|ai\/?|[^\/?#]+\.html)(?:\?.*)?$) header-del Content-Encoding
 
 [MITM]
-hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a4.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, odf.app-ads-services.com, googleads.g.doubleclick.net, firebaseremoteconfig.googleapis.com, *.googlevideo.com
+hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a4.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, odf.app-ads-services.com, googleads.g.doubleclick.net, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, *.googlevideo.com
 
 [Map Local]
 ^https?:\/\/[\w-]+\.googlevideo\.com\/initplayback.+&oad data-type=text data="" status-code=200
@@ -44,3 +44,4 @@ hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsupe
 ^https?:\/\/odf\.app-ads-services\.com\/odf\/(?:config|appmetadata|psmappid|appinstallationid)\?(?:[^#]*&)?bundle_id=com\.halfbrick\.jetpack(?:&|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/googleads\.g\.doubleclick\.net\/getconfig\/pubsetting\?(?:[^#]*&)?app_name=com\.halfbrick\.jetpack(?:&|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/halfbrick-jetpack-joyride\/namespaces\/firebase:fetch(?:\?.*)?$ data-type=text data="{\"state\":\"NO_CHANGE\",\"templateVersion\":\"2540\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/(?:[^\/.]+\.)?halfbrickplus\.com\/(?:check\.html|redirectLink)\?(?:[^#]*&)?(?:utm_source=jetpackjoyride|applePackageName=com\.halfbrick\.[^&#]+|googleStoreAppId=com\.halfbrick\.[^&#]+|webPC=https%3A%2F%2Fwww\.halfbrick\.com%2Fgames%2F)(?:&|$) data-type=text data="<!doctype html><html></html>" status-code=200 header="Content-Type:text/html; charset=utf-8"
