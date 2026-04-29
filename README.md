@@ -14,7 +14,7 @@ Files:
 - `youtube-player-request-clean.js`: companion cleanup script for uBO YouTube Player Request Clean.
 - `youtube-player-clean.js`: companion cleanup script for uBO YouTube Player JSON Clean.
 - `jetpack-joyride-ad-clean.js`: companion cleanup script for uBO Jetpack Joyride iOS Ad Clean and uBO Jetpack Joyride BidMachine Request Clean and uBO Jetpack Joyride BidMachine Response Clean.
-- `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS Ad Clean.
+- `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS GDT Request No-Fill and uBO Huaxiaozhu iOS GDT Response Clean.
 
 Recommended install order:
 1. Upload all module and companion script files to GitHub.

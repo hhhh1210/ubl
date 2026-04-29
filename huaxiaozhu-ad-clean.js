@@ -134,15 +134,32 @@ function buildNoFillGdtPayload(body, originalPayload) {
   return payload;
 }
 
-function finishJson(reason, value) {
-  const headers = cloneHeaders($response && $response.headers);
+function buildNoFillHeaders(baseHeaders, marker) {
+  const headers = cloneHeaders(baseHeaders);
   deleteHeaderCaseInsensitive(headers, 'Content-Encoding');
   deleteHeaderCaseInsensitive(headers, 'Content-Length');
   deleteHeaderCaseInsensitive(headers, 'Transfer-Encoding');
   setHeaderCaseInsensitive(headers, 'Cache-Control', 'no-store');
   setHeaderCaseInsensitive(headers, 'Pragma', 'no-cache');
   setHeaderCaseInsensitive(headers, 'Expires', '0');
-  setHeaderCaseInsensitive(headers, 'Content-Type', 'application/json; charset=utf-8');
+  setHeaderCaseInsensitive(headers, 'Content-Type', 'text/json; charset=utf-8');
+  setHeaderCaseInsensitive(headers, 'X-uBO-Huaxiaozhu', marker);
+  return headers;
+}
+
+function directJson(reason, value) {
+  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
+  done({
+    response: {
+      status: 200,
+      headers: buildNoFillHeaders({}, 'gdt-request-nofill-1'),
+      body: JSON.stringify(value),
+    },
+  });
+}
+
+function finishJson(reason, value) {
+  const headers = buildNoFillHeaders($response && $response.headers, 'gdt-response-nofill-1');
   console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
   done({
     status: 200,
@@ -154,9 +171,26 @@ function finishJson(reason, value) {
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
   const urlInfo = parseUrl(request.url);
+  const argument = typeof $argument === 'string' ? $argument : '';
   let handled = false;
 
   if (
+    /(?:^|&)phase=gdt-request(?:&|$)/.test(argument) &&
+    isHuaxiaozhuGdtEndpoint(urlInfo)
+  ) {
+    if (isHuaxiaozhuGdtBody(request.body)) {
+      directJson(
+        'Tencent GDT Huaxiaozhu bidding request short-circuited with no-fill',
+        buildNoFillGdtPayload(request.body, null)
+      );
+    } else {
+      done({});
+    }
+    handled = true;
+  }
+
+  if (
+    handled === false &&
     isHuaxiaozhuGdtEndpoint(urlInfo) &&
     isHuaxiaozhuGdtBody(request.body)
   ) {
