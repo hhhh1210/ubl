@@ -68,9 +68,11 @@ function isPsieSdkEndpoint(urlInfo) {
   return /^\/ngpsie\/psieappaiddsdkserver\/(?:switch\/getSDKSwitch|init\/getInitList|feature\/(?:getOfflineFeature|getFeatures)|model\/getModels|expirement\/qryExpirementList|strategy\/qryStrategyList|rulebase\/queryRuls|touchcode\/getStrategyTouchcode|product\/getComplexCandidateColls)$/.test(urlInfo.path);
 }
 
-function isToastDelayEndpoint(urlInfo) {
-  return urlInfo.host === 'client.app.coc.10086.cn' &&
-    urlInfo.path === '/biz-orange/DN/toast/getDelayTime';
+function isStartupToastEndpoint(urlInfo) {
+  if (urlInfo.host !== 'client.app.coc.10086.cn') {
+    return false;
+  }
+  return /^\/biz-orange\/(?:DN\/toast\/(?:getDelayTime|getToastRule)|DH\/toast\/august\/getPages|DN\/detainment\/august\/getPages)$/.test(urlInfo.path);
 }
 
 function buildSuccessNoDataHeaders(baseHeaders, marker) {
@@ -203,10 +205,10 @@ try {
     directNoData('PSIE strategy request short-circuited with no-data');
   } else if (isPsieSdkEndpoint(urlInfo)) {
     finishNoData('PSIE strategy response replaced with no-data');
-  } else if (isToastDelayEndpoint(urlInfo) && /(?:^|&)phase=toast-request(?:&|$)/.test(argument)) {
-    directNoContent('startup toast delay request suppressed', 'toast-request-204-1');
-  } else if (isToastDelayEndpoint(urlInfo)) {
-    finishNoContent('startup toast delay response suppressed', 'toast-response-204-1');
+  } else if (isStartupToastEndpoint(urlInfo) && /(?:^|&)phase=toast-request(?:&|$)/.test(argument)) {
+    directNoContent('startup toast/ad-shell request suppressed', 'toast-request-204-2');
+  } else if (isStartupToastEndpoint(urlInfo)) {
+    finishNoContent('startup toast/ad-shell response suppressed', 'toast-response-204-2');
   } else {
     done({});
   }
