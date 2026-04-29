@@ -13,6 +13,7 @@ Files:
 - `youtube-json-clean.js`: companion site cleanup script for uBO YouTube JSON Clean.
 - `youtube-player-request-clean.js`: companion site cleanup script for uBO YouTube Player Request Clean.
 - `youtube-player-clean.js`: companion site cleanup script for uBO YouTube Player JSON Clean.
+- `jetpack-joyride-ad-clean.js`: companion site cleanup script for uBO Jetpack Joyride iOS Ad Clean.
 
 Recommended install order:
 1. Upload all module and companion script files to GitHub.
@@ -30,12 +31,13 @@ Example raw URLs after upload:
 - `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-json-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-player-request-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/youtube-player-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/refs/heads/main/jetpack-joyride-ad-clean.js`
 
 Validation note:
 - `surge-cli --check` validates files as full profiles and will complain that rules must end with `FINAL`. That warning also appears for already-installed third-party `.sgmodule` files, so do not use it as the final installability test for modules.
 
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.
-- The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, *.googlevideo.com.
-- This package intentionally excludes the broad uBO-derived rule dump. It keeps only verified hjw01, mytvsuper, coolinet, YouTube Web, YouTube iOS App, and googlevideo handling.
+- The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a4.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, odf.app-ads-services.com, googleads.g.doubleclick.net, firebaseremoteconfig.googleapis.com, *.googlevideo.com.
+- This package intentionally excludes the broad uBO-derived rule dump. It keeps only verified hjw01, mytvsuper, coolinet, YouTube Web, YouTube iOS App, googlevideo, and app-scoped Jetpack Joyride handling.
 - Cosmetic filters, scriptlets, HTML filtering, `removeparam=`, `urlskip=`, and source-domain constrained rules are not part of this lightweight export.
