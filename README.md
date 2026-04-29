@@ -13,7 +13,7 @@ Files:
 - `youtube-json-clean.js`: companion cleanup script for uBO YouTube JSON Clean.
 - `youtube-player-request-clean.js`: companion cleanup script for uBO YouTube Player Request Clean.
 - `youtube-player-clean.js`: companion cleanup script for uBO YouTube Player JSON Clean.
-- `jetpack-joyride-ad-clean.js`: companion cleanup script for uBO Jetpack Joyride iOS Ad Clean and uBO Jetpack Joyride BidMachine Request Clean.
+- `jetpack-joyride-ad-clean.js`: companion cleanup script for uBO Jetpack Joyride iOS Ad Clean and uBO Jetpack Joyride BidMachine Request Clean and uBO Jetpack Joyride BidMachine Response Clean.
 
 Recommended install order:
 1. Upload all module and companion script files to GitHub.
@@ -39,7 +39,7 @@ Validation note:
 Jetpack Joyride iOS summary:
 - `Map Local` disables verified server-side ad toggles: Mintegral fill, Google ODF/AdMob config, Firebase Remote Config, HalfbrickPlus promo redirects, and ByteDance `app_alert_check`.
 - The response script returns 204 for verified Jetpack AppLovin and Unity ad-fill responses.
-- The request script short-circuits BidMachine only when the request body contains the Jetpack bundle marker, keeping generic SDK traffic out of scope.
+- The request script short-circuits BidMachine only when the request body contains the Jetpack bundle marker, and the response script adds a body-marker fallback for Surge iOS captures.
 - Pure telemetry observed in capture, such as Vungle metrics, AppLovin SDK error, and Axon appkill, is intentionally not included.
 
 Note:

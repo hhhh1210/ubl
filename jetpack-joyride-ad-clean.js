@@ -62,6 +62,14 @@ function bodyToText(body) {
   if (typeof body === 'string') {
     return body;
   }
+  if (typeof ArrayBuffer !== 'undefined') {
+    if (body instanceof ArrayBuffer) {
+      return bodyToText(new Uint8Array(body));
+    }
+    if (body && body.buffer instanceof ArrayBuffer && typeof body.byteLength === 'number') {
+      return bodyToText(new Uint8Array(body.buffer, body.byteOffset || 0, body.byteLength));
+    }
+  }
   if (body && typeof body.length === 'number') {
     let text = '';
     for (let i = 0; i < body.length; i++) {
@@ -72,8 +80,31 @@ function bodyToText(body) {
   return '';
 }
 
+function decodeBase64Text(text) {
+  try {
+    if (typeof atob !== 'function') {
+      return '';
+    }
+    const compact = String(text || '').replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+    if (compact.length < 16 || /[^A-Za-z0-9+/=]/.test(compact)) {
+      return '';
+    }
+    return atob(compact + '==='.slice((compact.length + 3) % 4));
+  } catch (error) {
+    return '';
+  }
+}
+
 function bodyHasJetpackMarker(body) {
-  return /com\.halfbrick\.jetpack|halfbrick-jetpack-joyride|id457446957/.test(bodyToText(body));
+  const text = bodyToText(body);
+  if (/com\.halfbrick\.jetpack|halfbrick-jetpack-joyride|id457446957/i.test(text)) {
+    return true;
+  }
+  if (/Y29tLmhhbGZicmljay5qZXRwYWNr|aGFsZmJyaWNrLWpldHBhY2stam95cmlkZQ|aWQ0NTc0NDY5NTc|ImJ1bmRsZSI6ImNvbS5oYWxmYnJpY2suamV0cGFjay/i.test(text)) {
+    return true;
+  }
+  const decoded = decodeBase64Text(text);
+  return /com\.halfbrick\.jetpack|halfbrick-jetpack-joyride|id457446957|Y29tLmhhbGZicmljay5qZXRwYWNr|ImJ1bmRsZSI6ImNvbS5oYWxmYnJpY2suamV0cGFjay/i.test(decoded);
 }
 
 function isJetpackApplovin(headers) {
@@ -128,18 +159,27 @@ function directNoContent(reason) {
 
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
+  const response = typeof $response === 'object' && $response !== null ? $response : {};
   const headers = request.headers || {};
   const urlInfo = parseUrl(request.url);
-  const scriptType = typeof $script === 'object' && $script !== null ? $script.type : '';
   const argument = typeof $argument === 'string' ? $argument : '';
   let handled = false;
 
-  if (scriptType === 'http-request' || /(?:^|&)phase=bidmachine-request(?:&|$)/.test(argument)) {
+  if (/(?:^|&)phase=bidmachine-request(?:&|$)/.test(argument)) {
     if (isBidMachineInit(urlInfo) && bodyHasJetpackMarker(request.body)) {
       directNoContent('BidMachine Jetpack auction request suppressed');
     } else {
       done({});
     }
+    handled = true;
+  }
+
+  if (
+    handled === false &&
+    isBidMachineInit(urlInfo) &&
+    (bodyHasJetpackMarker(request.body) || bodyHasJetpackMarker(response.body))
+  ) {
+    noContent('BidMachine Jetpack auction response suppressed');
     handled = true;
   }
 
