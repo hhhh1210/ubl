@@ -56,11 +56,21 @@ function isChinaMobileApp(headers) {
   return getHeaderCaseInsensitive(headers, 'equipmentinformation') !== '';
 }
 
-function isPsieAdStrategy(urlInfo) {
+function isPsieAppInfo(urlInfo) {
+  return urlInfo.host === 'h.app.coc.10086.cn' &&
+    urlInfo.path === '/ngpsie/psieipuudp/appInfo/checkAppInfo';
+}
+
+function isPsieSdkEndpoint(urlInfo) {
   if (urlInfo.host !== 'h.app.coc.10086.cn') {
     return false;
   }
-  return /^\/ngpsie\/psieappaiddsdkserver\/(?:touchcode\/getStrategyTouchcode|product\/getComplexCandidateColls)$/.test(urlInfo.path);
+  return /^\/ngpsie\/psieappaiddsdkserver\/(?:switch\/getSDKSwitch|init\/getInitList|feature\/getOfflineFeature|touchcode\/getStrategyTouchcode|product\/getComplexCandidateColls)$/.test(urlInfo.path);
+}
+
+function isToastDelayEndpoint(urlInfo) {
+  return urlInfo.host === 'client.app.coc.10086.cn' &&
+    urlInfo.path === '/biz-orange/DN/toast/getDelayTime';
 }
 
 function buildSuccessNoDataHeaders(baseHeaders, marker) {
@@ -85,6 +95,35 @@ function buildNoDataPayload() {
   };
 }
 
+function buildDisabledPsiePayload() {
+  return {
+    X_RECORDNUM: 0,
+    X_RESULTINFO: 'OK',
+    X_RESULDATA: {
+      appStatus: '0',
+      count_servers: {
+        servers: [],
+        strategy: '0',
+        server_type: '2',
+      },
+    },
+    X_RESULTCODE: '0',
+  };
+}
+
+function buildPlainJsonHeaders(baseHeaders, marker) {
+  const headers = cloneHeaders(baseHeaders);
+  deleteHeaderCaseInsensitive(headers, 'Content-Encoding');
+  deleteHeaderCaseInsensitive(headers, 'Content-Length');
+  deleteHeaderCaseInsensitive(headers, 'Transfer-Encoding');
+  setHeaderCaseInsensitive(headers, 'Content-Type', 'application/json; charset=utf-8');
+  setHeaderCaseInsensitive(headers, 'Cache-Control', 'no-store');
+  setHeaderCaseInsensitive(headers, 'Pragma', 'no-cache');
+  setHeaderCaseInsensitive(headers, 'Expires', '0');
+  setHeaderCaseInsensitive(headers, 'X-uBO-Yidong', marker);
+  return headers;
+}
+
 function directNoData(reason) {
   console.log(`uBO Yidong ad clean: ${reason}`);
   done({
@@ -92,6 +131,17 @@ function directNoData(reason) {
       status: 200,
       headers: buildSuccessNoDataHeaders({}, 'psie-request-nodata-1'),
       body: JSON.stringify(buildNoDataPayload()),
+    },
+  });
+}
+
+function directJson(reason, value, marker) {
+  console.log(`uBO Yidong ad clean: ${reason}`);
+  done({
+    response: {
+      status: 200,
+      headers: buildPlainJsonHeaders({}, marker),
+      body: JSON.stringify(value),
     },
   });
 }
@@ -106,18 +156,59 @@ function finishNoData(reason) {
   });
 }
 
+function finishJson(reason, value, marker) {
+  const response = typeof $response === 'object' && $response !== null ? $response : {};
+  console.log(`uBO Yidong ad clean: ${reason}`);
+  done({
+    status: 200,
+    headers: buildPlainJsonHeaders(response.headers, marker),
+    body: JSON.stringify(value),
+  });
+}
+
+function directNoContent(reason, marker) {
+  console.log(`uBO Yidong ad clean: ${reason}`);
+  done({
+    response: {
+      status: 204,
+      headers: buildPlainJsonHeaders({}, marker),
+      body: '',
+    },
+  });
+}
+
+function finishNoContent(reason, marker) {
+  const response = typeof $response === 'object' && $response !== null ? $response : {};
+  console.log(`uBO Yidong ad clean: ${reason}`);
+  done({
+    status: 204,
+    headers: buildPlainJsonHeaders(response.headers, marker),
+    body: '',
+  });
+}
+
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
   const headers = request.headers || {};
   const urlInfo = parseUrl(request.url);
   const argument = typeof $argument === 'string' ? $argument : '';
 
-  if (!isPsieAdStrategy(urlInfo) || !isChinaMobileApp(headers)) {
+  if (!isChinaMobileApp(headers)) {
     done({});
-  } else if (/(?:^|&)phase=psie-request(?:&|$)/.test(argument)) {
+  } else if (isPsieAppInfo(urlInfo) && /(?:^|&)phase=psie-request(?:&|$)/.test(argument)) {
+    directJson('PSIE app info request short-circuited as disabled', buildDisabledPsiePayload(), 'psie-appinfo-disabled-1');
+  } else if (isPsieAppInfo(urlInfo)) {
+    finishJson('PSIE app info response replaced as disabled', buildDisabledPsiePayload(), 'psie-appinfo-disabled-1');
+  } else if (isPsieSdkEndpoint(urlInfo) && /(?:^|&)phase=psie-request(?:&|$)/.test(argument)) {
     directNoData('PSIE strategy request short-circuited with no-data');
-  } else {
+  } else if (isPsieSdkEndpoint(urlInfo)) {
     finishNoData('PSIE strategy response replaced with no-data');
+  } else if (isToastDelayEndpoint(urlInfo) && /(?:^|&)phase=toast-request(?:&|$)/.test(argument)) {
+    directNoContent('startup toast delay request suppressed', 'toast-request-204-1');
+  } else if (isToastDelayEndpoint(urlInfo)) {
+    finishNoContent('startup toast delay response suppressed', 'toast-response-204-1');
+  } else {
+    done({});
   }
 } catch (error) {
   console.log('uBO Yidong ad clean failed:', error && error.message ? error.message : String(error));
