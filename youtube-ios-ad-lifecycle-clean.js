@@ -70,10 +70,24 @@ function pruneState(state, now) {
   }
 }
 
-function rememberCpn(state, now, cpn) {
+function rememberAdCpn(state, now, cpn) {
   if (cpn) {
-    state[cpn] = now;
+    state[`ad:${cpn}`] = now;
   }
+}
+
+function rememberMediaCpn(state, now, cpn) {
+  if (cpn) {
+    state[`media:${cpn}`] = now;
+  }
+}
+
+function isAdCpn(state, cpn) {
+  return Boolean(cpn && (state[`ad:${cpn}`] || state[cpn]));
+}
+
+function hasMediaStarted(state, cpn) {
+  return Boolean(cpn && state[`media:${cpn}`]);
 }
 
 function noContent(reason) {
@@ -83,6 +97,20 @@ function noContent(reason) {
       status: 204,
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-store',
+      },
+      body: '',
+    },
+  });
+}
+
+function emptyMedia(reason) {
+  console.log(`uBO youtube iOS ad lifecycle: ${reason}`);
+  done({
+    response: {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/vnd.yt-ump',
         'Cache-Control': 'no-store',
       },
       body: '',
@@ -105,8 +133,8 @@ try {
   if (phase === 'stats' || phase === 'adstats') {
     const cpn = queryValue(urlInfo.query, 'cpn');
     const hostCpn = queryValue(urlInfo.query, 'host_cpn');
-    rememberCpn(state, now, cpn);
-    rememberCpn(state, now, hostCpn);
+    rememberAdCpn(state, now, cpn);
+    rememberAdCpn(state, now, hostCpn);
     writeState(state);
     noContent(cpn ? `stored ad cpn=${cpn}` : 'ads stats');
   } else if (phase === 'initplayback') {
@@ -115,7 +143,7 @@ try {
     writeState(state);
     if (id === '000000000000266a') {
       noContent('blocked ad sentinel initplayback');
-    } else if (cpn && state[cpn]) {
+    } else if (isAdCpn(state, cpn) && !hasMediaStarted(state, cpn)) {
       noContent(`blocked ad initplayback cpn=${cpn}`);
     } else {
       done({});
@@ -123,9 +151,11 @@ try {
   } else if (phase === 'videoplayback') {
     const cpn = queryValue(urlInfo.query, 'cpn');
     writeState(state);
-    if (cpn && state[cpn]) {
-      noContent(`blocked ad videoplayback cpn=${cpn}`);
+    if (isAdCpn(state, cpn) && !hasMediaStarted(state, cpn)) {
+      emptyMedia(`emptied ad videoplayback cpn=${cpn}`);
     } else {
+      rememberMediaCpn(state, now, cpn);
+      writeState(state);
       done({});
     }
   } else {
