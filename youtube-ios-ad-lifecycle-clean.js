@@ -45,6 +45,15 @@ function queryValue(query, key) {
   }
 }
 
+function isPorAdInit(urlInfo) {
+  return urlInfo.path === '/initplayback'
+    && queryValue(urlInfo.query, 'rn') === '1'
+    && queryValue(urlInfo.query, 'opr') === '1'
+    && queryValue(urlInfo.query, 'ack') === '1'
+    && queryValue(urlInfo.query, 'por') === '1'
+    && queryValue(urlInfo.query, 'cpn');
+}
+
 function readState() {
   try {
     const raw = store.read(STORE_KEY);
@@ -144,6 +153,10 @@ try {
     if (id === '000000000000266a') {
       writeState(state);
       noContent('blocked ad sentinel initplayback');
+    } else if (isPorAdInit(urlInfo)) {
+      rememberAdCpn(state, now, cpn);
+      writeState(state);
+      noContent(`blocked por ad initplayback cpn=${cpn}`);
     } else if (isAdCpn(state, cpn) && !hasMediaStarted(state, cpn)) {
       writeState(state);
       noContent(`blocked ad initplayback cpn=${cpn}`);
