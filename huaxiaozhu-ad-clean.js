@@ -85,6 +85,17 @@ function isHuaxiaozhuGdtEndpoint(urlInfo) {
   return urlInfo.host === 'mi.gdt.qq.com' && urlInfo.path === '/server_bidding2';
 }
 
+function isHuaxiaozhuMarkerEndpoint(urlInfo) {
+  return urlInfo.host === 'omgup.hongyibo.com.cn' && (
+    urlInfo.path === '/syncconfig/ios/com.huaxiaozhu.rider' ||
+    urlInfo.path === '/api/realtime/stat/ios'
+  );
+}
+
+function isGdtLaunchEndpoint(urlInfo) {
+  return urlInfo.host === 'sdk.e.qq.com' && urlInfo.path === '/launch';
+}
+
 function extractParam(text, key) {
   const match = new RegExp(`(?:^|&)${key}=([^&]*)`).exec(String(text || ''));
   return match ? decodeURIComponentSafe(match[1]) : '';
@@ -179,6 +190,49 @@ function buildNoFillHeaders(baseHeaders, marker) {
   return headers;
 }
 
+function buildNoContentHeaders(baseHeaders, marker) {
+  const headers = cloneHeaders(baseHeaders);
+  deleteHeaderCaseInsensitive(headers, 'Content-Encoding');
+  deleteHeaderCaseInsensitive(headers, 'Content-Length');
+  deleteHeaderCaseInsensitive(headers, 'Transfer-Encoding');
+  deleteHeaderCaseInsensitive(headers, 'Content-Type');
+  setHeaderCaseInsensitive(headers, 'Cache-Control', 'no-store');
+  setHeaderCaseInsensitive(headers, 'Pragma', 'no-cache');
+  setHeaderCaseInsensitive(headers, 'Expires', '0');
+  setHeaderCaseInsensitive(headers, 'X-uBO-Huaxiaozhu', marker);
+  return headers;
+}
+
+const APP_MARKER_KEY = 'ubo.huaxiaozhu.recent';
+const APP_MARKER_TTL_MS = 60000;
+
+function nowMs() {
+  return Date.now ? Date.now() : new Date().getTime();
+}
+
+function hasPersistentStore() {
+  return typeof $persistentStore === 'object' &&
+    $persistentStore !== null &&
+    typeof $persistentStore.read === 'function' &&
+    typeof $persistentStore.write === 'function';
+}
+
+function markHuaxiaozhuApp(reason) {
+  if (!hasPersistentStore()) {
+    return;
+  }
+  $persistentStore.write(String(nowMs()), APP_MARKER_KEY);
+  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
+}
+
+function hasRecentHuaxiaozhuMarker() {
+  if (!hasPersistentStore()) {
+    return false;
+  }
+  const value = Number($persistentStore.read(APP_MARKER_KEY) || 0);
+  return Number.isFinite(value) && value > 0 && nowMs() - value < APP_MARKER_TTL_MS;
+}
+
 function directJson(reason, value) {
   console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
   done({
@@ -200,17 +254,43 @@ function finishJson(reason, value) {
   });
 }
 
+function finishNoContent(reason, marker) {
+  const headers = buildNoContentHeaders($response && $response.headers, marker);
+  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
+  done({
+    status: 204,
+    headers,
+    body: '',
+  });
+}
+
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
   const urlInfo = parseUrl(request.url);
   const argument = typeof $argument === 'string' ? $argument : '';
   let handled = false;
 
+  if (/(?:^|&)phase=app-marker(?:&|$)/.test(argument)) {
+    if (
+      isHuaxiaozhuMarkerEndpoint(urlInfo) &&
+      (
+        urlInfo.path === '/syncconfig/ios/com.huaxiaozhu.rider' ||
+        /com\.huaxiaozhu\.rider|DSplashViewController|kf-passenger-app/i.test(bodyToText(request.body))
+      )
+    ) {
+      markHuaxiaozhuApp('Huaxiaozhu app marker refreshed');
+    }
+    done({});
+    handled = true;
+  }
+
   if (
+    handled === false &&
     /(?:^|&)phase=gdt-request(?:&|$)/.test(argument) &&
     isHuaxiaozhuGdtEndpoint(urlInfo)
   ) {
     if (isHuaxiaozhuGdtBody(request.body)) {
+      markHuaxiaozhuApp('Huaxiaozhu GDT bidding marker refreshed');
       directJson(
         'Tencent GDT Huaxiaozhu bidding request short-circuited with no-fill',
         buildNoFillGdtPayload(request.body, null)
@@ -223,9 +303,23 @@ try {
 
   if (
     handled === false &&
+    /(?:^|&)phase=gdt-launch(?:&|$)/.test(argument) &&
+    isGdtLaunchEndpoint(urlInfo)
+  ) {
+    if (hasRecentHuaxiaozhuMarker()) {
+      finishNoContent('Tencent GDT Huaxiaozhu launch response suppressed', 'gdt-launch-empty-1');
+    } else {
+      done({});
+    }
+    handled = true;
+  }
+
+  if (
+    handled === false &&
     isHuaxiaozhuGdtEndpoint(urlInfo) &&
     isHuaxiaozhuGdtBody(request.body)
   ) {
+    markHuaxiaozhuApp('Huaxiaozhu GDT bidding marker refreshed');
     const response = typeof $response === 'object' && $response !== null ? $response : {};
     const text = bodyToText(response.body);
     const payload = JSON.parse(text);
