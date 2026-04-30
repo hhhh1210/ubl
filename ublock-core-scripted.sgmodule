@@ -49,8 +49,6 @@ DOMAIN,webcast-open.douyin.com,REJECT
 DOMAIN,cfgc.zztfly.com,REJECT
 DOMAIN,cdn-api-auth.zztfly.com,REJECT
 DOMAIN,business.msstatic.com,REJECT
-IP-CIDR,157.148.135.53/32,REJECT,no-resolve
-IP-CIDR,112.90.90.106/32,REJECT,no-resolve
 
 [Header Rewrite]
 http-request ^https?:\/\/(?:www\.)?(?:hjw01|hjwang9)\.com(?:\/?(?:\?.*)?$|\/(?:archives\/\d+\/?|tag\/[^?#]+\/?|tags\/?|category\/[^?#]+\/?|author\/\d+\/new\/?|authors(?:_[^\/?#]+)?(?:\/post-\d+\/?)?|communitys\/?|consumers\/?|follow\/?|date\/?|history\/search\/?|my\/\d+\/?|order\/hot\/?|ai\/?|[^\/?#]+\.html)(?:\?.*)?$) header-del Accept-Encoding

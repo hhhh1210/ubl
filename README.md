@@ -66,7 +66,7 @@ Huya iOS summary:
 - It also suppresses the two CSJ ad-video license IDs present in the IPA, `ad_csj-a-596205` and `ad_csj-a-596207`.
 - The `2026-04-30-101438.pcap` add-on showed `xs.gdt.qq.com` during the swipe-up Taobao ad. The later tests suggested Huya/GDT is not reliable through MITM, so GDT/Pangle splash-control and cached-material domains now use hard `REJECT` rules instead of Map Local.
 - The `2026-04-30-104745.har` blank-page capture exposed cached GDT splash media on `adsmind.gdtimg.com`; this is now rejected at domain level along with the matching `ugdtimg` GDT material hosts.
-- Two high-frequency Huya HTTPDNS fallback IPs, `157.148.135.53/32` and `112.90.90.106/32`, are rejected as a narrow experiment because local Surge reject tests removed the blank ad page.
+- The `2026-04-30-110957.har` follow-up showed those high-frequency Huya HTTPDNS fallback IPs also serve core Huya routes, so the module keeps the hard reject at ad-domain level and does not reject Huya CDN/IP fallback addresses.
 - Live stream CDN, room APIs, login, payment, game center, RN bundles, and ordinary `s1-static.msstatic.com` assets stay allowed.
 
 Note:
