@@ -16,6 +16,7 @@ Files:
 - `jetpack-joyride-ad-clean.js`: companion cleanup script for uBO Jetpack Joyride iOS Ad Clean and uBO Jetpack Joyride BidMachine Request Clean and uBO Jetpack Joyride BidMachine Response Clean and uBO Jetpack Joyride Chartboost Request Clean.
 - `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS GDT Request Marker, Response Empty Ads, App Marker, and GDT Launch Guard.
 - `didi-ad-clean.js`: companion cleanup script for uBO DiDi iOS YKS Ad Clean.
+- `wechat-pay-ad-clean.js`: companion cleanup script for uBO WeChat Pay Ad Data Empty, GoldPlan Page Clean, and ICBC Ad URL Clean.
 
 Recommended install order:
 1. Upload all module and companion script files to GitHub.
@@ -36,6 +37,7 @@ Example raw URLs after upload:
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/jetpack-joyride-ad-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/huaxiaozhu-ad-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/didi-ad-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/ios/wechat-pay-ad-clean.js`
 
 Validation note:
 - `surge-cli --check` validates files as full profiles and will complain that rules must end with `FINAL`. That warning also appears for already-installed third-party `.sgmodule` files, so do not use it as the final installability test for modules.
@@ -60,8 +62,14 @@ DiDi iOS summary:
 - `Map Local` suppresses only the observed `M5Rj3dB` ticket promo short-link/page chain so it cannot reopen as a full promo webview.
 - Generic DiDi static hosts such as `dpubstatic.udache.com` stay allowed except for the already verified `img-ys011.didistatic.com/static/ad_oss` material rule shared with Huaxiaozhu.
 
+WeChat Pay iOS summary:
+- The 2026-05-01 HAR pass targets the payment-complete GoldPlan ad page shown after WeChat Pay, not chat, Moments, or mini-program core traffic.
+- `mp.weixin.qq.com/wapad/getaddata?action=getad` is emptied when it carries the WeChat Pay ad request shape, removing the observed bottom card ad such as the Blue Moon/JD creative.
+- The GoldPlan HTML `SERVER_DATA` is rewritten with `is_hide_ad=true`, empty ad data, and no ad position, with a small CSS fallback for the iframe ad area.
+- The ICBC payment submit response keeps `pay_data` intact and only clears `ad_url`; the observed ICBC `weixin_payment.htm` promo landing page is mapped to an empty page.
+
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.
-- The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a.applovin.com, a.applvn.com, a4.applovin.com, d.applovin.com, ms.applovin.com, rt.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, install.monetization-sdk.chartboost.com, config.monetization-sdk.chartboost.com, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, omgup.hongyibo.com.cn, yuantu.diditaxi.com.cn, res.xiaojukeji.com, api.udache.com, v.didi.cn, dtrip.xiaojukeji.com, *.googlevideo.com.
-- This package intentionally excludes the broad uBO-derived rule dump. It keeps only verified hjw01, mytvsuper, coolinet, YouTube Web, YouTube iOS App, googlevideo, and app-scoped Jetpack Joyride/Huaxiaozhu/DiDi handling.
+- The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a.applovin.com, a.applvn.com, a4.applovin.com, d.applovin.com, ms.applovin.com, rt.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, install.monetization-sdk.chartboost.com, config.monetization-sdk.chartboost.com, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, omgup.hongyibo.com.cn, sdk.e.qq.com, yuantu.diditaxi.com.cn, res.xiaojukeji.com, api.udache.com, v.didi.cn, dtrip.xiaojukeji.com, payapp.weixin.qq.com, mp.weixin.qq.com, acq.icbc.com.cn, m.icbc.com.cn, *.googlevideo.com.
+- This package intentionally excludes the broad uBO-derived rule dump. It keeps only verified hjw01, mytvsuper, coolinet, YouTube Web, YouTube iOS App, googlevideo, and app-scoped Jetpack Joyride/Huaxiaozhu/DiDi/WeChat Pay handling.
 - Cosmetic filters, scriptlets, HTML filtering, `removeparam=`, `urlskip=`, and source-domain constrained rules are not part of this lightweight export.
