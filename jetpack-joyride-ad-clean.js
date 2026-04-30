@@ -7,6 +7,12 @@ const APPLOVIN_ZONES = new Set([
   '12b834430e9590d3',
   'fd6ee7c7f687f053',
   '4bcfd6d6696cd2a9',
+  'df387fab37cddc2d',
+  '378fe5550b078a51',
+  '94038d1392db669a',
+  'e8085f0e36f48762',
+  '2d296dd87fe9a8fc',
+  'e554f530541662b4',
 ]);
 
 function cloneHeaders(headers) {
@@ -122,10 +128,23 @@ function isJetpackUnity(urlInfo, headers) {
 }
 
 function isAppLovinEndpoint(urlInfo) {
-  if (urlInfo.host === 'a4.applovin.com' && urlInfo.path === '/4.0/ad') {
+  if (
+    (
+      urlInfo.host === 'a4.applovin.com' ||
+      urlInfo.host === 'a.applovin.com' ||
+      urlInfo.host === 'a.applvn.com'
+    ) &&
+    urlInfo.path === '/4.0/ad'
+  ) {
     return true;
   }
-  if (urlInfo.host === 'd.applovin.com' && urlInfo.path === '/2.0/device') {
+  if (urlInfo.host === 'd.applovin.com' && (
+    urlInfo.path === '/2.0/device' ||
+    urlInfo.path === '/2.0/vr'
+  )) {
+    return true;
+  }
+  if (urlInfo.host === 'rt.applovin.com' && urlInfo.path === '/4.0/pix') {
     return true;
   }
   if (urlInfo.host === 'ms.applovin.com' && (
@@ -138,6 +157,19 @@ function isAppLovinEndpoint(urlInfo) {
 
 function isBidMachineInit(urlInfo) {
   return urlInfo.host === 'api.bidmachine.io' && urlInfo.path === '/auction/init';
+}
+
+function isChartboostEndpoint(urlInfo) {
+  return (
+    (
+      urlInfo.host === 'install.monetization-sdk.chartboost.com' ||
+      urlInfo.host === 'config.monetization-sdk.chartboost.com'
+    ) &&
+    (
+      urlInfo.path === '/api/install' ||
+      urlInfo.path === '/api/config'
+    )
+  );
 }
 
 function isJetpackVungle(headers) {
@@ -169,6 +201,41 @@ function directNoContent(reason) {
   });
 }
 
+function directJson(reason, body) {
+  console.log(`uBO Jetpack Joyride ad clean: ${reason}`);
+  done({
+    response: {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+      body: JSON.stringify(body),
+    },
+  });
+}
+
+function chartboostBody(urlInfo) {
+  if (urlInfo.path === '/api/install') {
+    return {
+      message: 'Install request received!',
+      status: 200,
+    };
+  }
+  return {
+    status: 200,
+    response: {
+      autoIAPTrackingEnable: false,
+      bannerEnable: false,
+      prefetchDisable: true,
+      publisherDisable: true,
+      omSdk: {
+        enabled: false,
+        verificationEnabled: false,
+      },
+    },
+  };
+}
+
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
   const response = typeof $response === 'object' && $response !== null ? $response : {};
@@ -180,6 +247,15 @@ try {
   if (/(?:^|&)phase=bidmachine-request(?:&|$)/.test(argument)) {
     if (isBidMachineInit(urlInfo) && bodyHasJetpackMarker(request.body)) {
       directNoContent('BidMachine Jetpack auction request suppressed');
+    } else {
+      done({});
+    }
+    handled = true;
+  }
+
+  if (/(?:^|&)phase=chartboost-request(?:&|$)/.test(argument)) {
+    if (isChartboostEndpoint(urlInfo) && bodyHasJetpackMarker(request.body)) {
+      directJson('Chartboost Jetpack config suppressed', chartboostBody(urlInfo));
     } else {
       done({});
     }
