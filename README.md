@@ -14,7 +14,7 @@ Files:
 - `youtube-player-request-clean.js`: companion cleanup script for uBO YouTube Player Request Clean.
 - `youtube-player-clean.js`: companion cleanup script for uBO YouTube Player JSON Clean.
 - `jetpack-joyride-ad-clean.js`: companion cleanup script for uBO Jetpack Joyride iOS Ad Clean and uBO Jetpack Joyride BidMachine Request Clean and uBO Jetpack Joyride BidMachine Response Clean and uBO Jetpack Joyride Chartboost Request Clean.
-- `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS GDT Request Marker and uBO Huaxiaozhu iOS GDT Response Empty Ads and uBO Huaxiaozhu iOS App Marker.
+- `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS GDT Request Marker, Response Empty Ads, App Marker, and GDT Launch Guard.
 - `didi-ad-clean.js`: companion cleanup script for uBO DiDi iOS YKS Ad Clean.
 
 Recommended install order:
@@ -50,9 +50,9 @@ Jetpack Joyride iOS summary:
 Huaxiaozhu iOS summary:
 - The request script only marks confirmed Huaxiaozhu Tencent GDT `server_bidding2` requests. It no longer short-circuits the request, so the SDK can receive its real timing/play-round metadata.
 - The response script replaces only the ad `list` with no-fill while preserving GDT slot metadata from the real response, which is safer for hot launch and immediate relaunch behavior.
-- The 2026-04-30 IPA pass leaves the opaque `sdk.e.qq.com/launch` SDK bootstrap response untouched because it appears to carry launch/play-round state rather than a standalone ad creative.
+- The 2026-05-01 iOS pass adds a guarded `sdk.e.qq.com/launch` suppressor only after Huaxiaozhu has been fingerprinted in Surge persistent storage, covering the next-day first launch path without broad GDT blocking.
 - `Map Local` keeps only verified popup/material suppressions: `cpc-coupon-new` HTML/JS/CSS, Didi ad images, and cached GDT media files observed in captures.
-- Login, risk-control, Omega telemetry, safety shield, update, weather/static UI assets, and GDT SDK launch telemetry are intentionally allowed.
+- Login, risk-control, Omega telemetry, safety shield, update, weather/static UI assets, and ordinary GDT telemetry are intentionally allowed.
 
 DiDi iOS summary:
 - The 2026-04-30 IPA/HAR pass targets the YKS homepage/travel-card pipeline, not the core map, login, risk-control, update, or ride-order APIs.
