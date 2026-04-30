@@ -3,7 +3,7 @@
 Upload these files to a GitHub repository and use the `raw.githubusercontent.com` URL to install them in Surge.
 
 Files:
-- `ublock-core-rules.sgmodule`: lightweight verified transport/header/map-local rules only. No JavaScript cleanup.
+- `ublock-core-rules.sgmodule`: lightweight verified transport/header/map-local rules only. No JavaScript cleanup, and no YouTube Web hard ad rejects.
 - `ublock-core-scripted.sgmodule`: lightweight verified module with site-specific body cleanup hooks.
 - `ublock-core-scripted_副本.sgmodule`: compatibility copy of `ublock-core-scripted.sgmodule` for existing installs that reference the old filename.
 - `hjw01-clean.js`: companion cleanup script for uBO HJW01 Clean v3.
@@ -26,6 +26,8 @@ Example raw URLs after upload:
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/ublock-core-rules.sgmodule`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/ublock-core-scripted.sgmodule`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/ublock-core-scripted_副本.sgmodule`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/mac/ublock-core-scripted.sgmodule`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/ios/ublock-core-scripted.sgmodule`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/hjw01-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/html-style-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/main/generic-page-clean.js`
@@ -39,6 +41,14 @@ Example raw URLs after upload:
 
 Validation note:
 - `surge-cli --check` validates files as full profiles and will complain that rules must end with `FINAL`. That warning also appears for already-installed third-party `.sgmodule` files, so do not use it as the final installability test for modules.
+
+YouTube Mac Web summary:
+- Mac YouTube Web must stay separate from iOS YouTube App. Mac Web only targets `www.youtube.com`; iOS App only targets `youtubei.googleapis.com`.
+- The successful Mac fix is light-touch: prune page ad renderers and player ad fields in HTML/JSON, then use a small player request recovery path only when YouTube enters the verified adblock/error or zero-buffer state.
+- Hard Web rejects for `pagead`, `doubleclick`, `googlesyndication`, and `googlevideo` were removed because they trigger YouTube's anti-adblock detection on normal Chrome profiles.
+- `*.googlevideo.com` MITM and the `googlevideo/initplayback` Map Local rule were removed for Mac Web. Let content media streams stay unmodified.
+- The player request script only applies marker-specific fallbacks (`adunit`, `lactmilli`, `channel`, `instream`, `eafg`) after the page script sets a recovery marker; normal player requests pass through untouched.
+- If only a normal Chrome window shows "ad blocker detected" while Incognito works, clear YouTube site data/cookies/service worker state before changing the module again.
 
 Jetpack Joyride iOS summary:
 - `Map Local` disables verified server-side ad toggles: Mintegral fill, Google ODF/AdMob config, Firebase Remote Config cache refresh, HalfbrickPlus promo redirects, and ByteDance `app_alert_check`.
@@ -62,6 +72,6 @@ DiDi iOS summary:
 
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.
-- The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a.applovin.com, a.applvn.com, a4.applovin.com, d.applovin.com, ms.applovin.com, rt.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, install.monetization-sdk.chartboost.com, config.monetization-sdk.chartboost.com, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, omgup.hongyibo.com.cn, yuantu.diditaxi.com.cn, res.xiaojukeji.com, api.udache.com, v.didi.cn, dtrip.xiaojukeji.com, *.googlevideo.com.
-- This package intentionally excludes the broad uBO-derived rule dump. It keeps only verified hjw01, mytvsuper, coolinet, YouTube Web, YouTube iOS App, googlevideo, and app-scoped Jetpack Joyride/Huaxiaozhu/DiDi handling.
+- The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a.applovin.com, a.applvn.com, a4.applovin.com, d.applovin.com, ms.applovin.com, rt.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, install.monetization-sdk.chartboost.com, config.monetization-sdk.chartboost.com, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, omgup.hongyibo.com.cn, yuantu.diditaxi.com.cn, res.xiaojukeji.com, api.udache.com, v.didi.cn, dtrip.xiaojukeji.com.
+- This package intentionally excludes the broad uBO-derived rule dump. It keeps only verified hjw01, mytvsuper, coolinet, YouTube Web, YouTube iOS App, and app-scoped Jetpack Joyride/Huaxiaozhu/DiDi handling.
 - Cosmetic filters, scriptlets, HTML filtering, `removeparam=`, `urlskip=`, and source-domain constrained rules are not part of this lightweight export.

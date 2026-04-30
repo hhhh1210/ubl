@@ -97,6 +97,7 @@ function buildInlineScript() {
     '[role="alert"]',
     '[role="status"]',
   ].join(',');
+  const PLAYBACK_MARKERS = ['adunit', 'lactmilli', 'channel', 'instream', 'eafg'];
 
   function isPlainObject(value) {
     return Object.prototype.toString.call(value) === '[object Object]';
@@ -339,6 +340,22 @@ function buildInlineScript() {
     }
   }
 
+  function isAdblockPlayabilityError(response) {
+    try {
+      if (response?.playabilityStatus?.status !== 'UNPLAYABLE') return false;
+      if (response?.playabilityStatus?.errorScreen?.playerErrorMessageRenderer?.playerCaptchaViewModel) {
+        return false;
+      }
+      const runs = JSON.stringify(
+        response?.playabilityStatus?.errorScreen?.playerErrorMessageRenderer?.subreason?.runs || []
+      );
+      return runs.includes('WEB_PAGE_TYPE_UNKNOWN') &&
+        runs.includes('https://support.google.com/youtube/answer/3037019');
+    } catch (error) {
+      return false;
+    }
+  }
+
   function installPlayerRecovery() {
     try {
       if (window.__codexYouTubeLiteCleanRecoveryInstalled) return;
@@ -353,6 +370,7 @@ function buildInlineScript() {
     const reloadTimes = new Map();
     let sawInterruptionSnackbar = false;
     let usePlainReload = false;
+    let markerQueue = PLAYBACK_MARKERS.slice();
 
     function markInterruptionIfRelevant() {
       const player = getMoviePlayer();
@@ -406,11 +424,12 @@ function buildInlineScript() {
     setInterval(() => {
       if (!location.href.includes('/watch?')) {
         sawInterruptionSnackbar = false;
+        markerQueue = PLAYBACK_MARKERS.slice();
         return;
       }
 
       const player = getMoviePlayer();
-      if (!player || !isZeroBuffering(player)) return;
+      if (!player) return;
 
       let response;
       let progress;
@@ -424,8 +443,12 @@ function buildInlineScript() {
       const videoId = response?.videoDetails?.videoId;
       if (!videoId || response?.videoDetails?.isLive) return;
 
+      if (!isAdblockPlayabilityError(response) && !isZeroBuffering(player)) return;
+
       const current = Number(progress?.current || 0);
-      if (!sawInterruptionSnackbar && (!Number.isFinite(current) || current > 1.5)) return;
+      if (!isAdblockPlayabilityError(response) &&
+          !sawInterruptionSnackbar &&
+          (!Number.isFinite(current) || current > 1.5)) return;
 
       const now = Date.now();
       if (now - (reloadTimes.get(videoId) || 0) < 30000) return;
@@ -433,7 +456,9 @@ function buildInlineScript() {
       sawInterruptionSnackbar = false;
 
       try {
-        setUserAgentMarker(usePlainReload ? '' : 'channel');
+        const marker = usePlainReload ? '' : markerQueue.shift();
+        if (!markerQueue.length) markerQueue = PLAYBACK_MARKERS.slice();
+        setUserAgentMarker(marker || '');
         usePlainReload = false;
         if (typeof player.loadVideoById === 'function') {
           const start = response?.playerConfig?.playbackStartConfig?.startSeconds ?? 0;

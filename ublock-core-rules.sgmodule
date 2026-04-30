@@ -1,28 +1,14 @@
 #!name=uBO Core Rules for Surge
-#!desc=Lightweight verified rules-only export. Keeps tested Surge rules for selected sites/apps, YouTube, and googlevideo.
+#!desc=Mac lightweight rules-only export. Avoids YouTube Web hard rejects that trigger anti-adblock.
 
 [General]
 force-http-engine-hosts = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a.applovin.com, a.applvn.com, a4.applovin.com, d.applovin.com, ms.applovin.com, rt.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, install.monetization-sdk.chartboost.com, config.monetization-sdk.chartboost.com, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, omgup.hongyibo.com.cn, yuantu.diditaxi.com.cn, res.xiaojukeji.com, api.udache.com, v.didi.cn, dtrip.xiaojukeji.com
 
 [Rule]
-# Conservative YouTube ad transport rules.
-AND,((DOMAIN-SUFFIX,googlevideo.com), (PROTOCOL,UDP)),REJECT
+# YouTube Mac Web is handled by the scripted module. Hard pagead/doubleclick/
+# googlevideo rejects are intentionally excluded because YouTube Web treats
+# failed ad transport as an anti-adblock signal.
 AND,((DOMAIN,youtubei.googleapis.com), (PROTOCOL,UDP)),REJECT
-URL-REGEX,^https?:\/\/www\.youtube\.com\/youtubei\/v1\/player\/ad_break(?:[?#/]|$),REJECT
-URL-REGEX,^https?:\/\/www\.youtube\.com\/pagead\/,REJECT
-URL-REGEX,^https?:\/\/www\.youtube\.com\/api\/stats\/ads(?:[?#]|$),REJECT
-URL-REGEX,^https?:\/\/www\.youtube\.com\/pcs\/activeview\?,REJECT
-URL-REGEX,^https?:\/\/www\.youtube\.com\/ptracking\?.*(?:[?&](?:pltype=adpromoted|ptk=youtube_host|pltype=adhost)(?:&|$)),REJECT
-URL-REGEX,^https?:\/\/[\w-]+\.googlevideo\.com\/videoplayback\?expire=(?:[02-9]+|1[1-68-9]\d+|17[1-48-9]\d+)&,REJECT
-URL-REGEX,^https?:\/\/[\w-]+\.googlevideo\.com\/videoplayback\?expire=\d{10}&.*[?&]itag=18&.*[?&]ratebypass=yes&dur=\d{7}\d*(?:&|$),REJECT
-DOMAIN,ad.doubleclick.net,REJECT
-DOMAIN,static.doubleclick.net,REJECT
-DOMAIN,ade.googlesyndication.com,REJECT
-DOMAIN,tpc.googlesyndication.com,REJECT
-# Observed YouTube ad-only domains from live capture.
-DOMAIN,googleads.g.doubleclick.net,REJECT
-DOMAIN,www.googleadservices.com,REJECT
-DOMAIN,pagead2.googlesyndication.com,REJECT
 # Generic HTML cleanup companion blocks observed ad shells before they render.
 DOMAIN-SUFFIX,52av.one,REJECT
 DOMAIN-SUFFIX,i349.com,REJECT
@@ -38,10 +24,9 @@ http-request ^https?:\/\/(?:www\.)?(?:hjw01|hjwang9)\.com(?:\/?(?:\?.*)?$|\/(?:a
 http-response ^https?:\/\/(?:www\.)?(?:hjw01|hjwang9)\.com(?:\/?(?:\?.*)?$|\/(?:archives\/\d+\/?|tag\/[^?#]+\/?|tags\/?|category\/[^?#]+\/?|author\/\d+\/new\/?|authors(?:_[^\/?#]+)?(?:\/post-\d+\/?)?|communitys\/?|consumers\/?|follow\/?|date\/?|history\/search\/?|my\/\d+\/?|order\/hot\/?|ai\/?|[^\/?#]+\.html)(?:\?.*)?$) header-del Content-Encoding
 
 [MITM]
-hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a.applovin.com, a.applvn.com, a4.applovin.com, d.applovin.com, ms.applovin.com, rt.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, install.monetization-sdk.chartboost.com, config.monetization-sdk.chartboost.com, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, omgup.hongyibo.com.cn, yuantu.diditaxi.com.cn, res.xiaojukeji.com, api.udache.com, v.didi.cn, dtrip.xiaojukeji.com, *.googlevideo.com
+hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a.applovin.com, a.applvn.com, a4.applovin.com, d.applovin.com, ms.applovin.com, rt.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, install.monetization-sdk.chartboost.com, config.monetization-sdk.chartboost.com, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, omgup.hongyibo.com.cn, yuantu.diditaxi.com.cn, res.xiaojukeji.com, api.udache.com, v.didi.cn, dtrip.xiaojukeji.com
 
 [Map Local]
-^https?:\/\/[\w-]+\.googlevideo\.com\/initplayback.+&oad data-type=text data="" status-code=200
 ^https?:\/\/vg-new-ssplib-hb\.mtgglobals\.com\/load\?(?:[^#]*&)?(?:package_name=com\.halfbrick\.jetpack|placement_id=994827|unit_id=2654072)(?:&|$) data-type=text data="{\"status\":1,\"msg\":\"success\",\"data\":{\"ads\":[]}}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/odf\.app-ads-services\.com\/odf\/(?:config|appmetadata|psmappid|appinstallationid)\?(?:[^#]*&)?bundle_id=com\.halfbrick\.jetpack(?:&|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/googleads\.g\.doubleclick\.net\/getconfig\/pubsetting\?(?:[^#]*&)?app_name=com\.halfbrick\.jetpack(?:&|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"

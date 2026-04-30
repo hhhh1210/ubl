@@ -124,6 +124,7 @@ function editPlayerPayload(body, requestHeaders) {
   const userAgent = client.userAgent || '';
   const shouldUseChannelScreen = hasChannelMarker(userAgent);
   const shouldUseReloadReferer = hasPlaybackMarker(userAgent);
+  const graftUrl = String(client.mainAppWebInfo?.graftUrl || '');
 
   if (!shouldUseChannelScreen && !shouldUseReloadReferer) {
     return null;
@@ -136,11 +137,23 @@ function editPlayerPayload(body, requestHeaders) {
   if (client.clientName === undefined) {
     client.clientName = 'WEB';
   }
+  if (/adunit/i.test(userAgent) && client.clientName === 'WEB') {
+    client.clientScreen = 'ADUNIT';
+  }
   if (shouldUseChannelScreen) {
     if (client.clientName === 'WEB') {
       client.clientScreen = 'CHANNEL';
     }
     client.userAgent = withChannelUserAgent(userAgent || getHeaderCaseInsensitive(requestHeaders, 'User-Agent'));
+  }
+  if (/lactmilli/i.test(userAgent) && graftUrl.includes('&list=')) {
+    parsed.params = '8AUB';
+  }
+  if (/instream/i.test(userAgent)) {
+    contentPlaybackContext.adPlaybackContext = { adType: 'AD_TYPE_INSTREAM' };
+  }
+  if (/eafg/i.test(userAgent)) {
+    parsed.params = 'eAFgAQ';
   }
   if (shouldUseReloadReferer) {
     contentPlaybackContext.referer = withReloadHash(
