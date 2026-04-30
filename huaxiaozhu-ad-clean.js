@@ -92,10 +92,6 @@ function isHuaxiaozhuMarkerEndpoint(urlInfo) {
   );
 }
 
-function isGdtLaunchEndpoint(urlInfo) {
-  return urlInfo.host === 'sdk.e.qq.com' && urlInfo.path === '/launch';
-}
-
 function extractParam(text, key) {
   const match = new RegExp(`(?:^|&)${key}=([^&]*)`).exec(String(text || ''));
   return match ? decodeURIComponentSafe(match[1]) : '';
@@ -190,21 +186,8 @@ function buildNoFillHeaders(baseHeaders, marker) {
   return headers;
 }
 
-function buildNoContentHeaders(baseHeaders, marker) {
-  const headers = cloneHeaders(baseHeaders);
-  deleteHeaderCaseInsensitive(headers, 'Content-Encoding');
-  deleteHeaderCaseInsensitive(headers, 'Content-Length');
-  deleteHeaderCaseInsensitive(headers, 'Transfer-Encoding');
-  deleteHeaderCaseInsensitive(headers, 'Content-Type');
-  setHeaderCaseInsensitive(headers, 'Cache-Control', 'no-store');
-  setHeaderCaseInsensitive(headers, 'Pragma', 'no-cache');
-  setHeaderCaseInsensitive(headers, 'Expires', '0');
-  setHeaderCaseInsensitive(headers, 'X-uBO-Huaxiaozhu', marker);
-  return headers;
-}
-
 const APP_MARKER_KEY = 'ubo.huaxiaozhu.recent';
-const APP_MARKER_TTL_MS = 60000;
+const APP_MARKER_TTL_MS = 20000;
 
 function nowMs() {
   return Date.now ? Date.now() : new Date().getTime();
@@ -233,17 +216,6 @@ function hasRecentHuaxiaozhuMarker() {
   return Number.isFinite(value) && value > 0 && nowMs() - value < APP_MARKER_TTL_MS;
 }
 
-function directJson(reason, value) {
-  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
-  done({
-    response: {
-      status: 200,
-      headers: buildNoFillHeaders({}, 'gdt-request-nofill-1'),
-      body: JSON.stringify(value),
-    },
-  });
-}
-
 function finishJson(reason, value) {
   const headers = buildNoFillHeaders($response && $response.headers, 'gdt-response-nofill-1');
   console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
@@ -251,16 +223,6 @@ function finishJson(reason, value) {
     status: 200,
     headers,
     body: JSON.stringify(value),
-  });
-}
-
-function finishNoContent(reason, marker) {
-  const headers = buildNoContentHeaders($response && $response.headers, marker);
-  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
-  done({
-    status: 204,
-    headers,
-    body: '',
   });
 }
 
@@ -291,33 +253,15 @@ try {
   ) {
     if (isHuaxiaozhuGdtBody(request.body)) {
       markHuaxiaozhuApp('Huaxiaozhu GDT bidding marker refreshed');
-      directJson(
-        'Tencent GDT Huaxiaozhu bidding request short-circuited with no-fill',
-        buildNoFillGdtPayload(request.body, null)
-      );
-    } else {
-      done({});
     }
-    handled = true;
-  }
-
-  if (
-    handled === false &&
-    /(?:^|&)phase=gdt-launch(?:&|$)/.test(argument) &&
-    isGdtLaunchEndpoint(urlInfo)
-  ) {
-    if (hasRecentHuaxiaozhuMarker()) {
-      finishNoContent('Tencent GDT Huaxiaozhu launch response suppressed', 'gdt-launch-empty-1');
-    } else {
-      done({});
-    }
+    done({});
     handled = true;
   }
 
   if (
     handled === false &&
     isHuaxiaozhuGdtEndpoint(urlInfo) &&
-    isHuaxiaozhuGdtBody(request.body)
+    (isHuaxiaozhuGdtBody(request.body) || hasRecentHuaxiaozhuMarker())
   ) {
     markHuaxiaozhuApp('Huaxiaozhu GDT bidding marker refreshed');
     const response = typeof $response === 'object' && $response !== null ? $response : {};
