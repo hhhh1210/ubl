@@ -67,6 +67,7 @@ Huya iOS summary:
 - The `2026-04-30-101438.pcap` add-on showed `xs.gdt.qq.com` during the swipe-up Taobao ad. It now returns a tiny transparent local page that tries the app URL scheme `yykiwi://` plus close/back fallbacks, while the GDT/Pangle cached-material and SDK domains stay hard-rejected.
 - The `2026-04-30-104745.har` blank-page capture exposed cached GDT splash media on `adsmind.gdtimg.com`; this is now rejected at domain level along with the matching `ugdtimg` GDT material hosts.
 - The `2026-04-30-110957.har` follow-up showed those high-frequency Huya HTTPDNS fallback IPs also serve core Huya routes, so the module keeps the hard reject at ad-domain level and does not reject Huya CDN/IP fallback addresses.
+- The `2026-04-30-130617.har` test showed the scheme page loaded but did not close the ad surface; the live splash payload came from `us.l.qq.com/exapp`, so that GDT ad-fill host is now hard-rejected.
 - Live stream CDN, room APIs, login, payment, game center, RN bundles, and ordinary `s1-static.msstatic.com` assets stay allowed.
 
 Note:

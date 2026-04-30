@@ -32,6 +32,7 @@ URL-REGEX,^https?:\/\/file\.52papa\.tv\/download\/dl[^/?#]*\.php(?:[?#]|$),REJEC
 # Huaxiaozhu iOS app-scoped startup and popup ad resources observed from Surge capture.
 # DiDi iOS app-scoped homepage marketing cards and YKS promo entry suppressions observed from IPA/HAR capture.
 # Huya iOS ad templates, splash alert, GDT/Pangle ad SDK chain, and CSJ ad-video licenses confirmed from 13.2.70 IPA/HAR/pcap.
+DOMAIN,us.l.qq.com,REJECT
 DOMAIN,tangram.e.qq.com,REJECT
 DOMAIN,sdkreport.e.qq.com,REJECT
 DOMAIN,adsmind.gdtimg.com,REJECT
