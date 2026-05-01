@@ -96,6 +96,11 @@ function isHuaxiaozhuMarkerEndpoint(urlInfo) {
   );
 }
 
+function isHuaxiaozhuShieldEndpoint(urlInfo) {
+  return urlInfo.host === 'sec-guard.hongyibo.com.cn' &&
+    urlInfo.path === '/api/guard/psg/v2/getShieldStatus';
+}
+
 function extractParam(text, key) {
   const match = new RegExp(`(?:^|&)${key}=([^&]*)`).exec(String(text || ''));
   return match ? decodeURIComponentSafe(match[1]) : '';
@@ -242,8 +247,20 @@ function hasKnownHuaxiaozhuApp() {
   return Number.isFinite(value) && value > 0 && nowMs() - value < APP_KNOWN_TTL_MS;
 }
 
-function finishJson(reason, value) {
-  const headers = buildNoFillHeaders($response && $response.headers, 'gdt-response-nofill-1');
+function buildNoShieldPayload(originalPayload) {
+  const payload = originalPayload && typeof originalPayload === 'object' && !Array.isArray(originalPayload)
+    ? originalPayload
+    : { errno: 0, errmsg: '' };
+  if (!payload.data || typeof payload.data !== 'object' || Array.isArray(payload.data)) {
+    payload.data = {};
+  }
+  payload.data.dashboardLink = '';
+  payload.data.shieldInfo = [];
+  return payload;
+}
+
+function finishJson(reason, value, marker) {
+  const headers = buildNoFillHeaders($response && $response.headers, marker || 'gdt-response-nofill-1');
   console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
   done({
     status: 200,
@@ -304,6 +321,22 @@ try {
     } else {
       done({});
     }
+    handled = true;
+  }
+
+  if (
+    handled === false &&
+    /(?:^|&)phase=sec-guard(?:&|$)/.test(argument) &&
+    isHuaxiaozhuShieldEndpoint(urlInfo)
+  ) {
+    markHuaxiaozhuApp('Huaxiaozhu safety shield promo marker refreshed');
+    const response = typeof $response === 'object' && $response !== null ? $response : {};
+    const payload = JSON.parse(bodyToText(response.body) || '{}');
+    finishJson(
+      'Huaxiaozhu safety shield promo panels emptied',
+      buildNoShieldPayload(payload),
+      'sec-guard-empty-1'
+    );
     handled = true;
   }
 
