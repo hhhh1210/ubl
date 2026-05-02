@@ -95,14 +95,18 @@ const BAD_NAV_IDS = new Set([
 ]);
 
 const BAD_LINK_RE = /(?:manhattan\.webapp\.xiaojukeji\.com\/heranew|v\.didi\.cn\/prs\/M5Rj3dB|img-ys011\.didistatic\.com\/static\/ad_oss\/)/i;
-const BAD_RESOURCE_RE = /(?:casper_home_banner|home_marketing_card|home_banner_template|didipas_startpage_new_less_banner|bottom_marketing|marketing_banner|skyfall|popup)/i;
+const BAD_RESOURCE_RE = /(?:casper_home_banner|na_home_marketing_card|home_marketing_card|home_banner_template|didipas_startpage_new_less_banner|bottom_marketing|marketing_banner|mult_home_banner|skyfall|popup)/i;
 const AD_IMAGE_RE = /img-ys011\.didistatic\.com\/static\/ad_oss\//i;
+const TOKEN_LIST_KEY_RE = /^(?:nav_id|bottom_menu_id|order_cards_list)$/i;
 
 function isDidiYksEndpoint(urlInfo) {
+  if (urlInfo.host === 'conf.diditaxi.com.cn' && urlInfo.path === '/homepage/v1/core') {
+    return true;
+  }
   if (urlInfo.host === 'yuantu.diditaxi.com.cn' && urlInfo.path === '/ota/miniapp/yuantu/infoList') {
     return true;
   }
-  if (urlInfo.host === 'res.xiaojukeji.com' && urlInfo.path === '/resapi/activity/mget') {
+  if (urlInfo.host === 'res.xiaojukeji.com' && /^\/resapi\/activity\/(?:mget|getValid)$/.test(urlInfo.path)) {
     return true;
   }
   if (urlInfo.host === 'api.udache.com' && /^\/gulfstream\/confucius\/webx\/(?:chapter\/product\/init|v[23]\/productInit)$/.test(urlInfo.path)) {
@@ -112,7 +116,7 @@ function isDidiYksEndpoint(urlInfo) {
 }
 
 function looksLikeDidiYksPayload(text) {
-  return /ut-aggre-homepage|homepagemarketing|order_cards|order_cards_list|yuantu|didifinance|resapi\/activity\/mget|com\.xiaojukeji\.didi/i.test(String(text || ''));
+  return /ut-aggre-homepage|homepagemarketing|homepage\/v1\/core|homepageonestop|order_cards|order_cards_list|yuantu|didifinance|na_home_marketing_card|home_marketing_card|resapi\/activity\/(?:mget|getValid)|com\.xiaojukeji\.didi/i.test(String(text || ''));
 }
 
 function parseMaybeJson(text) {
@@ -151,7 +155,16 @@ function itemText(item) {
     item.url,
     item.resource_name,
     item.resourceName,
+    item.component_name,
+    item.componentName,
     item.template_name,
+    item.templateName,
+    item.api_tpl_name,
+    item.apiTplName,
+    item.o_url,
+    item.o_mi,
+    item.casper_id,
+    item.casper_tpl,
     item.tpl,
     item.T,
   ];
@@ -162,10 +175,39 @@ function itemText(item) {
 }
 
 function isBadStringItem(value) {
-  if (BAD_CARD_KEYS.has(value)) {
+  if (BAD_CARD_KEYS.has(value) || BAD_NAV_IDS.has(value)) {
     return true;
   }
   return BAD_LINK_RE.test(value) || BAD_RESOURCE_RE.test(value);
+}
+
+function cleanTokenList(text, state) {
+  const value = String(text || '');
+  if (/^\s*[\[{]/.test(value)) {
+    return text;
+  }
+  if (value.indexOf(',') === -1) {
+    if (isBadStringItem(value.trim())) {
+      state.changed = true;
+      return '';
+    }
+    return text;
+  }
+  const tokens = value.split(',');
+  const kept = [];
+  for (const token of tokens) {
+    const trimmed = token.trim();
+    if (!trimmed || isBadStringItem(trimmed)) {
+      state.changed = true;
+      continue;
+    }
+    kept.push(trimmed);
+  }
+  if (kept.length !== tokens.length) {
+    state.changed = true;
+    return kept.join(',');
+  }
+  return text;
 }
 
 function isBadObjectItem(item) {
@@ -175,7 +217,22 @@ function isBadObjectItem(item) {
   const id = stringValue(item.id || item.nav_id || item.card_id);
   const name = stringValue(item.name || item.text || item.title);
   const link = stringValue(item.link || item.url);
-  const resource = stringValue(item.resource_name || item.resourceName || item.tpl || item.T || item.template_name);
+  const resource = stringValue(
+    item.resource_name ||
+    item.resourceName ||
+    item.component_name ||
+    item.componentName ||
+    item.tpl ||
+    item.T ||
+    item.template_name ||
+    item.templateName ||
+    item.api_tpl_name ||
+    item.apiTplName ||
+    item.o_url ||
+    item.o_mi ||
+    item.casper_id ||
+    item.casper_tpl
+  );
 
   if (BAD_CARD_KEYS.has(id) || BAD_CARD_KEYS.has(stringValue(item.name))) {
     return true;
@@ -247,6 +304,11 @@ function cleanObject(object, state) {
     }
     let value = object[key];
 
+    if (isBadObjectItem(value)) {
+      state.changed = true;
+      continue;
+    }
+
     if (key === 'order_cards' || key === 'disorder_cards') {
       value = cleanObject(value && typeof value === 'object' && !Array.isArray(value) ? value : {}, state);
       out[key] = value;
@@ -258,9 +320,17 @@ function cleanObject(object, state) {
       continue;
     }
 
-    if ((key === 'bottom_menu' || key === 'nav_id_list') && typeof value === 'string') {
-      out[key] = cleanStringifiedJson(value, state);
+    if ((key === 'bottom_menu' || key === 'nav_id_list' || TOKEN_LIST_KEY_RE.test(key)) && typeof value === 'string') {
+      out[key] = cleanTokenList(cleanStringifiedJson(value, state), state);
       continue;
+    }
+
+    if (typeof value === 'string' && (BAD_LINK_RE.test(value) || BAD_RESOURCE_RE.test(value))) {
+      if (/^(?:link|url|landing_url|schema|scheme|resource_name|resourceName|template_name|templateName|api_tpl_name|apiTplName|o_url|o_mi|casper_id|casper_tpl|tpl|T)$/i.test(key)) {
+        out[key] = '';
+        state.changed = true;
+        continue;
+      }
     }
 
     if (typeof value === 'string' && AD_IMAGE_RE.test(value)) {
