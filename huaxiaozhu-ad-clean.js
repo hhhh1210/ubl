@@ -101,6 +101,11 @@ function isHuaxiaozhuShieldEndpoint(urlInfo) {
     urlInfo.path === '/api/guard/psg/v2/getShieldStatus';
 }
 
+function isHuaxiaozhuActivityEndpoint(urlInfo) {
+  return urlInfo.host === 'res-new.hongyibo.com.cn' &&
+    urlInfo.path === '/resapi/activity/mget';
+}
+
 function extractParam(text, key) {
   const match = new RegExp(`(?:^|&)${key}=([^&]*)`).exec(String(text || ''));
   return match ? decodeURIComponentSafe(match[1]) : '';
@@ -259,6 +264,155 @@ function buildNoShieldPayload(originalPayload) {
   return payload;
 }
 
+const BAD_ACTIVITY_KEY_RE = /^(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list)$/i;
+const BAD_ACTIVITY_VALUE_RE = /(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|youlianghui_external_commercial_ad|staticImage|static_icon_120_120|kf_multi_image_1|kf_home_core_left_title_image|kf_home_core_right_up_title_image|kf_home_core_steps_upgrade_fission|kf_home_other_title_image|kf_title_image_new|img-ys011\.didistatic\.com\/static\/ad_oss\/)/i;
+const BAD_ACTIVITY_IDS = {
+  '14': true,
+  '15': true,
+  '416': true,
+  '428': true,
+  '434': true,
+  '436': true,
+  '454': true,
+  '590': true,
+  '620': true,
+};
+
+function parseMaybeJson(text) {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    return undefined;
+  }
+}
+
+function stringValue(value) {
+  if (value === undefined || value === null) {
+    return '';
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return '';
+}
+
+function activityItemText(item) {
+  if (!item || typeof item !== 'object') {
+    return stringValue(item);
+  }
+  const fields = [
+    item.resource_name,
+    item.resourceName,
+    item.position_name,
+    item.positionName,
+    item.rn,
+    item.name,
+    item.title,
+    item.T,
+    item.tpl,
+    item.template,
+    item.template_name,
+    item.templateName,
+    item.image,
+    item.img,
+    item.icon,
+    item.url,
+    item.link,
+    item.landing_url,
+  ];
+  return fields.map(stringValue).join(' ');
+}
+
+function isBadActivityObject(item) {
+  if (!item || typeof item !== 'object') {
+    return false;
+  }
+  const resourceId = stringValue(item.resource_id || item.resourceId || item.rid);
+  const unitId = stringValue(item.unit_id || item.unitId);
+  const text = activityItemText(item);
+  return BAD_ACTIVITY_IDS[resourceId] === true ||
+    BAD_ACTIVITY_IDS[unitId] === true ||
+    BAD_ACTIVITY_VALUE_RE.test(text);
+}
+
+function cleanStringifiedActivityJson(text, state) {
+  const trimmed = String(text || '').trim();
+  if (!/^[\[{]/.test(trimmed)) {
+    return text;
+  }
+  const parsed = parseMaybeJson(trimmed);
+  if (parsed === undefined) {
+    return text;
+  }
+  const before = JSON.stringify(parsed);
+  const cleaned = cleanActivityValue(parsed, state);
+  if (JSON.stringify(cleaned) !== before) {
+    state.changed = true;
+    return JSON.stringify(cleaned);
+  }
+  return text;
+}
+
+function cleanActivityArray(array, state) {
+  const out = [];
+  for (const item of array) {
+    if (typeof item === 'string') {
+      const cleanedString = cleanStringifiedActivityJson(item, state);
+      if (BAD_ACTIVITY_VALUE_RE.test(cleanedString)) {
+        state.changed = true;
+        continue;
+      }
+      out.push(cleanedString);
+      continue;
+    }
+    if (isBadActivityObject(item)) {
+      state.changed = true;
+      continue;
+    }
+    out.push(cleanActivityValue(item, state));
+  }
+  if (out.length !== array.length) {
+    state.changed = true;
+  }
+  return out;
+}
+
+function cleanActivityObject(object, state) {
+  const out = {};
+  for (const key of Object.keys(object)) {
+    if (BAD_ACTIVITY_KEY_RE.test(key)) {
+      state.changed = true;
+      continue;
+    }
+    const value = object[key];
+    if (typeof value === 'string') {
+      const cleanedString = cleanStringifiedActivityJson(value, state);
+      if (BAD_ACTIVITY_VALUE_RE.test(cleanedString) && /^(?:image|img|icon|url|link|landing_url|material|content)$/i.test(key)) {
+        out[key] = '';
+        state.changed = true;
+        continue;
+      }
+      out[key] = cleanedString;
+      continue;
+    }
+    out[key] = cleanActivityValue(value, state);
+  }
+  return out;
+}
+
+function cleanActivityValue(value, state) {
+  if (Array.isArray(value)) {
+    return cleanActivityArray(value, state);
+  }
+  if (value && typeof value === 'object') {
+    return cleanActivityObject(value, state);
+  }
+  return value;
+}
+
 function finishJson(reason, value, marker) {
   const headers = buildNoFillHeaders($response && $response.headers, marker || 'gdt-response-nofill-1');
   console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
@@ -337,6 +491,28 @@ try {
       buildNoShieldPayload(payload),
       'sec-guard-empty-1'
     );
+    handled = true;
+  }
+
+  if (
+    handled === false &&
+    /(?:^|&)phase=activity(?:&|$)/.test(argument) &&
+    isHuaxiaozhuActivityEndpoint(urlInfo)
+  ) {
+    markHuaxiaozhuApp('Huaxiaozhu activity resource marker refreshed');
+    const response = typeof $response === 'object' && $response !== null ? $response : {};
+    const payload = JSON.parse(bodyToText(response.body) || '{}');
+    const state = { changed: false };
+    const cleaned = cleanActivityValue(payload, state);
+    if (state.changed) {
+      finishJson(
+        'Huaxiaozhu activity marketing resources cleaned',
+        cleaned,
+        'activity-mget-clean-1'
+      );
+    } else {
+      done({});
+    }
     handled = true;
   }
 
