@@ -62,6 +62,7 @@ DiDi iOS summary:
 - The 2026-04-30 IPA/HAR pass targets the YKS homepage/travel-card pipeline, not the core map, login, risk-control, update, or ride-order APIs.
 - The response script removes confirmed homepage marketing cards: `super_banner_card`, `new_loss_banner_card`, `marketing_card`, YKS banner cards, the `didifinance` loan tile, and the `yuantu` ticket bottom-entry when they appear in JSON/stringified JSON payloads.
 - The 2026-05-03 HAR pass adds the upstream `conf.diditaxi.com.cn/homepage/v1/core` and `res.xiaojukeji.com/resapi/activity/getValid` sources, cleaning stable `ut-aggre-homepage` / `homepagemarketing` card and token-list fields before rotating daily material IDs are rendered.
+- The start-page popup path clears `valid_act_ids` from `resapi/activity/getValid` and removes `pas_start_page` resource objects, covering the observed home overlay without blocking core map or ride APIs.
 - `Map Local` suppresses only the observed `M5Rj3dB` ticket promo short-link/page chain so it cannot reopen as a full promo webview.
 - Generic DiDi static hosts such as `dpubstatic.udache.com` stay allowed except for the already verified `img-ys011.didistatic.com/static/ad_oss` material rule shared with Huaxiaozhu.
 

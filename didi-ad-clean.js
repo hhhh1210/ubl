@@ -94,10 +94,13 @@ const BAD_NAV_IDS = new Set([
   'yuantu',
 ]);
 
-const BAD_LINK_RE = /(?:manhattan\.webapp\.xiaojukeji\.com\/heranew|v\.didi\.cn\/prs\/M5Rj3dB|img-ys011\.didistatic\.com\/static\/ad_oss\/)/i;
-const BAD_RESOURCE_RE = /(?:casper_home_banner|na_home_marketing_card|home_marketing_card|home_banner_template|didipas_startpage_new_less_banner|bottom_marketing|marketing_banner|mult_home_banner|skyfall|popup)/i;
+const BAD_LINK_RE = /(?:manhattan\.webapp\.xiaojukeji\.com\/heranew|v\.didi\.cn\/prs\/M5Rj3dB|img-ys011\.didistatic\.com\/static\/ad_oss\/|s3-hnapuhdd-cdn\.didistatic\.com\/zhunxing-creative\/)/i;
+const BAD_RESOURCE_RE = /(?:pas_start_page|one_resource_start_page|casper_home_banner|na_home_marketing_card|home_marketing_card|home_banner_template|didipas_startpage_new_less_banner|bottom_marketing|marketing_banner|mult_home_banner|skyfall|popup)/i;
 const AD_IMAGE_RE = /img-ys011\.didistatic\.com\/static\/ad_oss\//i;
 const TOKEN_LIST_KEY_RE = /^(?:nav_id|bottom_menu_id|order_cards_list)$/i;
+const BAD_RESOURCE_IDS = new Set([
+  '18',
+]);
 
 function isDidiYksEndpoint(urlInfo) {
   if (urlInfo.host === 'conf.diditaxi.com.cn' && urlInfo.path === '/homepage/v1/core') {
@@ -116,7 +119,7 @@ function isDidiYksEndpoint(urlInfo) {
 }
 
 function looksLikeDidiYksPayload(text) {
-  return /ut-aggre-homepage|homepagemarketing|homepage\/v1\/core|homepageonestop|order_cards|order_cards_list|yuantu|didifinance|na_home_marketing_card|home_marketing_card|resapi\/activity\/(?:mget|getValid)|com\.xiaojukeji\.didi/i.test(String(text || ''));
+  return /ut-aggre-homepage|homepagemarketing|homepage\/v1\/core|homepageonestop|order_cards|order_cards_list|yuantu|didifinance|pas_start_page|valid_act_ids|na_home_marketing_card|home_marketing_card|resapi\/activity\/(?:mget|getValid)|com\.xiaojukeji\.didi/i.test(String(text || ''));
 }
 
 function parseMaybeJson(text) {
@@ -153,6 +156,8 @@ function itemText(item) {
     item.title,
     item.link,
     item.url,
+    item.file_url,
+    item.fileUrl,
     item.resource_name,
     item.resourceName,
     item.component_name,
@@ -215,8 +220,9 @@ function isBadObjectItem(item) {
     return false;
   }
   const id = stringValue(item.id || item.nav_id || item.card_id);
+  const resourceId = stringValue(item.resource_id || item.resourceId || item.res);
   const name = stringValue(item.name || item.text || item.title);
-  const link = stringValue(item.link || item.url);
+  const link = stringValue(item.link || item.url || item.file_url || item.fileUrl);
   const resource = stringValue(
     item.resource_name ||
     item.resourceName ||
@@ -235,6 +241,9 @@ function isBadObjectItem(item) {
   );
 
   if (BAD_CARD_KEYS.has(id) || BAD_CARD_KEYS.has(stringValue(item.name))) {
+    return true;
+  }
+  if (BAD_RESOURCE_IDS.has(resourceId)) {
     return true;
   }
   if (BAD_NAV_IDS.has(id)) {
@@ -309,6 +318,14 @@ function cleanObject(object, state) {
       continue;
     }
 
+    if (/^(?:valid_act_ids|validActIds)$/.test(key) && Array.isArray(value)) {
+      if (value.length !== 0) {
+        state.changed = true;
+      }
+      out[key] = [];
+      continue;
+    }
+
     if (key === 'order_cards' || key === 'disorder_cards') {
       value = cleanObject(value && typeof value === 'object' && !Array.isArray(value) ? value : {}, state);
       out[key] = value;
@@ -326,7 +343,7 @@ function cleanObject(object, state) {
     }
 
     if (typeof value === 'string' && (BAD_LINK_RE.test(value) || BAD_RESOURCE_RE.test(value))) {
-      if (/^(?:link|url|landing_url|schema|scheme|resource_name|resourceName|template_name|templateName|api_tpl_name|apiTplName|o_url|o_mi|casper_id|casper_tpl|tpl|T)$/i.test(key)) {
+      if (/^(?:link|url|landing_url|schema|scheme|file_url|fileUrl|resource_name|resourceName|template_name|templateName|api_tpl_name|apiTplName|o_url|o_mi|casper_id|casper_tpl|tpl|T)$/i.test(key)) {
         out[key] = '';
         state.changed = true;
         continue;
