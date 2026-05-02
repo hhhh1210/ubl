@@ -264,8 +264,9 @@ function buildNoShieldPayload(originalPayload) {
   return payload;
 }
 
-const BAD_ACTIVITY_KEY_RE = /^(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list)$/i;
-const BAD_ACTIVITY_VALUE_RE = /(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|youlianghui_external_commercial_ad|staticImage|static_icon_120_120|kf_multi_image_1|kf_home_core_left_title_image|kf_home_core_right_up_title_image|kf_home_core_steps_upgrade_fission|kf_home_other_title_image|kf_title_image_new|img-ys011\.didistatic\.com\/static\/ad_oss\/)/i;
+const BAD_ACTIVITY_KEY_RE = /^(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common)$/i;
+const BAD_ACTIVITY_COMPONENT_RE = /^(?:homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common)$/i;
+const BAD_ACTIVITY_VALUE_RE = /(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common|youlianghui_external_commercial_ad|staticImage|static_icon_120_120|kf_multi_image_1|kf_home_core_left_title_image|kf_home_core_right_up_title_image|kf_home_core_steps_upgrade_fission|kf_home_other_title_image|kf_title_image_new|img-ys011\.didistatic\.com\/static\/ad_oss\/)/i;
 const BAD_ACTIVITY_IDS = {
   '14': true,
   '15': true,
@@ -310,6 +311,13 @@ function activityItemText(item) {
     item.positionName,
     item.rn,
     item.name,
+    item.position,
+    item.component_name,
+    item.componentName,
+    item.api_tpl_name,
+    item.apiTplName,
+    item.api_com_name,
+    item.apiComName,
     item.title,
     item.T,
     item.tpl,
@@ -332,9 +340,18 @@ function isBadActivityObject(item) {
   }
   const resourceId = stringValue(item.resource_id || item.resourceId || item.rid);
   const unitId = stringValue(item.unit_id || item.unitId);
+  const componentName = stringValue(
+    item.component_name ||
+    item.componentName ||
+    item.api_tpl_name ||
+    item.apiTplName ||
+    item.api_com_name ||
+    item.apiComName
+  );
   const text = activityItemText(item);
   return BAD_ACTIVITY_IDS[resourceId] === true ||
     BAD_ACTIVITY_IDS[unitId] === true ||
+    BAD_ACTIVITY_COMPONENT_RE.test(componentName) ||
     BAD_ACTIVITY_VALUE_RE.test(text);
 }
 
@@ -388,6 +405,10 @@ function cleanActivityObject(object, state) {
       continue;
     }
     const value = object[key];
+    if (isBadActivityObject(value)) {
+      state.changed = true;
+      continue;
+    }
     if (typeof value === 'string') {
       const cleanedString = cleanStringifiedActivityJson(value, state);
       if (BAD_ACTIVITY_VALUE_RE.test(cleanedString) && /^(?:image|img|icon|url|link|landing_url|material|content)$/i.test(key)) {

@@ -54,7 +54,7 @@ Huaxiaozhu iOS summary:
 - The response script replaces only the ad `list` with no-fill while preserving GDT slot metadata from the real response, which is safer for hot launch and immediate relaunch behavior.
 - The 2026-05-01 iOS pass adds a guarded `sdk.e.qq.com/launch` suppressor only after Huaxiaozhu has been fingerprinted in Surge persistent storage, covering the next-day first launch path without broad GDT blocking.
 - The 2026-05-02 HAR pass adds a narrow `sec-guard.hongyibo.com.cn/api/guard/psg/v2/getShieldStatus` cleanup that preserves the endpoint response but empties `data.shieldInfo`, removing rotating Safety Center / Safety Trip promo cards.
-- The 2026-05-03 HAR pass adds MitM and recursive cleanup for `res-new.hongyibo.com.cn/resapi/activity/mget`, removing confirmed Bronzedoor marketing resources such as `p_startpage`, `p_home_popup`, `p_super_banner`, `p_home_core_*`, `p_home_other_banner`, `p_home_page_upper_right`, and `p_nav_new`.
+- The 2026-05-03 HAR pass adds MitM and recursive cleanup for `res-new.hongyibo.com.cn/resapi/activity/mget`, removing confirmed Bronzedoor marketing resources by stable position and component names such as `p_startpage`, `p_home_popup`, `p_super_banner`, `p_home_core_*`, `p_home_other_banner`, `p_home_page_upper_right`, `p_nav_new`, `homepage_pop_window`, `activity_cover_layer`, `marketing_bubble`, `banner_position_list`, `destination_promotion`, and `home_right_top_common`.
 - `Map Local` keeps only verified popup/material suppressions: `cpc-coupon-new` HTML/JS/CSS, Didi ad images, and cached GDT media files observed in captures.
 - Login, risk-control, Omega telemetry, update, weather/static UI assets, and ordinary GDT telemetry are intentionally allowed.
 
