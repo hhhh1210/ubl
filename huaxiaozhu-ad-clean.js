@@ -72,6 +72,30 @@ function parseUrl(url) {
   };
 }
 
+function removeQueryParam(url, key) {
+  const source = String(url || '');
+  const hashIndex = source.indexOf('#');
+  const beforeHash = hashIndex === -1 ? source : source.slice(0, hashIndex);
+  const hash = hashIndex === -1 ? '' : source.slice(hashIndex);
+  const queryIndex = beforeHash.indexOf('?');
+  if (queryIndex === -1) {
+    return source;
+  }
+  const base = beforeHash.slice(0, queryIndex);
+  const query = beforeHash.slice(queryIndex + 1);
+  const kept = [];
+  for (const part of query.split('&')) {
+    if (!part) {
+      continue;
+    }
+    const name = decodeURIComponentSafe(part.split('=')[0]);
+    if (name !== key) {
+      kept.push(part);
+    }
+  }
+  return base + (kept.length ? `?${kept.join('&')}` : '') + hash;
+}
+
 function isHuaxiaozhuGdtBody(body) {
   const text = bodyToText(body);
   if (/com\.huaxiaozhu\.rider|c_pkgname=|appid=1210818176|posid=8156967880562298/i.test(text)) {
@@ -104,6 +128,11 @@ function isHuaxiaozhuShieldEndpoint(urlInfo) {
 function isHuaxiaozhuActivityEndpoint(urlInfo) {
   return urlInfo.host === 'res-new.hongyibo.com.cn' &&
     urlInfo.path === '/resapi/activity/mget';
+}
+
+function isHuaxiaozhuToggleEndpoint(urlInfo) {
+  return urlInfo.host === 'as.hongyibo.com.cn' &&
+    urlInfo.path === '/ep/as/toggles';
 }
 
 function extractParam(text, key) {
@@ -279,6 +308,17 @@ const BAD_ACTIVITY_IDS = {
   '620': true,
 };
 
+const BAD_TOGGLE_NAMES = new Set([
+  'kf_home_bronzedoor_enable',
+  'kf_hummer_discount_retain_popup',
+  'kf_hummer_end_marketing_pkg',
+  'kf_hummer_flower_coin_popup',
+  'kf_hummer_home_top_remind_pop',
+  'kf_hummer_inservice_communicate_cards',
+  'kf_hummer_inservice_communicate_cards_test',
+  'kf_marketing_dialog_toggle',
+]);
+
 function parseMaybeJson(text) {
   try {
     return JSON.parse(text);
@@ -366,6 +406,43 @@ function isBadActivityObject(item) {
     BAD_ACTIVITY_VALUE_RE.test(text);
 }
 
+function patchJsonStringFlag(object, key, flag, value, state) {
+  const assign = object && object.assign;
+  const args = assign && assign.args;
+  if (!args || typeof args !== 'object' || typeof args[key] !== 'string') {
+    return;
+  }
+  const parsed = parseMaybeJson(args[key]);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return;
+  }
+  if (parsed[flag] !== undefined && parsed[flag] !== value) {
+    parsed[flag] = value;
+    args[key] = JSON.stringify(parsed);
+    state.changed = true;
+  }
+}
+
+function patchHuaxiaozhuToggleObject(object, state) {
+  if (!object || typeof object !== 'object' || Array.isArray(object)) {
+    return;
+  }
+  const name = stringValue(object.name);
+  if (name === 'IsLaunchTaskEnable' || name === 'LaunchEnableTest') {
+    patchJsonStringFlag(object, 'config', 'is_fast_ad', 0, state);
+  }
+  if (BAD_TOGGLE_NAMES.has(name)) {
+    if (object.allow !== false) {
+      object.allow = false;
+      state.changed = true;
+    }
+    if (object.assign !== undefined) {
+      delete object.assign;
+      state.changed = true;
+    }
+  }
+}
+
 function cleanStringifiedActivityJson(text, state) {
   const trimmed = String(text || '').trim();
   if (!/^[\[{]/.test(trimmed)) {
@@ -409,6 +486,7 @@ function cleanActivityArray(array, state) {
 }
 
 function cleanActivityObject(object, state) {
+  patchHuaxiaozhuToggleObject(object, state);
   const out = {};
   for (const key of Object.keys(object)) {
     if (BAD_ACTIVITY_KEY_RE.test(key)) {
@@ -487,6 +565,21 @@ try {
 
   if (
     handled === false &&
+    /(?:^|&)phase=toggles-request(?:&|$)/.test(argument) &&
+    isHuaxiaozhuToggleEndpoint(urlInfo)
+  ) {
+    const nextUrl = removeQueryParam(request.url, 'md5');
+    if (nextUrl !== request.url) {
+      console.log('uBO Huaxiaozhu ad clean: toggles md5 cache key removed');
+      done({ url: nextUrl });
+    } else {
+      done({});
+    }
+    handled = true;
+  }
+
+  if (
+    handled === false &&
     /(?:^|&)phase=gdt-request(?:&|$)/.test(argument) &&
     isHuaxiaozhuGdtEndpoint(urlInfo)
   ) {
@@ -504,6 +597,28 @@ try {
   ) {
     if (hasKnownHuaxiaozhuApp()) {
       finishNoContent('Tencent GDT Huaxiaozhu launch response suppressed by known app marker', 'gdt-launch-known-1');
+    } else {
+      done({});
+    }
+    handled = true;
+  }
+
+  if (
+    handled === false &&
+    /(?:^|&)phase=toggles-response(?:&|$)/.test(argument) &&
+    isHuaxiaozhuToggleEndpoint(urlInfo)
+  ) {
+    markHuaxiaozhuApp('Huaxiaozhu toggles marker refreshed');
+    const response = typeof $response === 'object' && $response !== null ? $response : {};
+    const payload = JSON.parse(bodyToText(response.body) || '{}');
+    const state = { changed: false };
+    const cleaned = cleanActivityValue(payload, state);
+    if (state.changed) {
+      finishJson(
+        'Huaxiaozhu startup/home popup toggles cleaned',
+        cleaned,
+        'toggles-clean-1'
+      );
     } else {
       done({});
     }

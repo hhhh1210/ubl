@@ -64,6 +64,38 @@ function parseUrl(url) {
   };
 }
 
+function decodeURIComponentSafe(text) {
+  try {
+    return decodeURIComponent(String(text || '').replace(/\+/g, ' '));
+  } catch (error) {
+    return String(text || '');
+  }
+}
+
+function removeQueryParam(url, key) {
+  const source = String(url || '');
+  const hashIndex = source.indexOf('#');
+  const beforeHash = hashIndex === -1 ? source : source.slice(0, hashIndex);
+  const hash = hashIndex === -1 ? '' : source.slice(hashIndex);
+  const queryIndex = beforeHash.indexOf('?');
+  if (queryIndex === -1) {
+    return source;
+  }
+  const base = beforeHash.slice(0, queryIndex);
+  const query = beforeHash.slice(queryIndex + 1);
+  const kept = [];
+  for (const part of query.split('&')) {
+    if (!part) {
+      continue;
+    }
+    const name = decodeURIComponentSafe(part.split('=')[0]);
+    if (name !== key) {
+      kept.push(part);
+    }
+  }
+  return base + (kept.length ? `?${kept.join('&')}` : '') + hash;
+}
+
 function buildJsonHeaders(baseHeaders, marker) {
   const headers = cloneHeaders(baseHeaders);
   deleteHeaderCaseInsensitive(headers, 'Content-Encoding');
@@ -291,6 +323,11 @@ function patchDidiToggleObject(object, state) {
       state.changed = true;
     }
   }
+
+  if (name === 'wyc_request_method_control' && args.addPopupTimes !== 0) {
+    args.addPopupTimes = 0;
+    state.changed = true;
+  }
 }
 
 function cleanStringifiedJson(text, state) {
@@ -428,10 +465,26 @@ function finishJson(reason, value) {
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
   const response = typeof $response === 'object' && $response !== null ? $response : {};
+  const argument = typeof $argument === 'string' ? $argument : '';
   const urlInfo = parseUrl(request.url);
   let handled = false;
 
-  if (isDidiYksEndpoint(urlInfo)) {
+  if (
+    /(?:^|&)phase=toggles-request(?:&|$)/.test(argument) &&
+    urlInfo.host === 'as.xiaojukeji.com' &&
+    urlInfo.path === '/ep/as/toggles'
+  ) {
+    const nextUrl = removeQueryParam(request.url, 'md5');
+    if (nextUrl !== request.url) {
+      console.log('uBO DiDi ad clean: toggles md5 cache key removed');
+      done({ url: nextUrl });
+    } else {
+      done({});
+    }
+    handled = true;
+  }
+
+  if (handled === false && isDidiYksEndpoint(urlInfo)) {
     const responseText = bodyToText(response.body);
     const requestText = bodyToText(request.body);
     if (looksLikeDidiYksPayload(`${request.url}\n${requestText}\n${responseText}`)) {
