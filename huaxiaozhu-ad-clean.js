@@ -266,7 +266,7 @@ function buildNoShieldPayload(originalPayload) {
 
 const BAD_ACTIVITY_KEY_RE = /^(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common)$/i;
 const BAD_ACTIVITY_COMPONENT_RE = /^(?:homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common)$/i;
-const BAD_ACTIVITY_VALUE_RE = /(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common|youlianghui_external_commercial_ad|staticImage|static_icon_120_120|kf_multi_image_1|kf_home_core_left_title_image|kf_home_core_right_up_title_image|kf_home_core_steps_upgrade_fission|kf_home_other_title_image|kf_title_image_new|img-ys011\.didistatic\.com\/static\/ad_oss\/)/i;
+const BAD_ACTIVITY_VALUE_RE = /(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common|youlianghui_external_commercial_ad|staticImage|static_icon_120_120|kf_multi_image_1|kf_home_core_left_title_image|kf_home_core_right_up_title_image|kf_home_core_steps_upgrade_fission|kf_home_other_title_image|kf_title_image_new|prod\.huaxz\.cn\/imk-kf-index|imk-kf-index|home_pop_manual|channel_id=1300000014|entrance_channel=1300000014|img-ys011\.didistatic\.com\/static\/ad_oss\/)/i;
 const BAD_ACTIVITY_IDS = {
   '14': true,
   '15': true,
@@ -327,9 +327,20 @@ function activityItemText(item) {
     item.image,
     item.img,
     item.icon,
+    item.file_url,
+    item.fileUrl,
     item.url,
     item.link,
     item.landing_url,
+    item.landingUrl,
+    item.log_data,
+    item.logData,
+    item.custom_channel,
+    item.customChannel,
+    item.channel_id,
+    item.channelId,
+    item.entrance_channel,
+    item.entranceChannel,
   ];
   return fields.map(stringValue).join(' ');
 }
