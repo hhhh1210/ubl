@@ -103,6 +103,9 @@ const BAD_RESOURCE_IDS = new Set([
 ]);
 
 function isDidiYksEndpoint(urlInfo) {
+  if (urlInfo.host === 'as.xiaojukeji.com' && urlInfo.path === '/ep/as/toggles') {
+    return true;
+  }
   if (urlInfo.host === 'conf.diditaxi.com.cn' && urlInfo.path === '/homepage/v1/core') {
     return true;
   }
@@ -119,7 +122,7 @@ function isDidiYksEndpoint(urlInfo) {
 }
 
 function looksLikeDidiYksPayload(text) {
-  return /ut-aggre-homepage|homepagemarketing|homepage\/v1\/core|homepageonestop|order_cards|order_cards_list|yuantu|didifinance|pas_start_page|valid_act_ids|na_home_marketing_card|home_marketing_card|resapi\/activity\/(?:mget|getValid)|com\.xiaojukeji\.didi/i.test(String(text || ''));
+  return /ut-aggre-homepage|homepagemarketing|homepage\/v1\/core|homepageonestop|order_cards|order_cards_list|yuantu|didifinance|pas_start_page|pas_notice_webview|new_resource_sdk_toggle|ios_activity_download_config|activity_resource_15|valid_act_ids|na_home_marketing_card|home_marketing_card|resapi\/activity\/(?:mget|getValid)|com\.xiaojukeji\.didi/i.test(String(text || ''));
 }
 
 function parseMaybeJson(text) {
@@ -261,6 +264,35 @@ function isBadObjectItem(item) {
   return false;
 }
 
+function patchDidiToggleObject(object, state) {
+  const name = stringValue(object && object.name);
+  const assign = object && object.assign;
+  const args = assign && assign.args;
+  if (!args || typeof args !== 'object' || Array.isArray(args)) {
+    return;
+  }
+
+  if (name === 'new_resource_sdk_toggle') {
+    for (const key of ['pas_start_page', 'pas_notice_webview']) {
+      if (args[key] !== undefined && args[key] !== '0') {
+        args[key] = '0';
+        state.changed = true;
+      }
+    }
+  }
+
+  if (name === 'ios_activity_download_config') {
+    if (args.enable !== 0) {
+      args.enable = 0;
+      state.changed = true;
+    }
+    if (args.url) {
+      args.url = '';
+      state.changed = true;
+    }
+  }
+}
+
 function cleanStringifiedJson(text, state) {
   const trimmed = String(text || '').trim();
   if (!/^[\[{]/.test(trimmed)) {
@@ -305,6 +337,7 @@ function cleanArray(array, state) {
 }
 
 function cleanObject(object, state) {
+  patchDidiToggleObject(object, state);
   const out = {};
   for (const key of Object.keys(object)) {
     if (BAD_CARD_KEYS.has(key)) {
