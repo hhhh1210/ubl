@@ -309,6 +309,7 @@ const BAD_ACTIVITY_IDS = {
 };
 
 const BAD_TOGGLE_NAMES = new Set([
+  'launch_advertising_display_interval',
   'kf_home_bronzedoor_enable',
   'kf_hummer_discount_retain_popup',
   'kf_hummer_end_marketing_pkg',

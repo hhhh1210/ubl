@@ -58,6 +58,7 @@ Huaxiaozhu iOS summary:
 - The 2026-05-04 HAR pass adds the confirmed `p_home_popup` / `imk-kf-index` / `home_pop_manual` landing-page signature, with a narrow `prod.huaxz.cn/imk-kf-index` Map Local fallback for cached popup resources.
 - The deeper startup path removes the `md5` cache validator from `as.hongyibo.com.cn/ep/as/toggles`, then clears only verified launch/home marketing toggles such as `is_fast_ad`, `kf_home_bronzedoor_enable`, `kf_hummer_home_top_remind_pop`, and related coupon/marketing popup bundles.
 - The 2026-05-05 HAR pass confirms GDT and toggles cleanup are active, then adds a narrow `gift-static.hongyibo.com.cn/static/kfpub/6106/edu*` tiny-gif fallback for the remaining native direct-load promo images.
+- The 2026-05-06 HAR pass disables the still-active `launch_advertising_display_interval` toggle so rotating startup ad scheduling is closed before daily material URLs are requested.
 - `Map Local` keeps only verified popup/material suppressions: `cpc-coupon-new` HTML/JS/CSS, the `home_pop_manual` popup landing page, Huaxiaozhu `6106/edu*` promo images, Didi ad images, and cached GDT media files observed in captures.
 - Login, risk-control, Omega telemetry, update, weather/static UI assets, and ordinary GDT telemetry are intentionally allowed.
 
