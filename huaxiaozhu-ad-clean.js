@@ -130,6 +130,11 @@ function isHuaxiaozhuActivityEndpoint(urlInfo) {
     urlInfo.path === '/resapi/activity/mget';
 }
 
+function isHuaxiaozhuPDataEndpoint(urlInfo) {
+  return urlInfo.host === 'api.hongyibo.com.cn' &&
+    urlInfo.path === '/gulfstream/passenger-center/v1/other/pData';
+}
+
 function isHuaxiaozhuToggleEndpoint(urlInfo) {
   return urlInfo.host === 'as.hongyibo.com.cn' &&
     urlInfo.path === '/ep/as/toggles';
@@ -657,6 +662,28 @@ try {
         'Huaxiaozhu activity marketing resources cleaned',
         cleaned,
         'activity-mget-clean-1'
+      );
+    } else {
+      done({});
+    }
+    handled = true;
+  }
+
+  if (
+    handled === false &&
+    /(?:^|&)phase=pdata(?:&|$)/.test(argument) &&
+    isHuaxiaozhuPDataEndpoint(urlInfo)
+  ) {
+    markHuaxiaozhuApp('Huaxiaozhu Bronzedoor pData marker refreshed');
+    const response = typeof $response === 'object' && $response !== null ? $response : {};
+    const payload = JSON.parse(bodyToText(response.body) || '{}');
+    const state = { changed: false };
+    const cleaned = cleanActivityValue(payload, state);
+    if (state.changed) {
+      finishJson(
+        'Huaxiaozhu Bronzedoor pData marketing resources cleaned',
+        cleaned,
+        'pdata-clean-1'
       );
     } else {
       done({});
