@@ -436,6 +436,7 @@ function patchHuaxiaozhuToggleObject(object, state) {
   const name = stringValue(object.name);
   if (name === 'IsLaunchTaskEnable' || name === 'LaunchEnableTest') {
     patchJsonStringFlag(object, 'config', 'is_fast_ad', 0, state);
+    patchJsonStringFlag(object, 'config', 'is_resource', 0, state);
   }
   if (BAD_TOGGLE_NAMES.has(name)) {
     if (object.allow !== false) {
