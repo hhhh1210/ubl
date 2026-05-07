@@ -130,9 +130,9 @@ function isHuaxiaozhuActivityEndpoint(urlInfo) {
     urlInfo.path === '/resapi/activity/mget';
 }
 
-function isHuaxiaozhuPDataEndpoint(urlInfo) {
+function isHuaxiaozhuBronzedoorEndpoint(urlInfo) {
   return urlInfo.host === 'api.hongyibo.com.cn' &&
-    urlInfo.path === '/gulfstream/passenger-center/v1/other/pData';
+    /^\/gulfstream\/passenger-center\/v1\/other\/p(?:Data|Layout)$/.test(urlInfo.path);
 }
 
 function isHuaxiaozhuToggleEndpoint(urlInfo) {
@@ -322,6 +322,7 @@ const BAD_TOGGLE_NAMES = new Set([
   'kf_hummer_home_top_remind_pop',
   'kf_hummer_inservice_communicate_cards',
   'kf_hummer_inservice_communicate_cards_test',
+  'kf_home_popup_req_remove_city',
   'kf_marketing_dialog_toggle',
 ]);
 
@@ -437,6 +438,7 @@ function patchHuaxiaozhuToggleObject(object, state) {
   if (name === 'IsLaunchTaskEnable' || name === 'LaunchEnableTest') {
     patchJsonStringFlag(object, 'config', 'is_fast_ad', 0, state);
     patchJsonStringFlag(object, 'config', 'is_resource', 0, state);
+    patchJsonStringFlag(object, 'config', 'is_webxnasdk', 0, state);
   }
   if (BAD_TOGGLE_NAMES.has(name)) {
     if (object.allow !== false) {
@@ -673,9 +675,9 @@ try {
   if (
     handled === false &&
     /(?:^|&)phase=pdata(?:&|$)/.test(argument) &&
-    isHuaxiaozhuPDataEndpoint(urlInfo)
+    isHuaxiaozhuBronzedoorEndpoint(urlInfo)
   ) {
-    markHuaxiaozhuApp('Huaxiaozhu Bronzedoor pData marker refreshed');
+    markHuaxiaozhuApp('Huaxiaozhu Bronzedoor resource marker refreshed');
     const response = typeof $response === 'object' && $response !== null ? $response : {};
     const payload = JSON.parse(bodyToText(response.body) || '{}');
     const state = { changed: false };
