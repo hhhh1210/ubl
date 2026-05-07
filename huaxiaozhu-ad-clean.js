@@ -327,7 +327,9 @@ const BAD_TOGGLE_NAMES = new Set([
   'kf_hummer_home_top_remind_pop',
   'kf_hummer_inservice_communicate_cards',
   'kf_hummer_inservice_communicate_cards_test',
+  'kf_activity_show_launchvideo_close_delay',
   'kf_home_popup_req_remove_city',
+  'kf_hummer_right_upgrade_dialog',
   'kf_marketing_dialog_toggle',
 ]);
 
@@ -435,15 +437,52 @@ function patchJsonStringFlag(object, key, flag, value, state) {
   }
 }
 
+function patchDaggerLaunchConfig(object, state) {
+  const assign = object && object.assign;
+  const args = assign && assign.args;
+  if (!args || typeof args !== 'object') {
+    return;
+  }
+  if (args.is_launch_enable !== undefined && args.is_launch_enable !== '0') {
+    args.is_launch_enable = '0';
+    state.changed = true;
+  }
+  if (typeof args.launch_config !== 'string') {
+    return;
+  }
+  const parsed = parseMaybeJson(args.launch_config);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return;
+  }
+  const original = JSON.stringify(parsed);
+  if (Array.isArray(parsed.page_names)) {
+    parsed.page_names = parsed.page_names.filter((name) => name !== 'DSplashViewController');
+  }
+  if (parsed.prewarming_threshold !== undefined) {
+    parsed.prewarming_threshold = '0';
+  }
+  if (JSON.stringify(parsed) !== original) {
+    args.launch_config = JSON.stringify(parsed);
+    state.changed = true;
+  }
+}
+
 function patchHuaxiaozhuToggleObject(object, state) {
   if (!object || typeof object !== 'object' || Array.isArray(object)) {
     return;
   }
   const name = stringValue(object.name);
+  if (name === 'IsDaggerEnable') {
+    patchDaggerLaunchConfig(object, state);
+  }
   if (name === 'IsLaunchTaskEnable' || name === 'LaunchEnableTest') {
     patchJsonStringFlag(object, 'config', 'is_fast_ad', 0, state);
     patchJsonStringFlag(object, 'config', 'is_resource', 0, state);
     patchJsonStringFlag(object, 'config', 'is_webxnasdk', 0, state);
+    if (object.assign && object.assign.args && object.assign.args.delay_time !== undefined) {
+      object.assign.args.delay_time = '0';
+      state.changed = true;
+    }
   }
   if (BAD_TOGGLE_NAMES.has(name)) {
     if (object.allow !== false) {
