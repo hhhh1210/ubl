@@ -63,7 +63,8 @@ Huaxiaozhu iOS summary:
 - The 2026-05-07 HAR shows no new material leak but one empty `DSplashViewController` countdown; the launch toggle cleanup now also sets `is_resource=0` so the startup resource task does not create an empty splash shell after ad material has been removed.
 - The later 2026-05-07 HAR shows the empty popup shell can still be triggered when cached `img-ys011.didistatic.com/static/ad_oss` material is mapped to a successful tiny GIF, so that verified material rule now returns `204` instead of a transparent image to make the app follow its no-material path.
 - The 2026-05-07 23:31 HAR shows a remaining one-shot popup reported as `p_home_popup` / `youlianghui_external_commercial_ad` from the WebX NA/Bronzedoor path; the toggle cleanup now also sets `is_webxnasdk=0`, disables `kf_home_popup_req_remove_city`, and extends the same recursive cleanup to `pLayout`.
-- `Map Local` keeps only verified popup/material suppressions: `cpc-coupon-new` HTML/JS/CSS, the `home_pop_manual` popup landing page, Huaxiaozhu `6106/edu*` promo images, Didi ad images, and cached GDT media files observed in captures.
+- The 2026-05-08 HAR identifies the next one-shot popup as `p_home_other_banner` / `kf_home_other_title_image` opening `kf-webx/pop-ups/upgrade-fission.html`; the module now cleans the narrow `api.didi.cn/webx/na/product/init` WebX NA source and maps the verified `upgrade-fission` HTML/JS/CSS shell to empty responses.
+- `Map Local` keeps only verified popup/material suppressions: `cpc-coupon-new` and `upgrade-fission` HTML/JS/CSS, the `home_pop_manual` popup landing page, Huaxiaozhu `6106/edu*` promo images, Didi ad images, and cached GDT media files observed in captures.
 - Login, risk-control, Omega telemetry, update, weather/static UI assets, and ordinary GDT telemetry are intentionally allowed.
 
 DiDi iOS summary:

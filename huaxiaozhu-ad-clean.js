@@ -135,6 +135,11 @@ function isHuaxiaozhuBronzedoorEndpoint(urlInfo) {
     /^\/gulfstream\/passenger-center\/v1\/other\/p(?:Data|Layout)$/.test(urlInfo.path);
 }
 
+function isHuaxiaozhuWebxNaEndpoint(urlInfo) {
+  return urlInfo.host === 'api.didi.cn' &&
+    urlInfo.path === '/webx/na/product/init';
+}
+
 function isHuaxiaozhuToggleEndpoint(urlInfo) {
   return urlInfo.host === 'as.hongyibo.com.cn' &&
     urlInfo.path === '/ep/as/toggles';
@@ -300,7 +305,7 @@ function buildNoShieldPayload(originalPayload) {
 
 const BAD_ACTIVITY_KEY_RE = /^(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common)$/i;
 const BAD_ACTIVITY_COMPONENT_RE = /^(?:homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common)$/i;
-const BAD_ACTIVITY_VALUE_RE = /(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common|youlianghui_external_commercial_ad|staticImage|static_icon_120_120|kf_multi_image_1|kf_home_core_left_title_image|kf_home_core_right_up_title_image|kf_home_core_steps_upgrade_fission|kf_home_other_title_image|kf_title_image_new|prod\.huaxz\.cn\/imk-kf-index|imk-kf-index|home_pop_manual|channel_id=1300000014|entrance_channel=1300000014|img-ys011\.didistatic\.com\/static\/ad_oss\/)/i;
+const BAD_ACTIVITY_VALUE_RE = /(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common|youlianghui_external_commercial_ad|staticImage|static_icon_120_120|kf_multi_image_1|kf_home_core_left_title_image|kf_home_core_right_up_title_image|kf_home_core_steps_upgrade_fission|kf_home_other_title_image|kf_title_image_new|upgrade-fission|prod\.huaxz\.cn\/imk-kf-index|imk-kf-index|home_pop_manual|channel_id=1300000014|entrance_channel=1300000014|img-ys011\.didistatic\.com\/static\/ad_oss\/)/i;
 const BAD_ACTIVITY_IDS = {
   '14': true,
   '15': true,
@@ -687,6 +692,28 @@ try {
         'Huaxiaozhu Bronzedoor pData marketing resources cleaned',
         cleaned,
         'pdata-clean-1'
+      );
+    } else {
+      done({});
+    }
+    handled = true;
+  }
+
+  if (
+    handled === false &&
+    /(?:^|&)phase=webxna(?:&|$)/.test(argument) &&
+    isHuaxiaozhuWebxNaEndpoint(urlInfo)
+  ) {
+    markHuaxiaozhuApp('Huaxiaozhu WebX NA product marker refreshed');
+    const response = typeof $response === 'object' && $response !== null ? $response : {};
+    const payload = JSON.parse(bodyToText(response.body) || '{}');
+    const state = { changed: false };
+    const cleaned = cleanActivityValue(payload, state);
+    if (state.changed) {
+      finishJson(
+        'Huaxiaozhu WebX NA product marketing resources cleaned',
+        cleaned,
+        'webxna-clean-1'
       );
     } else {
       done({});
