@@ -61,6 +61,7 @@ Huaxiaozhu iOS summary:
 - The 2026-05-06 HAR pass disables the still-active `launch_advertising_display_interval` toggle so rotating startup ad scheduling is closed before daily material URLs are requested.
 - The deeper 2026-05-06 pass follows the app's own Bronzedoor/Omega logs instead of daily image URLs: repeated `p_startpage` / `p_home_popup` reports line up with `api.hongyibo.com.cn/gulfstream/passenger-center/v1/other/pData`, so the module now MitMs only that exact `pData` path and recursively removes the same verified marketing resource positions before new daily material is cached.
 - The 2026-05-07 HAR shows no new material leak but one empty `DSplashViewController` countdown; the launch toggle cleanup now also sets `is_resource=0` so the startup resource task does not create an empty splash shell after ad material has been removed.
+- The later 2026-05-07 HAR shows the empty popup shell can still be triggered when cached `img-ys011.didistatic.com/static/ad_oss` material is mapped to a successful tiny GIF, so that verified material rule now returns `204` instead of a transparent image to make the app follow its no-material path.
 - `Map Local` keeps only verified popup/material suppressions: `cpc-coupon-new` HTML/JS/CSS, the `home_pop_manual` popup landing page, Huaxiaozhu `6106/edu*` promo images, Didi ad images, and cached GDT media files observed in captures.
 - Login, risk-control, Omega telemetry, update, weather/static UI assets, and ordinary GDT telemetry are intentionally allowed.
 

@@ -53,7 +53,7 @@ hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsupe
 ^https?:\/\/static\.hongyibo\.com\.cn\/kf-webx\/pop-ups\/static\/css\/cpc-coupon-new\.[^?#]+\.css(?:\?.*)?$ data-type=text data="" status-code=200 header="Content-Type:text/css; charset=utf-8"
 ^https?:\/\/gift-static\.hongyibo\.com\.cn\/static\/kfpub\/6106\/edu[^\/?#]*\.(?:png|jpe?g|webp|gif)(?:\?.*)?$ data-type=tiny-gif status-code=200
 ^https?:\/\/s3-hnapuhdd-cdn\.didistatic\.com\/kf-biz-material\/marketing\/pop-ups\/cpc-coupon\/bg\.png(?:\?.*)?$ data-type=tiny-gif status-code=200
-^https?:\/\/img-ys011\.didistatic\.com\/static\/ad_oss\/[^?#]+\.(?:png|jpe?g|webp|gif)(?:\?.*)?$ data-type=tiny-gif status-code=200
+^https?:\/\/img-ys011\.didistatic\.com\/static\/ad_oss\/[^?#]+\.(?:png|jpe?g|webp|gif)(?:\?.*)?$ data-type=text data="" status-code=204
 ^https?:\/\/pgdt\.ugdtimg\.com\/\d+\/\d+\/snscosdownload\/SZ\/reserved\/[^?#]+(?:\?.*)?$ data-type=text data="" status-code=204
 ^https?:\/\/adsmind\.ugdtimg\.com\/ads_svp_video__[^?#]+\.mp4(?:\?.*)?$ data-type=text data="" status-code=204
 ^https?:\/\/v\.didi\.cn\/prs\/M5Rj3dB(?:\?.*)?$ data-type=text data="<!doctype html><html></html>" status-code=200 header="Content-Type:text/html; charset=utf-8"
