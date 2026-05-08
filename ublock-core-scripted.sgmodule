@@ -31,7 +31,7 @@ URL-REGEX,^https?:\/\/file\.52papa\.tv\/download\/dl[^/?#]*\.php(?:[?#]|$),REJEC
 # Jetpack Joyride iOS app-scoped ad endpoints observed from Surge capture.
 # Huaxiaozhu iOS app-scoped startup and popup ad resources observed from Surge capture.
 # DiDi iOS app-scoped homepage marketing cards and YKS promo entry suppressions observed from IPA/HAR capture.
-# Huya iOS app-scoped startup ad telemetry/static media blocks from 2026-05-09-063750 HAR. Config endpoints are mapped to empty responses below so the SDK does not reuse cached ads.
+# Huya iOS app-scoped startup ad telemetry/static media blocks from 2026-05-09 HARs. Config endpoints are mapped to empty responses below so the SDK does not reuse cached ads.
 DOMAIN,sdkreport.e.qq.com,REJECT
 DOMAIN,adsmind.gdtimg.com,REJECT
 DOMAIN,adsmind.ugdtimg.com,REJECT
@@ -103,6 +103,7 @@ hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsupe
 ^https?:\/\/img-ys011\.didistatic\.com\/static\/ad_oss\/[^?#]+\.(?:png|jpe?g|webp|gif)(?:\?.*)?$ data-type=text data="" status-code=204
 ^https?:\/\/pgdt\.ugdtimg\.com\/\d+\/\d+\/snscosdownload\/SZ\/reserved\/[^?#]+(?:\?.*)?$ data-type=text data="" status-code=204
 ^https?:\/\/adsmind\.ugdtimg\.com\/ads_svp_video__[^?#]+\.mp4(?:\?.*)?$ data-type=text data="" status-code=204
+^https?:\/\/business\.msstatic\.com\/ssp\/material\/[^?#]+\.(?:png|jpe?g|webp|gif)(?:\?.*)?$ data-type=tiny-gif status-code=200
 ^https?:\/\/business\.msstatic\.com\/dsp\/public\/sdkconfig\.xml(?:\?.*)?$ data-type=text data="<?xml version=\"1.0\" encoding=\"UTF-8\"?><config><offlineCache><length>0</length></offlineCache><companies></companies></config>" status-code=200 header="Content-Type:text/xml; charset=utf-8"
 ^https?:\/\/xs\.gdt\.qq\.com\/style_factory\/template_list(?:\?.*)?$ data-type=text data="{\"ret\":0,\"msg\":\"success\",\"templates\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
 ^https?:\/\/xs\.gdt\.qq\.com\/style_factory\/module_list(?:\?.*)?$ data-type=text data="{\"modules\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
