@@ -135,19 +135,30 @@ function buildJsonHeaders(baseHeaders, marker) {
   return headers;
 }
 
-function cleanTangramUpdateSetting(requestText, responseText) {
-  if (!/com\.yy\.kiwi|1112179873/i.test(requestText || '')) {
-    return null;
+function hasHuyaMarker(requestText, sdk, app) {
+  if (/com\.yy\.kiwi|1112179873/i.test(requestText || '')) {
+    return true;
   }
+  if (app && Object.prototype.hasOwnProperty.call(app, '5035917038257268')) {
+    return true;
+  }
+  return !!(sdk && /huya|ios_hy_splash|ioshuya/i.test(String(sdk.ex_exp_info || '')));
+}
 
+function cleanTangramUpdateSetting(requestText, responseText) {
   const payload = JSON.parse(responseText || '{}');
   if (!payload || !payload.setting || typeof payload.setting !== 'object') {
     return null;
   }
 
+  const sdk = payload.setting.sdk ? base64DecodeJson(payload.setting.sdk) : null;
+  const app = payload.setting.app ? base64DecodeJson(payload.setting.app) : null;
+  if (!hasHuyaMarker(requestText, sdk, app)) {
+    return null;
+  }
+
   const changes = [];
-  if (payload.setting.sdk) {
-    const sdk = base64DecodeJson(payload.setting.sdk);
+  if (sdk) {
     setIfDifferent(sdk, 'openSplashDynamic', 0, changes);
     setIfDifferent(sdk, 'splashReqAdCount', 0, changes);
     setIfDifferent(sdk, 'tangram_splash_material_check', 0, changes);
@@ -160,8 +171,7 @@ function cleanTangramUpdateSetting(requestText, responseText) {
     payload.setting.sdk = base64EncodeJson(sdk);
   }
 
-  if (payload.setting.app) {
-    const app = base64DecodeJson(payload.setting.app);
+  if (app) {
     for (const slotId of Object.keys(app)) {
       if (app[slotId] && typeof app[slotId] === 'object') {
         setIfDifferent(app[slotId], 'dynamic_use_lgt', 0, changes);
