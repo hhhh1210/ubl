@@ -135,6 +135,37 @@ function buildJsonHeaders(baseHeaders, marker) {
   return headers;
 }
 
+function currentUrl() {
+  return String((typeof $request !== 'undefined' && $request && $request.url) || '');
+}
+
+function isHuyaExappRequest(requestText) {
+  return /(?:^|&)posid=3026774105282411(?:&|$)/.test(requestText || '')
+    && /(?:hostappid%22%3A%221112179873|hostappid"?\s*[:=]\s*"?1112179873|com\.yy\.kiwi)/i.test(requestText || '');
+}
+
+function cleanGdtExappFill(requestText, responseText) {
+  if (!isHuyaExappRequest(requestText)) {
+    return null;
+  }
+
+  const payload = JSON.parse(responseText || '{}');
+  if (!payload || !payload.data || !payload.data['3026774105282411']) {
+    return null;
+  }
+
+  const slot = payload.data['3026774105282411'];
+  slot.ret = 0;
+  slot.msg = '';
+  slot.list = [];
+  slot.dr = slot.dr || 0;
+  payload.last_ads = {};
+  payload.ret = 0;
+  payload.rpt = 0;
+  payload.reqinterval = 1;
+  return JSON.stringify(payload);
+}
+
 function hasHuyaMarker(requestText, sdk, app) {
   if (/com\.yy\.kiwi|1112179873/i.test(requestText || '')) {
     return true;
@@ -189,13 +220,16 @@ function cleanTangramUpdateSetting(requestText, responseText) {
 try {
   const requestText = bodyToText($request && $request.body);
   const responseText = bodyToText($response && $response.body);
-  const body = cleanTangramUpdateSetting(requestText, responseText);
+  const url = currentUrl();
+  const body = /:\/\/us\.l\.qq\.com\/exapp(?:[?#]|$)/.test(url)
+    ? cleanGdtExappFill(requestText, responseText)
+    : cleanTangramUpdateSetting(requestText, responseText);
   if (!body) {
     done({});
   } else {
     done({
       body,
-      headers: buildJsonHeaders($response && $response.headers, 'tangram-splash-setting-1'),
+      headers: buildJsonHeaders($response && $response.headers, 'huya-gdt-fill-clean-1'),
     });
   }
 } catch (error) {
