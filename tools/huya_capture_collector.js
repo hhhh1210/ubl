@@ -23,6 +23,7 @@ const config = {
 let pendingRecords = 0;
 let lastCommitAt = 0;
 let pushing = false;
+const seenIds = new Set();
 
 function sh(command, args, options = {}) {
   const output = execFileSync(command, args, {
@@ -123,10 +124,19 @@ function remoteIp(req) {
 }
 
 function appendRecord(record) {
+  if (seenIds.has(record.id)) {
+    return false;
+  }
+  seenIds.add(record.id);
+  if (seenIds.size > 20000) {
+    const first = seenIds.values().next().value;
+    seenIds.delete(first);
+  }
   const file = logPathFor(record);
   ensureDir(path.dirname(file));
   fs.appendFileSync(file, `${JSON.stringify(record)}\n`);
   pendingRecords += 1;
+  return true;
 }
 
 async function pushIfNeeded(force = false) {
@@ -205,10 +215,12 @@ function handlePost(req, res) {
     try {
       const body = Buffer.concat(chunks).toString('utf8');
       const record = normalizeRecord(body, req);
-      appendRecord(record);
+      const appended = appendRecord(record);
       res.writeHead(204);
       res.end();
-      pushIfNeeded(false).catch((error) => console.error('[huya-capture] push error:', error));
+      if (appended) {
+        pushIfNeeded(false).catch((error) => console.error('[huya-capture] push error:', error));
+      }
     } catch (error) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: false, error: String(error && error.message || error) }));
