@@ -51,8 +51,9 @@ DOMAIN,toblog.ctobsnssdk.com,REJECT
 DOMAIN,webcast-open.douyin.com,REJECT
 DOMAIN,cfgc.zztfly.com,REJECT
 DOMAIN,cdn-api-auth.zztfly.com,REJECT
-# Huya route-safe layer: keep ByteDance TNC blocked, but allow Huya HTTPDNS/auth/TGPA/fingerprint and Volc VOD license routes so正文 content entries can resolve and play.
+# Huya route-safe layer: keep ByteDance TNC blocked, but allow Huya HTTPDNS/auth/TGPA/fingerprint routes so正文 content entries can resolve and play.
 DOMAIN-SUFFIX,zijieapi.com,REJECT
+URL-REGEX,^https?:\/\/vod-license-[mb]\.volccdn\.com\/vod-license\/l-1053894658-ch-webcast-a-596205\.lic(?:[?#]|$),REJECT
 
 [Header Rewrite]
 http-request ^https?:\/\/(?:www\.)?(?:hjw01|hjwang9)\.com(?:\/?(?:\?.*)?$|\/(?:archives\/\d+\/?|tag\/[^?#]+\/?|tags\/?|category\/[^?#]+\/?|author\/\d+\/new\/?|authors(?:_[^\/?#]+)?(?:\/post-\d+\/?)?|communitys\/?|consumers\/?|follow\/?|date\/?|history\/search\/?|my\/\d+\/?|order\/hot\/?|ai\/?|[^\/?#]+\.html)(?:\?.*)?$) header-del Accept-Encoding
