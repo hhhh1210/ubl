@@ -25,11 +25,12 @@ let lastCommitAt = 0;
 let pushing = false;
 
 function sh(command, args, options = {}) {
-  return execFileSync(command, args, {
+  const output = execFileSync(command, args, {
     cwd: options.cwd || config.sourceRepo,
     encoding: 'utf8',
     stdio: options.stdio || ['ignore', 'pipe', 'pipe'],
-  }).trim();
+  });
+  return output ? String(output).trim() : '';
 }
 
 function spawn(command, args, options = {}) {
