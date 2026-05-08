@@ -133,6 +133,10 @@ const TOKEN_LIST_KEY_RE = /^(?:nav_id|bottom_menu_id|order_cards_list)$/i;
 const BAD_RESOURCE_IDS = new Set([
   '18',
 ]);
+const BAD_TOGGLE_NAMES = new Set([
+  'launch_advertising_display_interval',
+  'didipas_splash_mp4control',
+]);
 
 function isDidiYksEndpoint(urlInfo) {
   if (urlInfo.host === 'as.xiaojukeji.com' && urlInfo.path === '/ep/as/toggles') {
@@ -154,7 +158,7 @@ function isDidiYksEndpoint(urlInfo) {
 }
 
 function looksLikeDidiYksPayload(text) {
-  return /ut-aggre-homepage|homepagemarketing|homepage\/v1\/core|homepageonestop|order_cards|order_cards_list|yuantu|didifinance|pas_start_page|pas_notice_webview|new_resource_sdk_toggle|ios_activity_download_config|activity_resource_15|valid_act_ids|na_home_marketing_card|home_marketing_card|resapi\/activity\/(?:mget|getValid)|com\.xiaojukeji\.didi/i.test(String(text || ''));
+  return /ut-aggre-homepage|homepagemarketing|homepage\/v1\/core|homepageonestop|order_cards|order_cards_list|yuantu|didifinance|pas_start_page|pas_notice_webview|new_resource_sdk_toggle|ios_activity_download_config|activity_resource_15|valid_act_ids|na_home_marketing_card|home_marketing_card|resapi\/activity\/(?:mget|getValid)|IsDaggerEnable|launch_advertising_display_interval|didipas_splash_mp4control|llm_assistant_experiment|qu_dialog_rn_new|com\.xiaojukeji\.didi/i.test(String(text || ''));
 }
 
 function parseMaybeJson(text) {
@@ -296,16 +300,70 @@ function isBadObjectItem(item) {
   return false;
 }
 
-function patchDidiToggleObject(object, state) {
-  const name = stringValue(object && object.name);
+function disableToggle(object, state) {
+  if (object.allow !== false) {
+    object.allow = false;
+    state.changed = true;
+  }
+  if (object.assign !== undefined) {
+    delete object.assign;
+    state.changed = true;
+  }
+}
+
+function patchDaggerLaunchConfig(object, state) {
   const assign = object && object.assign;
   const args = assign && assign.args;
   if (!args || typeof args !== 'object' || Array.isArray(args)) {
     return;
   }
+  if (args.is_launch_enable !== undefined && args.is_launch_enable !== '0') {
+    args.is_launch_enable = '0';
+    state.changed = true;
+  }
+  if (typeof args.launch_config !== 'string') {
+    return;
+  }
+  const parsed = parseMaybeJson(args.launch_config);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return;
+  }
+  const before = JSON.stringify(parsed);
+  if (Array.isArray(parsed.page_names)) {
+    parsed.page_names = parsed.page_names.filter((name) => name !== 'DSplashViewController' && name !== 'ORSSplashViewController');
+  }
+  if (parsed.prewarming_threshold !== undefined) {
+    parsed.prewarming_threshold = '0';
+  }
+  if (JSON.stringify(parsed) !== before) {
+    args.launch_config = JSON.stringify(parsed);
+    state.changed = true;
+  }
+}
+
+function patchDidiToggleObject(object, state) {
+  if (!object || typeof object !== 'object' || Array.isArray(object)) {
+    return;
+  }
+  const name = stringValue(object && object.name);
+  const assign = object && object.assign;
+  const args = assign && assign.args;
+
+  if (name === 'IsDaggerEnable') {
+    patchDaggerLaunchConfig(object, state);
+  }
+
+  if (BAD_TOGGLE_NAMES.has(name)) {
+    disableToggle(object, state);
+    return;
+  }
+
+  if (!args || typeof args !== 'object' || Array.isArray(args)) {
+    return;
+  }
 
   if (name === 'new_resource_sdk_toggle') {
-    for (const key of ['pas_start_page', 'pas_notice_webview']) {
+    for (const key of ['pas_start_page', 'pas_notice_webview', 'didipas_startpage_map', 'pas_home_activity']) {
       if (args[key] !== undefined && args[key] !== '0') {
         args[key] = '0';
         state.changed = true;
@@ -326,6 +384,20 @@ function patchDidiToggleObject(object, state) {
 
   if (name === 'wyc_request_method_control' && args.addPopupTimes !== 0) {
     args.addPopupTimes = 0;
+    state.changed = true;
+  }
+
+  if (name === 'llm_assistant_experiment') {
+    for (const key of ['llm_home_popup_enabled_ios', 'llm_home_popup_enabled_android']) {
+      if (args[key] !== undefined && args[key] !== 0) {
+        args[key] = 0;
+        state.changed = true;
+      }
+    }
+  }
+
+  if (name === 'qu_dialog_rn_new' && args.dialog_popup_operation_banner !== undefined && args.dialog_popup_operation_banner !== 0) {
+    args.dialog_popup_operation_banner = 0;
     state.changed = true;
   }
 }
@@ -453,7 +525,7 @@ function cleanValue(value, state) {
 }
 
 function finishJson(reason, value) {
-  const headers = buildJsonHeaders($response && $response.headers, 'didi-yks-clean-1');
+  const headers = buildJsonHeaders($response && $response.headers, 'didi-splash-entry-1');
   console.log(`uBO DiDi ad clean: ${reason}`);
   done({
     status: 200,
