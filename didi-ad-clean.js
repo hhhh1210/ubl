@@ -134,6 +134,8 @@ const BAD_RESOURCE_IDS = new Set([
   '18',
 ]);
 const BAD_TOGGLE_NAMES = new Set([
+  'bts_config_client_blord_launch_ad',
+  'gray_map_pt_hppop',
   'launch_advertising_display_interval',
   'didipas_splash_mp4control',
 ]);
@@ -525,7 +527,7 @@ function cleanValue(value, state) {
 }
 
 function finishJson(reason, value) {
-  const headers = buildJsonHeaders($response && $response.headers, 'didi-splash-entry-1');
+  const headers = buildJsonHeaders($response && $response.headers, 'didi-overlay-close-1');
   console.log(`uBO DiDi ad clean: ${reason}`);
   done({
     status: 200,
