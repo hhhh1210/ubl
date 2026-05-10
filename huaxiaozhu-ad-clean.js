@@ -441,6 +441,23 @@ function patchDaggerLaunchConfig(object, state) {
   }
 }
 
+function patchWebxProductPageConfig(object, state) {
+  const assign = object && object.assign;
+  const args = assign && assign.args;
+  if (!args || typeof args.config !== 'string') {
+    return;
+  }
+  const parsed = parseMaybeJson(args.config);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return;
+  }
+  if (Array.isArray(parsed.webviewPage) && parsed.webviewPage.length !== 0) {
+    parsed.webviewPage = [];
+    args.config = JSON.stringify(parsed);
+    state.changed = true;
+  }
+}
+
 function patchHuaxiaozhuToggleObject(object, state) {
   if (!object || typeof object !== 'object' || Array.isArray(object)) {
     return;
@@ -448,6 +465,9 @@ function patchHuaxiaozhuToggleObject(object, state) {
   const name = stringValue(object.name);
   if (name === 'IsDaggerEnable') {
     patchDaggerLaunchConfig(object, state);
+  }
+  if (name === 'webx_get_prod_page_conf') {
+    patchWebxProductPageConfig(object, state);
   }
   if (name === 'IsLaunchTaskEnable' || name === 'LaunchEnableTest') {
     patchJsonStringFlag(object, 'config', 'is_fast_ad', 0, state);
@@ -621,7 +641,7 @@ try {
       finishJson(
         'Huaxiaozhu startup/home popup toggles cleaned',
         cleaned,
-        'toggles-clean-1'
+        'toggles-webx-map-clean-1'
       );
     } else {
       done({});
