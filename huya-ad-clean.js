@@ -196,6 +196,13 @@ function cleanTangramUpdateSetting(requestText, responseText) {
     setIfDifferent(sdk, 'tangram_splash_material_check', 0, changes);
     setIfDifferent(sdk, 'enableDSDKBackgroundSaveTemplateDict', 0, changes);
     setIfDifferent(sdk, 'newDeviceIntoFetch', 0, changes);
+    setIfDifferent(sdk, 'cookieForLastAds', 0, changes);
+    setIfDifferent(sdk, 'enableIdfaCache', 0, changes);
+    setIfDifferent(sdk, 'maxCount', 0, changes);
+    setIfDifferent(sdk, 'native_loadad_count_limit', 0, changes);
+    setIfDifferent(sdk, 'inter_loadad_count_limit', 0, changes);
+    setIfDifferent(sdk, 'sscaad', 0, changes);
+    setIfDifferent(sdk, 'pingLocalDnsList', '', changes);
     setIfDifferent(sdk, 'srcap', 0, changes);
     setIfDifferent(sdk, 'spl_exptime', 0, changes);
     setIfDifferent(sdk, 'spl_ltime', 0, changes);
@@ -231,7 +238,7 @@ try {
   } else {
     done({
       body,
-      headers: buildJsonHeaders($response && $response.headers, 'huya-splash-nofill-1'),
+      headers: buildJsonHeaders($response && $response.headers, 'huya-splash-cache-nofill-1'),
     });
   }
 } catch (error) {
