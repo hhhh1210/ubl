@@ -160,7 +160,7 @@ function isDidiYksEndpoint(urlInfo) {
 }
 
 function looksLikeDidiYksPayload(text) {
-  return /ut-aggre-homepage|homepagemarketing|homepage\/v1\/core|homepageonestop|order_cards|order_cards_list|yuantu|didifinance|pas_start_page|pas_notice_webview|new_resource_sdk_toggle|ios_activity_download_config|activity_resource_15|valid_act_ids|na_home_marketing_card|home_marketing_card|resapi\/activity\/(?:mget|getValid)|IsDaggerEnable|launch_advertising_display_interval|didipas_splash_mp4control|llm_assistant_experiment|qu_dialog_rn_new|com\.xiaojukeji\.didi/i.test(String(text || ''));
+  return /ut-aggre-homepage|homepagemarketing|homepage\/v1\/core|homepageonestop|order_cards|order_cards_list|yuantu|didifinance|pas_start_page|pas_notice_webview|new_resource_sdk_toggle|ios_activity_download_config|activity_resource_15|valid_act_ids|na_home_marketing_card|home_marketing_card|resapi\/activity\/(?:mget|getValid)|IsDaggerEnable|launch_advertising_display_interval|didipas_splash_mp4control|webx_get_prod_page_conf|llm_assistant_experiment|qu_dialog_rn_new|com\.xiaojukeji\.didi/i.test(String(text || ''));
 }
 
 function parseMaybeJson(text) {
@@ -343,6 +343,23 @@ function patchDaggerLaunchConfig(object, state) {
   }
 }
 
+function patchWebxProductPageConfig(object, state) {
+  const assign = object && object.assign;
+  const args = assign && assign.args;
+  if (!args || typeof args.config !== 'string') {
+    return;
+  }
+  const parsed = parseMaybeJson(args.config);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return;
+  }
+  if (Array.isArray(parsed.webviewPage) && parsed.webviewPage.length !== 0) {
+    parsed.webviewPage = [];
+    args.config = JSON.stringify(parsed);
+    state.changed = true;
+  }
+}
+
 function patchDidiToggleObject(object, state) {
   if (!object || typeof object !== 'object' || Array.isArray(object)) {
     return;
@@ -353,6 +370,10 @@ function patchDidiToggleObject(object, state) {
 
   if (name === 'IsDaggerEnable') {
     patchDaggerLaunchConfig(object, state);
+  }
+
+  if (name === 'webx_get_prod_page_conf') {
+    patchWebxProductPageConfig(object, state);
   }
 
   if (BAD_TOGGLE_NAMES.has(name)) {
@@ -527,7 +548,7 @@ function cleanValue(value, state) {
 }
 
 function finishJson(reason, value) {
-  const headers = buildJsonHeaders($response && $response.headers, 'didi-overlay-close-1');
+  const headers = buildJsonHeaders($response && $response.headers, 'didi-webx-popup-map-clean-1');
   console.log(`uBO DiDi ad clean: ${reason}`);
   done({
     status: 200,

@@ -79,6 +79,7 @@ DiDi iOS summary:
 - The 2026-05-04 HAR pass adds the upstream `as.xiaojukeji.com/ep/as/toggles` source, disabling only the verified `new_resource_sdk_toggle.pas_start_page` / `pas_notice_webview` and `ios_activity_download_config` activity package path used by cached start-page popups.
 - The follow-up toggles pass strips the `md5` cache validator before `as.xiaojukeji.com/ep/as/toggles`, forcing a full config response so the popup toggle cleanup also applies when the app would otherwise reuse local `304 CACHED` settings.
 - The 2026-05-09 Huaxiaozhu-style pass targets the remaining launch container instead of daily image URLs: `IsDaggerEnable.launch_config` now drops the splash controllers, `launch_advertising_display_interval` / `didipas_splash_mp4control` are disabled, and only the verified AI home popup / operation-banner flags are zeroed.
+- The 2026-05-11 HAR mirrors the Huaxiaozhu gray-overlay behavior: ad material under `img-ys011.didistatic.com/static/ad_oss` is already 204, but the native WebX shell can remain. The toggles cleanup now clears `webx_get_prod_page_conf.webviewPage` while preserving `productPage`, so the generic marketing webview route is not pre-created as a blank overlay.
 - `Map Local` suppresses only the observed `M5Rj3dB` ticket promo short-link/page chain so it cannot reopen as a full promo webview.
 - Generic DiDi static hosts such as `dpubstatic.udache.com` stay allowed except for the already verified `img-ys011.didistatic.com/static/ad_oss` material rule shared with Huaxiaozhu.
 
