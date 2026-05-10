@@ -127,11 +127,13 @@ const BAD_NAV_IDS = new Set([
 ]);
 
 const BAD_LINK_RE = /(?:manhattan\.webapp\.xiaojukeji\.com\/heranew|v\.didi\.cn\/prs\/M5Rj3dB|img-ys011\.didistatic\.com\/static\/ad_oss\/|s3-hnapuhdd-cdn\.didistatic\.com\/zhunxing-creative\/)/i;
-const BAD_RESOURCE_RE = /(?:pas_start_page|one_resource_start_page|casper_home_banner|na_home_marketing_card|home_marketing_card|home_banner_template|didipas_startpage_new_less_banner|bottom_marketing|marketing_banner|mult_home_banner|skyfall|popup)/i;
+const BAD_RESOURCE_RE = /(?:pas_start_page|pas_notice_webview|one_resource_start_page|casper_home_banner|na_home_marketing_card|home_marketing_card|home_banner_template|didipas_startpage_new_less_banner|bottom_marketing|marketing_banner|mult_home_banner|skyfall|popup)/i;
 const AD_IMAGE_RE = /img-ys011\.didistatic\.com\/static\/ad_oss\//i;
 const TOKEN_LIST_KEY_RE = /^(?:nav_id|bottom_menu_id|order_cards_list)$/i;
 const BAD_RESOURCE_IDS = new Set([
   '18',
+  '63',
+  '21373',
 ]);
 const BAD_TOGGLE_NAMES = new Set([
   'bts_config_client_blord_launch_ad',
@@ -159,6 +161,11 @@ function isDidiYksEndpoint(urlInfo) {
   return false;
 }
 
+function isDidiShieldEndpoint(urlInfo) {
+  return urlInfo.host === 'guard.sec.xiaojukeji.com' &&
+    urlInfo.path === '/api/guard/psg/v2/getShieldStatus';
+}
+
 function looksLikeDidiYksPayload(text) {
   return /ut-aggre-homepage|homepagemarketing|homepage\/v1\/core|homepageonestop|order_cards|order_cards_list|yuantu|didifinance|pas_start_page|pas_notice_webview|new_resource_sdk_toggle|ios_activity_download_config|activity_resource_15|valid_act_ids|na_home_marketing_card|home_marketing_card|resapi\/activity\/(?:mget|getValid)|IsDaggerEnable|launch_advertising_display_interval|didipas_splash_mp4control|webx_get_prod_page_conf|llm_assistant_experiment|qu_dialog_rn_new|com\.xiaojukeji\.didi/i.test(String(text || ''));
 }
@@ -169,6 +176,17 @@ function parseMaybeJson(text) {
   } catch (error) {
     return undefined;
   }
+}
+
+function buildNoShieldPayload(originalPayload) {
+  const payload = originalPayload && typeof originalPayload === 'object' && !Array.isArray(originalPayload)
+    ? originalPayload
+    : { errno: 0, errmsg: '' };
+  if (!payload.data || typeof payload.data !== 'object' || Array.isArray(payload.data)) {
+    payload.data = {};
+  }
+  payload.data.shieldInfo = [];
+  return payload;
 }
 
 function stringValue(value) {
@@ -547,8 +565,8 @@ function cleanValue(value, state) {
   return value;
 }
 
-function finishJson(reason, value) {
-  const headers = buildJsonHeaders($response && $response.headers, 'didi-webx-popup-map-clean-1');
+function finishJson(reason, value, marker) {
+  const headers = buildJsonHeaders($response && $response.headers, marker || 'didi-gray-overlay-entry-clean-1');
   console.log(`uBO DiDi ad clean: ${reason}`);
   done({
     status: 200,
@@ -593,6 +611,16 @@ try {
         }
       }
     }
+  }
+
+  if (handled === false && isDidiShieldEndpoint(urlInfo)) {
+    const payload = parseMaybeJson(bodyToText(response.body) || '{}') || {};
+    handled = true;
+    finishJson(
+      'DiDi safety shield overlay emptied',
+      buildNoShieldPayload(payload),
+      'didi-shield-empty-1'
+    );
   }
 
   if (handled === false) {
