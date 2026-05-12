@@ -458,6 +458,33 @@ function patchWebxProductPageConfig(object, state) {
   }
 }
 
+function removeHostFromJsonArrayString(value, host, state) {
+  if (typeof value !== 'string' || value.indexOf(host) === -1) {
+    return value;
+  }
+  const parsed = parseMaybeJson(value);
+  if (!Array.isArray(parsed)) {
+    return value;
+  }
+  const filtered = parsed.filter((item) => stringValue(item).toLowerCase() !== host);
+  if (filtered.length === parsed.length) {
+    return value;
+  }
+  state.changed = true;
+  return JSON.stringify(filtered);
+}
+
+function patchKflowerHttpDnsConfig(object, state) {
+  const assign = object && object.assign;
+  const args = assign && assign.args;
+  if (!args || typeof args !== 'object') {
+    return;
+  }
+  for (const key of Object.keys(args)) {
+    args[key] = removeHostFromJsonArrayString(args[key], 'api.hongyibo.com.cn', state);
+  }
+}
+
 function patchHuaxiaozhuToggleObject(object, state) {
   if (!object || typeof object !== 'object' || Array.isArray(object)) {
     return;
@@ -468,6 +495,9 @@ function patchHuaxiaozhuToggleObject(object, state) {
   }
   if (name === 'webx_get_prod_page_conf') {
     patchWebxProductPageConfig(object, state);
+  }
+  if (name === 'HTTP_DNS_KFLOWER_PSNGER') {
+    patchKflowerHttpDnsConfig(object, state);
   }
   if (name === 'IsLaunchTaskEnable' || name === 'LaunchEnableTest') {
     patchJsonStringFlag(object, 'config', 'is_fast_ad', 0, state);
@@ -641,7 +671,7 @@ try {
       finishJson(
         'Huaxiaozhu startup/home popup toggles cleaned',
         cleaned,
-        'toggles-webx-map-clean-1'
+        'toggles-httpdns-api-clean-1'
       );
     } else {
       done({});
