@@ -139,6 +139,100 @@ function currentUrl() {
   return String((typeof $request !== 'undefined' && $request && $request.url) || '');
 }
 
+function parseUrl(url) {
+  const match = String(url || '').match(/^https?:\/\/([^/?#:]+)([^?#]*)(?:\?([^#]*))?/i);
+  if (!match) {
+    return { host: '', path: '', query: '' };
+  }
+  return {
+    host: match[1].toLowerCase(),
+    path: match[2] || '/',
+    query: match[3] || '',
+  };
+}
+
+function hasQueryValue(query, key, value) {
+  return new RegExp(`(?:^|&)${key}=${value}(?:&|$)`).test(String(query || ''));
+}
+
+function buildEmptyHeaders(baseHeaders, marker, contentType) {
+  const headers = cloneHeaders(baseHeaders);
+  deleteHeaderCaseInsensitive(headers, 'Content-Encoding');
+  deleteHeaderCaseInsensitive(headers, 'Content-Length');
+  deleteHeaderCaseInsensitive(headers, 'Transfer-Encoding');
+  setHeaderCaseInsensitive(headers, 'Cache-Control', 'no-store');
+  setHeaderCaseInsensitive(headers, 'Pragma', 'no-cache');
+  setHeaderCaseInsensitive(headers, 'Expires', '0');
+  if (contentType) {
+    setHeaderCaseInsensitive(headers, 'Content-Type', contentType);
+  }
+  setHeaderCaseInsensitive(headers, 'X-uBO-Huya', marker);
+  return headers;
+}
+
+function cleanPangolinPageAd(urlInfo) {
+  const isHuyaPangolin = hasQueryValue(urlInfo.query, 'aid', '5000546');
+  if (
+    isHuyaPangolin &&
+    /^api-access\.pangolin-sdk-toutiao1?\.com$/.test(urlInfo.host) &&
+    /^\/api\/ad\/union\/sdk\/(?:settings|stats\/batch)\/$/.test(urlInfo.path)
+  ) {
+    return {
+      status: 204,
+      body: '',
+      marker: 'huya-page-pangle-empty-1',
+      contentType: '',
+    };
+  }
+  if (
+    isHuyaPangolin &&
+    urlInfo.host === 'lf-cdn-tos.bytescm.com' &&
+    urlInfo.path === '/obj/static/ad/play-comp/playable-component-sdk/package.ugen.json'
+  ) {
+    return {
+      status: 200,
+      body: JSON.stringify({ name: 'play-component-sdk', version: '0', resources: [] }),
+      marker: 'huya-page-pangle-empty-1',
+      contentType: 'application/json; charset=utf-8',
+    };
+  }
+  if (
+    isHuyaPangolin &&
+    urlInfo.host === 'sf6-fe-tos.pglstatp-toutiao.com' &&
+    urlInfo.path === '/obj/ad-pattern/renderer/package.json'
+  ) {
+    return {
+      status: 200,
+      body: JSON.stringify({ name: 'ad-pattern-renderer', version: '0', resources: [], engines: {} }),
+      marker: 'huya-page-pangle-empty-1',
+      contentType: 'application/json; charset=utf-8',
+    };
+  }
+  if (
+    urlInfo.host === 'sf3-fe-tos.pglstatp-toutiao.com' &&
+    /^\/obj\/ad-pattern\/(?:tetris|renderer|static)\/.+\.js$/.test(urlInfo.path)
+  ) {
+    return {
+      status: 200,
+      body: '',
+      marker: 'huya-page-pangle-empty-1',
+      contentType: 'application/javascript; charset=utf-8',
+    };
+  }
+  if (
+    urlInfo.host === 'sf3-fe-tos.pglstatp-toutiao.com' &&
+    /^\/obj\/ad-pattern\/(?:renderer|static)\/.+\.html$/.test(urlInfo.path)
+  ) {
+    return {
+      status: 200,
+      body: '<!doctype html><html></html>',
+      marker: 'huya-page-pangle-empty-1',
+      contentType: 'text/html; charset=utf-8',
+    };
+  }
+  return null;
+}
+
 function isHuyaExappRequest(requestText) {
   const text = String(requestText || '');
   return /(?:^|&)posid=3026774105282411(?:&|$)/.test(text)
@@ -229,17 +323,31 @@ try {
   const requestText = bodyToText($request && $request.body);
   const responseText = bodyToText($response && $response.body);
   const url = currentUrl();
-  const body = /:\/\/us\.l\.qq\.com\/exapp(?:[?#]|$)/.test(url)
-    ? cleanGdtExappFill(requestText, responseText)
-    : cleanTangramUpdateSetting(requestText, responseText);
-
-  if (!body) {
-    done({});
-  } else {
+  const urlInfo = parseUrl(url);
+  const pageAd = cleanPangolinPageAd(urlInfo);
+  let handled = false;
+  if (pageAd) {
     done({
-      body,
-      headers: buildJsonHeaders($response && $response.headers, 'huya-splash-cache-nofill-1'),
+      status: pageAd.status,
+      body: pageAd.body,
+      headers: buildEmptyHeaders($response && $response.headers, pageAd.marker, pageAd.contentType),
     });
+    handled = true;
+  }
+
+  if (!handled) {
+    const body = /:\/\/us\.l\.qq\.com\/exapp(?:[?#]|$)/.test(url)
+      ? cleanGdtExappFill(requestText, responseText)
+      : cleanTangramUpdateSetting(requestText, responseText);
+
+    if (!body) {
+      done({});
+    } else {
+      done({
+        body,
+        headers: buildJsonHeaders($response && $response.headers, 'huya-splash-cache-nofill-1'),
+      });
+    }
   }
 } catch (error) {
   done({});
