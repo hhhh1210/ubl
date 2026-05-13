@@ -155,6 +155,18 @@ function hasQueryValue(query, key, value) {
   return new RegExp(`(?:^|&)${key}=${value}(?:&|$)`).test(String(query || ''));
 }
 
+function extractParam(text, key) {
+  const match = new RegExp(`(?:^|&)${key}=([^&]*)`).exec(String(text || ''));
+  if (!match) {
+    return '';
+  }
+  try {
+    return decodeURIComponent(match[1].replace(/\+/g, '%20'));
+  } catch (error) {
+    return match[1];
+  }
+}
+
 function buildEmptyHeaders(baseHeaders, marker, contentType) {
   const headers = cloneHeaders(baseHeaders);
   deleteHeaderCaseInsensitive(headers, 'Content-Encoding');
@@ -235,25 +247,39 @@ function cleanPangolinPageAd(urlInfo) {
 
 function isHuyaExappRequest(requestText) {
   const text = String(requestText || '');
-  return /(?:^|&)posid=3026774105282411(?:&|$)/.test(text)
+  return /(?:^|&)posid=(?:3026774105282411|3096015588382074|4076515691155523|6076318568786637)(?:&|$)/.test(text)
     && /(?:hostappid%22%3A%221112179873|hostappid"?\s*[:=]\s*"?1112179873|com\.yy\.kiwi)/i.test(text);
+}
+
+function isHuyaGdtSlot(slotId) {
+  return /^(?:3026774105282411|3096015588382074|4076515691155523|6076318568786637)$/.test(String(slotId || ''));
 }
 
 function cleanGdtExappFill(requestText, responseText) {
   const payload = JSON.parse(responseText || '{}');
-  const slot = payload && payload.data && payload.data['3026774105282411'];
-  if (!slot || typeof slot !== 'object') {
+  const data = payload && payload.data;
+  if (!data || typeof data !== 'object') {
     return null;
   }
   const hasRequestBody = String(requestText || '').length > 0;
-  if (hasRequestBody && !isHuyaExappRequest(requestText)) {
+  const requestSlot = extractParam(requestText, 'posid');
+  if (hasRequestBody && (!isHuyaExappRequest(requestText) || !isHuyaGdtSlot(requestSlot))) {
+    return null;
+  }
+  const slotIds = Object.keys(data).filter(isHuyaGdtSlot);
+  if (slotIds.length === 0) {
     return null;
   }
 
-  slot.ret = 0;
-  slot.msg = '';
-  slot.list = [];
-  slot.dr = slot.dr || 0;
+  for (const slotId of slotIds) {
+    const slot = data[slotId];
+    if (slot && typeof slot === 'object') {
+      slot.ret = 0;
+      slot.msg = '';
+      slot.list = [];
+      slot.dr = slot.dr || 0;
+    }
+  }
   payload.last_ads = {};
   payload.ret = 0;
   payload.rpt = 0;
@@ -293,6 +319,16 @@ function cleanTangramUpdateSetting(requestText, responseText) {
     setIfDifferent(sdk, 'cookieForLastAds', 0, changes);
     setIfDifferent(sdk, 'enableIdfaCache', 0, changes);
     setIfDifferent(sdk, 'maxCount', 0, changes);
+    setIfDifferent(sdk, 'stop', 1, changes);
+    setIfDifferent(sdk, 'iOSBannerPageUrl', '', changes);
+    setIfDifferent(sdk, 'iOSInterstitialPageUrl', '', changes);
+    setIfDifferent(sdk, 'tpl', '', changes);
+    setIfDifferent(sdk, 'mmaEnabled', 0, changes);
+    setIfDifferent(sdk, 'mmaConfigURL', '', changes);
+    setIfDifferent(sdk, 'miniCardSupport', 0, changes);
+    setIfDifferent(sdk, 'miniCardRef', '', changes);
+    setIfDifferent(sdk, 'miniCardList', '', changes);
+    setIfDifferent(sdk, 'inner_browser_on', 0, changes);
     setIfDifferent(sdk, 'native_loadad_count_limit', 0, changes);
     setIfDifferent(sdk, 'inter_loadad_count_limit', 0, changes);
     setIfDifferent(sdk, 'sscaad', 0, changes);
@@ -345,7 +381,7 @@ try {
     } else {
       done({
         body,
-        headers: buildJsonHeaders($response && $response.headers, 'huya-splash-cache-nofill-1'),
+        headers: buildJsonHeaders($response && $response.headers, 'huya-gdt-page-nofill-1'),
       });
     }
   }
