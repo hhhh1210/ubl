@@ -458,20 +458,56 @@ function patchWebxProductPageConfig(object, state) {
   }
 }
 
-function removeHostFromJsonArrayString(value, host, state) {
+const API_HOST_FOR_DOMAIN_MITM = 'api.hongyibo.com.cn';
+
+function isApiHostEntry(value, host) {
+  const text = stringValue(value).toLowerCase();
+  return text === host ||
+    text === `https://${host}` ||
+    text.indexOf(`${host}/*`) === 0;
+}
+
+function cleanHostRoutingValue(value, host, state) {
+  if (Array.isArray(value)) {
+    const out = [];
+    for (const item of value) {
+      if (isApiHostEntry(item, host)) {
+        state.changed = true;
+        continue;
+      }
+      out.push(cleanHostRoutingValue(item, host, state));
+    }
+    return out;
+  }
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const key of Object.keys(value)) {
+      const item = value[key];
+      if (typeof item === 'string' && isApiHostEntry(item, host)) {
+        state.changed = true;
+        continue;
+      }
+      out[key] = cleanHostRoutingValue(item, host, state);
+    }
+    return out;
+  }
+  return value;
+}
+
+function cleanJsonHostRoutingString(value, host, state) {
   if (typeof value !== 'string' || value.indexOf(host) === -1) {
     return value;
   }
   const parsed = parseMaybeJson(value);
-  if (!Array.isArray(parsed)) {
+  if (parsed === undefined) {
     return value;
   }
-  const filtered = parsed.filter((item) => stringValue(item).toLowerCase() !== host);
-  if (filtered.length === parsed.length) {
+  const before = JSON.stringify(parsed);
+  const cleaned = cleanHostRoutingValue(parsed, host, state);
+  if (JSON.stringify(cleaned) === before) {
     return value;
   }
-  state.changed = true;
-  return JSON.stringify(filtered);
+  return JSON.stringify(cleaned);
 }
 
 function patchKflowerHttpDnsConfig(object, state) {
@@ -481,7 +517,7 @@ function patchKflowerHttpDnsConfig(object, state) {
     return;
   }
   for (const key of Object.keys(args)) {
-    args[key] = removeHostFromJsonArrayString(args[key], 'api.hongyibo.com.cn', state);
+    args[key] = cleanJsonHostRoutingString(args[key], API_HOST_FOR_DOMAIN_MITM, state);
   }
 }
 
@@ -497,6 +533,9 @@ function patchHuaxiaozhuToggleObject(object, state) {
     patchWebxProductPageConfig(object, state);
   }
   if (name === 'HTTP_DNS_KFLOWER_PSNGER') {
+    patchKflowerHttpDnsConfig(object, state);
+  }
+  if (name === 'isUseHTTPDNS' || name === 'isEnableOKNetSwitcher') {
     patchKflowerHttpDnsConfig(object, state);
   }
   if (name === 'IsLaunchTaskEnable' || name === 'LaunchEnableTest') {
@@ -671,7 +710,7 @@ try {
       finishJson(
         'Huaxiaozhu startup/home popup toggles cleaned',
         cleaned,
-        'toggles-httpdns-api-clean-1'
+        'toggles-httpdns-api-clean-2'
       );
     } else {
       done({});
