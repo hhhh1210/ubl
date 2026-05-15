@@ -138,13 +138,21 @@ function isHuaxiaozhuShieldEndpoint(urlInfo) {
 }
 
 function isHuaxiaozhuActivityEndpoint(urlInfo) {
-  return urlInfo.host === 'res-new.hongyibo.com.cn' &&
-    urlInfo.path === '/resapi/activity/mget';
+  return (
+    urlInfo.host === 'res-new.hongyibo.com.cn' &&
+    urlInfo.path === '/resapi/activity/mget'
+  ) || (
+    urlInfo.host === 'res.hongyibo.com.cn' &&
+    (
+      urlInfo.path === '/resapi/activity/mget' ||
+      urlInfo.path === '/os/gs/resapi/activity/mget'
+    )
+  );
 }
 
 function isHuaxiaozhuBronzedoorEndpoint(urlInfo) {
   return urlInfo.host === 'api.hongyibo.com.cn' &&
-    /^\/gulfstream\/passenger-center\/v1\/other\/p(?:Data|Layout)$/.test(urlInfo.path);
+    /^\/gulfstream\/(?:passenger-center\/v1\/other\/(?:p(?:Data|Layout)|pGetKFlowerActivityInfo|pGetMarketingInfo|pGetKfUnfinishedMsg)|pre-sale\/v1\/other\/(?:pGetIndexInfo|pGetConfig\/kFlowerConfig)|api\/v1\/passenger\/pGetPanelConfig)$/.test(urlInfo.path);
 }
 
 function isHuaxiaozhuWebxNaEndpoint(urlInfo) {
