@@ -26,6 +26,18 @@ function setHeaderCaseInsensitive(headers, name, value) {
   headers[name] = value;
 }
 
+function getHeaderCaseInsensitive(headers, target) {
+  const lower = String(target).toLowerCase();
+  if (headers && typeof headers === 'object') {
+    for (const key of Object.keys(headers)) {
+      if (key.toLowerCase() === lower) {
+        return headers[key];
+      }
+    }
+  }
+  return '';
+}
+
 function bytesToText(bytes) {
   let text = '';
   for (let i = 0; i < bytes.length; i++) {
@@ -107,6 +119,10 @@ function isHuaxiaozhuGdtBody(body) {
 
 function isHuaxiaozhuGdtEndpoint(urlInfo) {
   return urlInfo.host === 'mi.gdt.qq.com' && urlInfo.path === '/server_bidding2';
+}
+
+function isHuaxiaozhuGdtLaunchEndpoint(urlInfo) {
+  return urlInfo.host === 'sdk.e.qq.com' && urlInfo.path === '/launch';
 }
 
 function isHuaxiaozhuMarkerEndpoint(urlInfo) {
@@ -235,6 +251,19 @@ function buildNoFillHeaders(baseHeaders, marker) {
   return headers;
 }
 
+function buildNoContentHeaders(baseHeaders, marker) {
+  const headers = cloneHeaders(baseHeaders);
+  deleteHeaderCaseInsensitive(headers, 'Content-Encoding');
+  deleteHeaderCaseInsensitive(headers, 'Content-Length');
+  deleteHeaderCaseInsensitive(headers, 'Transfer-Encoding');
+  setHeaderCaseInsensitive(headers, 'Cache-Control', 'no-store');
+  setHeaderCaseInsensitive(headers, 'Pragma', 'no-cache');
+  setHeaderCaseInsensitive(headers, 'Expires', '0');
+  setHeaderCaseInsensitive(headers, 'Content-Type', 'text/plain; charset=utf-8');
+  setHeaderCaseInsensitive(headers, 'X-uBO-Huaxiaozhu', marker);
+  return headers;
+}
+
 const APP_MARKER_KEY = 'ubo.huaxiaozhu.recent';
 const APP_MARKER_TTL_MS = 20000;
 
@@ -263,6 +292,10 @@ function hasRecentHuaxiaozhuMarker() {
   }
   const value = Number($persistentStore.read(APP_MARKER_KEY) || 0);
   return Number.isFinite(value) && value > 0 && nowMs() - value < APP_MARKER_TTL_MS;
+}
+
+function isGdtMobSdkRequest(request) {
+  return /GDTMobSDK/i.test(String(getHeaderCaseInsensitive(request && request.headers, 'User-Agent') || ''));
 }
 
 function buildNoShieldPayload(originalPayload) {
@@ -695,6 +728,16 @@ function finishJson(reason, value, marker) {
   });
 }
 
+function finishNoContent(reason, marker) {
+  const headers = buildNoContentHeaders($response && $response.headers, marker || 'no-content-1');
+  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
+  done({
+    status: 204,
+    headers,
+    body: '',
+  });
+}
+
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
   const urlInfo = parseUrl(request.url);
@@ -739,6 +782,23 @@ try {
       markHuaxiaozhuApp('Huaxiaozhu GDT bidding marker refreshed');
     }
     done({});
+    handled = true;
+  }
+
+  if (
+    handled === false &&
+    /(?:^|&)phase=gdt-launch(?:&|$)/.test(argument) &&
+    isHuaxiaozhuGdtLaunchEndpoint(urlInfo)
+  ) {
+    if (hasRecentHuaxiaozhuMarker() || isGdtMobSdkRequest(request)) {
+      markHuaxiaozhuApp('Huaxiaozhu GDT launch marker refreshed');
+      finishNoContent(
+        'Tencent GDT Huaxiaozhu launch response emptied',
+        'gdt-launch-empty-1'
+      );
+    } else {
+      done({});
+    }
     handled = true;
   }
 
