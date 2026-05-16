@@ -537,7 +537,17 @@ function patchWebxProductPageConfig(object, state) {
   }
 }
 
-const API_HOST_FOR_DOMAIN_MITM = 'api.hongyibo.com.cn';
+const HOSTS_FOR_DOMAIN_MITM = [
+  'api.hongyibo.com.cn',
+  'res.hongyibo.com.cn',
+  'res.hongyibo.com',
+  'res-new.hongyibo.com.cn',
+  'res-new.hongyibo.com',
+];
+
+const WEBX_NA_CLOSE_TOGGLE_NAMES = new Set([
+  'Webx_nasdk_close_cover_request',
+]);
 
 function isApiHostEntry(value, host) {
   const text = stringValue(value).toLowerCase();
@@ -601,7 +611,9 @@ function patchKflowerHttpDnsConfig(object, state) {
     return;
   }
   for (const key of Object.keys(args)) {
-    args[key] = cleanJsonHostRoutingString(args[key], API_HOST_FOR_DOMAIN_MITM, state);
+    for (const host of HOSTS_FOR_DOMAIN_MITM) {
+      args[key] = cleanJsonHostRoutingString(args[key], host, state);
+    }
   }
 }
 
@@ -637,6 +649,16 @@ function patchHuaxiaozhuToggleObject(object, state) {
   if (BAD_TOGGLE_NAMES.has(name)) {
     if (object.allow !== false) {
       object.allow = false;
+      state.changed = true;
+    }
+    if (object.assign !== undefined) {
+      delete object.assign;
+      state.changed = true;
+    }
+  }
+  if (WEBX_NA_CLOSE_TOGGLE_NAMES.has(name)) {
+    if (object.allow !== true) {
+      object.allow = true;
       state.changed = true;
     }
     if (object.assign !== undefined) {
