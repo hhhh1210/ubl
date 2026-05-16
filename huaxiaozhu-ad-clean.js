@@ -547,6 +547,8 @@ const HOSTS_FOR_DOMAIN_MITM = [
 
 const WEBX_NA_CLOSE_TOGGLE_NAMES = new Set([
   'Webx_nasdk_close_cover_request',
+  'Webx_nasdk_close_launch_enter_params',
+  'Webx_nasdk_close_page_did_show',
 ]);
 
 function isApiHostEntry(value, host) {
