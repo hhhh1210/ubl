@@ -768,6 +768,39 @@ function finishNoContent(reason, marker) {
   });
 }
 
+function finishDirectJson(reason, value, marker) {
+  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
+  done({
+    response: {
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-store',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Content-Type': 'text/json; charset=utf-8',
+        'X-uBO-Huaxiaozhu': marker || 'direct-json-1',
+      },
+      body: JSON.stringify(value),
+    },
+  });
+}
+
+function finishDirectNoContent(reason, marker) {
+  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
+  done({
+    response: {
+      status: 204,
+      headers: {
+        'Cache-Control': 'no-store',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'X-uBO-Huaxiaozhu': marker || 'direct-no-content-1',
+      },
+      body: '',
+    },
+  });
+}
+
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
   const urlInfo = parseUrl(request.url);
@@ -810,8 +843,31 @@ try {
   ) {
     if (isHuaxiaozhuGdtBody(request.body)) {
       markHuaxiaozhuApp('Huaxiaozhu GDT bidding marker refreshed');
+      finishDirectJson(
+        'Tencent GDT Huaxiaozhu bidding request short-circuited with no-fill',
+        buildNoFillGdtPayload(request.body),
+        'gdt-request-fast-nofill-1'
+      );
+    } else {
+      done({});
     }
-    done({});
+    handled = true;
+  }
+
+  if (
+    handled === false &&
+    /(?:^|&)phase=gdt-launch-request(?:&|$)/.test(argument) &&
+    isHuaxiaozhuGdtLaunchEndpoint(urlInfo)
+  ) {
+    if (hasRecentHuaxiaozhuMarker() || isGdtMobSdkRequest(request)) {
+      markHuaxiaozhuApp('Huaxiaozhu GDT launch marker refreshed');
+      finishDirectNoContent(
+        'Tencent GDT Huaxiaozhu launch request short-circuited',
+        'gdt-launch-fast-empty-1'
+      );
+    } else {
+      done({});
+    }
     handled = true;
   }
 
