@@ -101,11 +101,6 @@ function hasRecentHupuMarker() {
   }
 }
 
-function isHupuBody(body) {
-  const text = bodyToText(body);
-  return HUPU_BUNDLE_RE.test(text) || HUPU_BUNDLE_RE.test(decodeURIComponentSafe(text));
-}
-
 function isHupuConfigEndpoint(urlInfo) {
   return urlInfo.host === 'goblin.hupu.com' && /\/config\/app$/i.test(urlInfo.path);
 }
@@ -397,30 +392,6 @@ try {
     patchHupuThemisValue(payload, state);
     if (state.changed) {
       finishJson('Hupu Themis ad flags disabled', payload, 'themis-ad-flags-1');
-    } else {
-      done({});
-    }
-    handled = true;
-  }
-
-  if (
-    handled === false &&
-    /(?:^|&)phase=gdt-mview(?:&|$)/.test(argument) &&
-    isHupuGdtMviewEndpoint(urlInfo)
-  ) {
-    if (isHupuGdtMviewBody(request.body) || hasRecentHupuMarker()) {
-      markHupuApp('Hupu GDT mview marker refreshed');
-      let payload = {};
-      try {
-        payload = JSON.parse(bodyToText(response.body) || '{}');
-      } catch (error) {
-        payload = {};
-      }
-      finishJson(
-        'Hupu GDT mview response replaced with no-fill',
-        buildGdtNoFillPayload(request.body, payload),
-        'gdt-mview-nofill-1'
-      );
     } else {
       done({});
     }
