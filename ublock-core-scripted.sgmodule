@@ -119,6 +119,6 @@ hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsupe
 ^https?:\/\/mmbiz\.qpic\.cn\/sz_mmbiz_jpg\/G9HRUGtypQtq30uAH5nTGfLasczMTudyyrIZibkdU8ZmIaGMQIHL9ZvPaZyGBCPCotOC8SicB9MEOvWC9GhW40dXN4lF4Q6asY7cOxtia13ezM\/640(?:\?.*)?$ data-type=tiny-gif status-code=200
 ^https?:\/\/mmbiz\.qpic\.cn\/sz_mmbiz_jpg\/PMOTRuOINwnuWib1tnO4jIBEQNLrALgX0Ean1N8pGic9zqssicKGDcsoaiaIe1lD9ODgMYt9G47icAgnHiabjOVicTrT9mbFdFL1KuJbialEb3MXD7c\/300(?:\?.*)?$ data-type=tiny-gif status-code=200
 ^https?:\/\/mmbiz\.qpic\.cn\/sz_mmbiz_jpg\/PMOTRuOINwn3mNsAH0QD9MWD9cN8NhxyFQOnGibRvhs3PKjna9EMHWQ60ibFwCUPhqVB9S9RK3bSKianPB4dDibqP9ia7uphevD6TYrxTLziaHNNI\/640(?:\?.*)?$ data-type=tiny-gif status-code=200
-^https?:\/\/(?:wximg|wxsnsdythumb)\.wxs\.qq\.com\/\d+\/\d+\/snscosdownload\/[^?#]+(?:\?(?=[^#]*(?:^|&)posid=4031112715115510(?:&|$))[^#]*)?$ data-type=tiny-gif status-code=200
+^https?:\/\/(?:wximg|wxsnsdythumb)\.wxs\.qq\.com\/\d+\/\d+\/snscosdownload\/[^?#]+(?:\?(?=[^#]*\bposid=4031112715115510(?:&|$))[^#]*)?$ data-type=tiny-gif status-code=200
 ^https?:\/\/(?:wximg|wxsnsdythumb)\.wxs\.qq\.com\/\d+\/\d+\/snscosdownload\/[^?#]*0000008d00004eec(?:\?.*)?$ data-type=tiny-gif status-code=200
 ^https?:\/\/ad\.wx\.com(?::12638)?\/cgi-bin\/(?:exposure|click)(?:\?.*)?$ data-type=text data="" status-code=204
