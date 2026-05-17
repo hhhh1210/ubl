@@ -377,6 +377,7 @@ const BAD_TOGGLE_NAMES = new Set([
   'kf_operation_resource_config',
   'kf_marketing_dialog_toggle',
   'kf_passenger_native_resource_sdk_init',
+  'kf_passenger_webx_nasdk_control',
   'kf_res_popup_check_show_control_ios',
   'kf_native_tt_ad',
 ]);
