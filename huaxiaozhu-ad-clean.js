@@ -319,8 +319,8 @@ function buildNoShieldPayload(originalPayload) {
 }
 
 const BAD_ACTIVITY_KEY_RE = /^(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common)$/i;
-const BAD_ACTIVITY_COMPONENT_RE = /^(?:homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common|KFResourceServiceCom|KFTravelPopupCom)$/i;
-const BAD_ACTIVITY_VALUE_RE = /(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common|KFResourceServiceCom|KFTravelPopupCom|youlianghui_external_commercial_ad|staticImage|static_icon_120_120|kf_multi_image_1|kf_home_core_left_title_image|kf_home_core_right_up_title_image|kf_home_core_steps_upgrade_fission|kf_home_other_title_image|kf_title_image_new|upgrade-fission|prod\.huaxz\.cn\/imk-kf-index|imk-kf-index|home_pop_manual|channel_id=1300000014|entrance_channel=1300000014|img-ys011\.didistatic\.com\/static\/ad_oss\/)/i;
+const BAD_ACTIVITY_COMPONENT_RE = /^(?:homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common|KFHotTipCom|KFActivityInfoCom|KFResourceServiceCom|KFTravelPopupCom|DADForceShowActivityCenterView|DPSPopupWindow)$/i;
+const BAD_ACTIVITY_VALUE_RE = /(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common|KFHotTipCom|KFActivityInfoCom|KFResourceServiceCom|KFTravelPopupCom|DADForceShowActivityCenterView|DPSPopupWindow|DAD_force_btn_close|advertise_logo|ad_jump_detail|youlianghui_external_commercial_ad|staticImage|static_icon_120_120|kf_multi_image_1|kf_home_core_left_title_image|kf_home_core_right_up_title_image|kf_home_core_steps_upgrade_fission|kf_home_other_title_image|kf_title_image_new|upgrade-fission|prod\.huaxz\.cn\/imk-kf-index|imk-kf-index|home_pop_manual|channel_id=1300000014|entrance_channel=1300000014|img-ys011\.didistatic\.com\/static\/ad_oss\/)/i;
 const BAD_ACTIVITY_IDS = {
   '14': true,
   '15': true,
@@ -333,12 +333,17 @@ const BAD_ACTIVITY_IDS = {
   '620': true,
 };
 const BAD_TRAVEL_COMPONENT_IDS = {
+  '10005': true,
+  '10006': true,
   '14013': true,
   '15004': true,
 };
 
 const BAD_TOGGLE_NAMES = new Set([
+  'HTTP_DNS_KFLOWER_PSNGER',
   'launch_advertising_display_interval',
+  'isUseHTTPDNS',
+  'isUseSocketHTTPDNS',
   'kf_home_bronzedoor_enable',
   'kf_hummer_discount_retain_popup',
   'kf_hummer_end_marketing_pkg',
@@ -418,6 +423,8 @@ function activityItemText(item) {
     item.component_name,
     item.componentName,
     item.cname,
+    item.popup_type,
+    item.popupType,
     item.desc,
     item.api_tpl_name,
     item.apiTplName,
