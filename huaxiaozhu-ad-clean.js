@@ -12,7 +12,7 @@ function cloneHeaders(headers) {
   return out;
 }
 
-function deleteHeaderCaseInsensitive(headers, target) {
+function deleteHeader(headers, target) {
   const lower = String(target).toLowerCase();
   for (const key of Object.keys(headers)) {
     if (key.toLowerCase() === lower) {
@@ -21,29 +21,30 @@ function deleteHeaderCaseInsensitive(headers, target) {
   }
 }
 
-function setHeaderCaseInsensitive(headers, name, value) {
-  deleteHeaderCaseInsensitive(headers, name);
+function setHeader(headers, name, value) {
+  deleteHeader(headers, name);
   headers[name] = value;
 }
 
-function getHeaderCaseInsensitive(headers, target) {
+function getHeader(headers, target) {
   const lower = String(target).toLowerCase();
-  if (headers && typeof headers === 'object') {
-    for (const key of Object.keys(headers)) {
-      if (key.toLowerCase() === lower) {
-        return headers[key];
-      }
+  if (!headers || typeof headers !== 'object') {
+    return '';
+  }
+  for (const key of Object.keys(headers)) {
+    if (key.toLowerCase() === lower) {
+      return headers[key];
     }
   }
   return '';
 }
 
 function bytesToText(bytes) {
-  let text = '';
+  let out = '';
   for (let i = 0; i < bytes.length; i++) {
-    text += String.fromCharCode(bytes[i] & 0xff);
+    out += String.fromCharCode(bytes[i] & 0xff);
   }
-  return text;
+  return out;
 }
 
 function bodyToText(body) {
@@ -64,7 +65,7 @@ function bodyToText(body) {
   return '';
 }
 
-function decodeURIComponentSafe(text) {
+function decodeSafe(text) {
   try {
     return decodeURIComponent(String(text || '').replace(/\+/g, ' '));
   } catch (error) {
@@ -77,11 +78,7 @@ function parseUrl(url) {
   if (!match) {
     return { host: '', path: '', query: '' };
   }
-  return {
-    host: match[1].toLowerCase(),
-    path: match[2] || '/',
-    query: match[3] || '',
-  };
+  return { host: match[1].toLowerCase(), path: match[2] || '/', query: match[3] || '' };
 }
 
 function removeQueryParam(url, key) {
@@ -94,300 +91,19 @@ function removeQueryParam(url, key) {
     return source;
   }
   const base = beforeHash.slice(0, queryIndex);
-  const query = beforeHash.slice(queryIndex + 1);
   const kept = [];
-  for (const part of query.split('&')) {
+  for (const part of beforeHash.slice(queryIndex + 1).split('&')) {
     if (!part) {
       continue;
     }
-    const name = decodeURIComponentSafe(part.split('=')[0]);
-    if (name !== key) {
+    if (decodeSafe(part.split('=')[0]) !== key) {
       kept.push(part);
     }
   }
   return base + (kept.length ? `?${kept.join('&')}` : '') + hash;
 }
 
-function isHuaxiaozhuGdtBody(body) {
-  const text = bodyToText(body);
-  if (/com\.huaxiaozhu\.rider|c_pkgname=|appid=1210818176|posid=8156967880562298/i.test(text)) {
-    return /com\.huaxiaozhu\.rider|appid=1210818176|posid=8156967880562298/i.test(text);
-  }
-  const decoded = decodeURIComponentSafe(text);
-  return /com\.huaxiaozhu\.rider|"appid"\s*:\s*"1210818176"|posid=8156967880562298/i.test(decoded);
-}
-
-function isHuaxiaozhuGdtEndpoint(urlInfo) {
-  return urlInfo.host === 'mi.gdt.qq.com' && urlInfo.path === '/server_bidding2';
-}
-
-function isHuaxiaozhuGdtLaunchEndpoint(urlInfo) {
-  return urlInfo.host === 'sdk.e.qq.com' && urlInfo.path === '/launch';
-}
-
-function isHuaxiaozhuMarkerEndpoint(urlInfo) {
-  return urlInfo.host === 'omgup.hongyibo.com.cn' && (
-    urlInfo.path === '/syncconfig/ios/com.huaxiaozhu.rider' ||
-    urlInfo.path === '/api/realtime/stat/ios'
-  );
-}
-
-function isHuaxiaozhuShieldEndpoint(urlInfo) {
-  return urlInfo.host === 'sec-guard.hongyibo.com.cn' &&
-    urlInfo.path === '/api/guard/psg/v2/getShieldStatus';
-}
-
-function isHuaxiaozhuActivityEndpoint(urlInfo) {
-  return (
-    urlInfo.host === 'res-new.hongyibo.com.cn' &&
-    urlInfo.path === '/resapi/activity/mget'
-  ) || (
-    urlInfo.host === 'res.hongyibo.com.cn' &&
-    (
-      urlInfo.path === '/resapi/activity/mget' ||
-      urlInfo.path === '/os/gs/resapi/activity/mget'
-    )
-  );
-}
-
-function isHuaxiaozhuBronzedoorEndpoint(urlInfo) {
-  return urlInfo.host === 'api.hongyibo.com.cn' &&
-    /^\/gulfstream\/(?:passenger-center\/v1\/other\/(?:p(?:Data|Layout)|pGetKFlowerActivityInfo|pGetMarketingInfo|pGetKfUnfinishedMsg)|pre-sale\/v1\/other\/(?:pGetIndexInfo|pGetConfig\/kFlowerConfig)|api\/v1\/passenger\/pGetPanelConfig)$/.test(urlInfo.path);
-}
-
-function isHuaxiaozhuWebxNaEndpoint(urlInfo) {
-  return urlInfo.host === 'api.didi.cn' &&
-    urlInfo.path === '/webx/na/product/init';
-}
-
-function isHuaxiaozhuToggleEndpoint(urlInfo) {
-  return urlInfo.host === 'as.hongyibo.com.cn' &&
-    urlInfo.path === '/ep/as/toggles';
-}
-
-function extractParam(text, key) {
-  const match = new RegExp(`(?:^|&)${key}=([^&]*)`).exec(String(text || ''));
-  return match ? decodeURIComponentSafe(match[1]) : '';
-}
-
-function extractGdtSlotId(body, payload) {
-  const bodyText = bodyToText(body);
-  const posid = extractParam(bodyText, 'posid');
-  if (posid) {
-    return posid;
-  }
-  const data = payload && payload.data;
-  if (data && typeof data === 'object') {
-    const keys = Object.keys(data);
-    if (keys.length !== 0) {
-      return keys[0];
-    }
-  }
-  return '8156967880562298';
-}
-
-const DEFAULT_GDT_SLOT_META = {
-  cfg: {
-    playcfg: {},
-    playmod: 1,
-  },
-  ctrl_config: {
-    app: {
-      acr_cfg: '{"1":0,"2":4,"3":1,"4":1,"n":6,"t":4}',
-    },
-  },
-  dr: 0,
-  is_encrypted: 0,
-};
-
-function clonePlainObject(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return undefined;
-  }
-  const out = {};
-  for (const key of Object.keys(value)) {
-    out[key] = value[key];
-  }
-  return out;
-}
-
-function buildNoAdSlot(originalSlot) {
-  const slot = {};
-  const cfg = clonePlainObject(originalSlot && originalSlot.cfg) || DEFAULT_GDT_SLOT_META.cfg;
-  const ctrlConfig = clonePlainObject(originalSlot && originalSlot.ctrl_config) || DEFAULT_GDT_SLOT_META.ctrl_config;
-
-  slot.cfg = cfg;
-  slot.ctrl_config = ctrlConfig;
-  slot.dr = originalSlot && originalSlot.dr !== undefined ? originalSlot.dr : DEFAULT_GDT_SLOT_META.dr;
-  slot.is_encrypted = originalSlot && originalSlot.is_encrypted !== undefined
-    ? originalSlot.is_encrypted
-    : DEFAULT_GDT_SLOT_META.is_encrypted;
-  slot.list = [];
-  slot.msg = '';
-  slot.ret = 0;
-  return slot;
-}
-
-function buildNoFillGdtPayload(body, originalPayload) {
-  const slotId = extractGdtSlotId(body, originalPayload);
-  const payload = {
-    ret: 0,
-    msg: '',
-    data: {},
-    ip_ping_url: '',
-    last_ads: {},
-    reqinterval: 1,
-  };
-  if (originalPayload && originalPayload.seq !== undefined) {
-    payload.seq = originalPayload.seq;
-  }
-  const originalSlot = originalPayload && originalPayload.data && originalPayload.data[slotId];
-  payload.data[slotId] = buildNoAdSlot(originalSlot);
-  return payload;
-}
-
-function buildNoFillHeaders(baseHeaders, marker) {
-  const headers = cloneHeaders(baseHeaders);
-  deleteHeaderCaseInsensitive(headers, 'Content-Encoding');
-  deleteHeaderCaseInsensitive(headers, 'Content-Length');
-  deleteHeaderCaseInsensitive(headers, 'Transfer-Encoding');
-  setHeaderCaseInsensitive(headers, 'Cache-Control', 'no-store');
-  setHeaderCaseInsensitive(headers, 'Pragma', 'no-cache');
-  setHeaderCaseInsensitive(headers, 'Expires', '0');
-  setHeaderCaseInsensitive(headers, 'Content-Type', 'text/json; charset=utf-8');
-  setHeaderCaseInsensitive(headers, 'X-uBO-Huaxiaozhu', marker);
-  return headers;
-}
-
-function buildNoContentHeaders(baseHeaders, marker) {
-  const headers = cloneHeaders(baseHeaders);
-  deleteHeaderCaseInsensitive(headers, 'Content-Encoding');
-  deleteHeaderCaseInsensitive(headers, 'Content-Length');
-  deleteHeaderCaseInsensitive(headers, 'Transfer-Encoding');
-  setHeaderCaseInsensitive(headers, 'Cache-Control', 'no-store');
-  setHeaderCaseInsensitive(headers, 'Pragma', 'no-cache');
-  setHeaderCaseInsensitive(headers, 'Expires', '0');
-  setHeaderCaseInsensitive(headers, 'Content-Type', 'text/plain; charset=utf-8');
-  setHeaderCaseInsensitive(headers, 'X-uBO-Huaxiaozhu', marker);
-  return headers;
-}
-
-const APP_MARKER_KEY = 'ubo.huaxiaozhu.recent';
-const APP_MARKER_TTL_MS = 20000;
-
-function nowMs() {
-  return Date.now ? Date.now() : new Date().getTime();
-}
-
-function hasPersistentStore() {
-  return typeof $persistentStore === 'object' &&
-    $persistentStore !== null &&
-    typeof $persistentStore.read === 'function' &&
-    typeof $persistentStore.write === 'function';
-}
-
-function markHuaxiaozhuApp(reason) {
-  if (!hasPersistentStore()) {
-    return;
-  }
-  $persistentStore.write(String(nowMs()), APP_MARKER_KEY);
-  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
-}
-
-function hasRecentHuaxiaozhuMarker() {
-  if (!hasPersistentStore()) {
-    return false;
-  }
-  const value = Number($persistentStore.read(APP_MARKER_KEY) || 0);
-  return Number.isFinite(value) && value > 0 && nowMs() - value < APP_MARKER_TTL_MS;
-}
-
-function isGdtMobSdkRequest(request) {
-  return /GDTMobSDK/i.test(String(getHeaderCaseInsensitive(request && request.headers, 'User-Agent') || ''));
-}
-
-function buildNoShieldPayload(originalPayload) {
-  const payload = originalPayload && typeof originalPayload === 'object' && !Array.isArray(originalPayload)
-    ? originalPayload
-    : { errno: 0, errmsg: '' };
-  if (!payload.data || typeof payload.data !== 'object' || Array.isArray(payload.data)) {
-    payload.data = {};
-  }
-  payload.data.dashboardLink = '';
-  payload.data.shieldInfo = [];
-  return payload;
-}
-
-const BAD_ACTIVITY_KEY_RE = /^(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common)$/i;
-const BAD_ACTIVITY_COMPONENT_RE = /^(?:homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common|KFHotTipCom|KFActivityInfoCom|KFResourceServiceCom|KFTravelPopupCom|DADForceShowActivityCenterView|DPSPopupWindow)$/i;
-const BAD_ACTIVITY_VALUE_RE = /(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common|KFHotTipCom|KFActivityInfoCom|KFResourceServiceCom|KFTravelPopupCom|DADForceShowActivityCenterView|DPSPopupWindow|DAD_force_btn_close|advertise_logo|ad_jump_detail|youlianghui_external_commercial_ad|staticImage|static_icon_120_120|kf_multi_image_1|kf_home_core_left_title_image|kf_home_core_right_up_title_image|kf_home_core_steps_upgrade_fission|kf_home_other_title_image|kf_title_image_new|upgrade-fission|prod\.huaxz\.cn\/imk-kf-index|imk-kf-index|home_pop_manual|channel_id=1300000014|entrance_channel=1300000014|img-ys011\.didistatic\.com\/static\/ad_oss\/)/i;
-const BAD_ACTIVITY_IDS = {
-  '14': true,
-  '15': true,
-  '416': true,
-  '428': true,
-  '434': true,
-  '436': true,
-  '454': true,
-  '590': true,
-  '620': true,
-};
-const BAD_TRAVEL_COMPONENT_IDS = {
-  '10005': true,
-  '10006': true,
-  '14013': true,
-  '15004': true,
-};
-
-const BAD_TOGGLE_NAMES = new Set([
-  'HTTP_DNS_KFLOWER_PSNGER',
-  'launch_advertising_display_interval',
-  'isUseHTTPDNS',
-  'isUseSocketHTTPDNS',
-  'kf_home_bronzedoor_enable',
-  'kf_hummer_discount_retain_popup',
-  'kf_hummer_end_marketing_pkg',
-  'kf_hummer_flower_coin_popup',
-  'kf_hummer_home_top_remind_pop',
-  'kf_hummer_home_communicate_card',
-  'kf_hummer_home_communicate_card_test',
-  'kf_hummer_inservice_communicate_cards',
-  'kf_hummer_inservice_communicate_cards_test',
-  'kf_hummer_onservice_im_pop',
-  'kf_inservice_safety_report_popup',
-  'kf_wait_pick_up_safety_dialog',
-  'kf_wait_pick_up_safety_dialog_test',
-  'kf_sfc_inservice_dialog',
-  'kf_sfc_driver_invite_casper',
-  'kf_sfc_travel_alert_driver_card_casper',
-  'kf_sfc_home_communicate_casper',
-  'kf_sfc_home_kingkong_casper',
-  'kf_dj_home_communicate',
-  'kf_dj_estimate_communicate',
-  'kf_dj_estimate_communicate_casper',
-  'kf_estimate_communicate',
-  'kf_estimate_communicate_test',
-  'kf_end_communicate',
-  'kf_dj_inservice_driver_dialog',
-  'kf_djcar_cancel_page_view',
-  'kf_djcar_end_page_view',
-  'kf_hummer_member_cards',
-  'kf_hummer_sfc_estimate_communicate',
-  'kf_hummer_sfc_wait_orderinfo',
-  'kf_activity_show_launchvideo_close_delay',
-  'kf_activity_show_launchvideo',
-  'kf_activity_resource_config',
-  'kf_home_popup_req_remove_city',
-  'kf_hummer_right_upgrade_dialog',
-  'kf_operation_resource_config',
-  'kf_marketing_dialog_toggle',
-  'kf_passenger_native_resource_sdk_init',
-  'kf_passenger_webx_nasdk_control',
-  'kf_res_popup_check_show_control_ios',
-  'kf_native_tt_ad',
-]);
-
-function parseMaybeJson(text) {
+function parseJson(text) {
   try {
     return JSON.parse(text);
   } catch (error) {
@@ -408,7 +124,231 @@ function stringValue(value) {
   return '';
 }
 
-function activityItemText(item) {
+function buildHeaders(baseHeaders, marker, contentType) {
+  const headers = cloneHeaders(baseHeaders);
+  deleteHeader(headers, 'Content-Encoding');
+  deleteHeader(headers, 'Content-Length');
+  deleteHeader(headers, 'Transfer-Encoding');
+  setHeader(headers, 'Cache-Control', 'no-store');
+  setHeader(headers, 'Pragma', 'no-cache');
+  setHeader(headers, 'Expires', '0');
+  if (contentType) {
+    setHeader(headers, 'Content-Type', contentType);
+  }
+  setHeader(headers, 'X-uBO-Huaxiaozhu', marker);
+  return headers;
+}
+
+function finishJson(reason, value, marker) {
+  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
+  done({
+    status: 200,
+    headers: buildHeaders($response && $response.headers, marker, 'application/json; charset=utf-8'),
+    body: JSON.stringify(value),
+  });
+}
+
+function finishNoContent(reason, marker) {
+  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
+  done({
+    status: 204,
+    headers: buildHeaders($response && $response.headers, marker, 'text/plain; charset=utf-8'),
+    body: '',
+  });
+}
+
+function finishDirectJson(reason, value, marker) {
+  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
+  done({
+    response: {
+      status: 200,
+      headers: buildHeaders({}, marker, 'application/json; charset=utf-8'),
+      body: JSON.stringify(value),
+    },
+  });
+}
+
+function finishDirectNoContent(reason, marker) {
+  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
+  done({
+    response: {
+      status: 204,
+      headers: buildHeaders({}, marker, 'text/plain; charset=utf-8'),
+      body: '',
+    },
+  });
+}
+
+const APP_MARKER_KEY = 'ubo.huaxiaozhu.recent';
+const APP_MARKER_TTL_MS = 20000;
+
+function nowMs() {
+  return Date.now ? Date.now() : new Date().getTime();
+}
+
+function hasStore() {
+  return typeof $persistentStore === 'object' &&
+    $persistentStore !== null &&
+    typeof $persistentStore.read === 'function' &&
+    typeof $persistentStore.write === 'function';
+}
+
+function markApp(reason) {
+  if (hasStore()) {
+    $persistentStore.write(String(nowMs()), APP_MARKER_KEY);
+  }
+  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
+}
+
+function hasRecentAppMarker() {
+  if (!hasStore()) {
+    return false;
+  }
+  const value = Number($persistentStore.read(APP_MARKER_KEY) || 0);
+  return Number.isFinite(value) && value > 0 && nowMs() - value < APP_MARKER_TTL_MS;
+}
+
+function isMarkerEndpoint(urlInfo) {
+  return urlInfo.host === 'omgup.hongyibo.com.cn' &&
+    (
+      urlInfo.path === '/syncconfig/ios/com.huaxiaozhu.rider' ||
+      urlInfo.path === '/api/realtime/stat/ios'
+    );
+}
+
+function isToggleEndpoint(urlInfo) {
+  return urlInfo.host === 'as.hongyibo.com.cn' && urlInfo.path === '/ep/as/toggles';
+}
+
+function isActivityEndpoint(urlInfo) {
+  return (
+    urlInfo.host === 'res-new.hongyibo.com.cn' &&
+    urlInfo.path === '/resapi/activity/mget'
+  ) || (
+    urlInfo.host === 'res.hongyibo.com.cn' &&
+    (
+      urlInfo.path === '/resapi/activity/mget' ||
+      urlInfo.path === '/os/gs/resapi/activity/mget'
+    )
+  );
+}
+
+function isPDataEndpoint(urlInfo) {
+  return urlInfo.host === 'api.hongyibo.com.cn' &&
+    /^\/gulfstream\/(?:passenger-center\/v1\/other\/(?:p(?:Data|Layout)|pGetKFlowerActivityInfo|pGetMarketingInfo|pGetKfUnfinishedMsg)|pre-sale\/v1\/other\/(?:pGetIndexInfo|pGetConfig\/kFlowerConfig)|api\/v1\/passenger\/pGetPanelConfig)$/.test(urlInfo.path);
+}
+
+function isShieldEndpoint(urlInfo) {
+  return urlInfo.host === 'sec-guard.hongyibo.com.cn' &&
+    urlInfo.path === '/api/guard/psg/v2/getShieldStatus';
+}
+
+function isGdtBiddingEndpoint(urlInfo) {
+  return urlInfo.host === 'mi.gdt.qq.com' && urlInfo.path === '/server_bidding2';
+}
+
+function isGdtLaunchEndpoint(urlInfo) {
+  return urlInfo.host === 'sdk.e.qq.com' && urlInfo.path === '/launch';
+}
+
+function isHuaxiaozhuGdtBody(body) {
+  const text = bodyToText(body);
+  if (/com\.huaxiaozhu\.rider|appid=1210818176|posid=8156967880562298/i.test(text)) {
+    return true;
+  }
+  return /com\.huaxiaozhu\.rider|"appid"\s*:\s*"1210818176"|posid=8156967880562298/i.test(decodeSafe(text));
+}
+
+function isGdtSdkRequest(request) {
+  return /GDTMobSDK/i.test(String(getHeader(request && request.headers, 'User-Agent') || ''));
+}
+
+function extractParam(text, key) {
+  const match = new RegExp(`(?:^|&)${key}=([^&]*)`).exec(String(text || ''));
+  return match ? decodeSafe(match[1]) : '';
+}
+
+function gdtSlotId(body, payload) {
+  const posid = extractParam(bodyToText(body), 'posid');
+  if (posid) {
+    return posid;
+  }
+  const data = payload && payload.data;
+  const keys = data && typeof data === 'object' ? Object.keys(data) : [];
+  return keys[0] || '8156967880562298';
+}
+
+function noFillGdtPayload(body, originalPayload) {
+  const slotId = gdtSlotId(body, originalPayload);
+  const originalSlot = originalPayload && originalPayload.data && originalPayload.data[slotId];
+  return {
+    ret: 0,
+    msg: '',
+    data: {
+      [slotId]: {
+        cfg: originalSlot && originalSlot.cfg ? originalSlot.cfg : { playcfg: {}, playmod: 1 },
+        ctrl_config: originalSlot && originalSlot.ctrl_config ? originalSlot.ctrl_config : { app: {} },
+        dr: originalSlot && originalSlot.dr !== undefined ? originalSlot.dr : 0,
+        is_encrypted: originalSlot && originalSlot.is_encrypted !== undefined ? originalSlot.is_encrypted : 0,
+        list: [],
+        msg: '',
+        ret: 0,
+      },
+    },
+    ip_ping_url: '',
+    last_ads: {},
+    reqinterval: 1,
+  };
+}
+
+function noShieldPayload(originalPayload) {
+  const payload = originalPayload && typeof originalPayload === 'object' && !Array.isArray(originalPayload)
+    ? originalPayload
+    : { errno: 0, errmsg: '' };
+  if (!payload.data || typeof payload.data !== 'object' || Array.isArray(payload.data)) {
+    payload.data = {};
+  }
+  payload.data.dashboardLink = '';
+  payload.data.shieldInfo = [];
+  return payload;
+}
+
+const DISABLE_TOGGLES = new Set([
+  'HTTP_DNS_KFLOWER_PSNGER',
+  'isUseHTTPDNS',
+  'isUseSocketHTTPDNS',
+  'launch_advertising_display_interval',
+  'kf_activity_resource_config',
+  'kf_activity_show_launchvideo',
+  'kf_activity_show_launchvideo_close_delay',
+  'kf_home_bronzedoor_enable',
+  'kf_home_popup_req_remove_city',
+  'kf_marketing_dialog_toggle',
+  'kf_operation_resource_config',
+  'kf_passenger_native_resource_sdk_init',
+  'kf_passenger_webx_nasdk_control',
+  'kf_res_popup_check_show_control_ios',
+  'kf_native_tt_ad',
+  'kf_kuaishou_ad',
+]);
+
+const ENABLE_WEBX_CLOSE_TOGGLES = new Set([
+  'Webx_nasdk_close_cover_request',
+  'Webx_nasdk_close_getProdPageConf_request',
+  'Webx_nasdk_close_launch_enter_params',
+  'Webx_nasdk_close_omega',
+  'Webx_nasdk_close_page_did_show',
+  'Webx_nasdk_close_product_init_request',
+  'webx_nasdk_close_all',
+]);
+
+const BAD_KEY_RE = /^(?:p_startpage|p_home_popup|p_super_banner|p_home_other_banner|p_home_page_upper_right|p_home_core_left|p_home_core_right_up|p_home_core_right_down|p_nav_new|homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common)$/i;
+const BAD_COMPONENT_RE = /^(?:homepage_pop_window|activity_cover_layer|marketing_bubble|new_marketing_bubble|banner_position_list|destination_promotion|home_right_top_common|KFHotTipCom|KFActivityInfoCom|KFResourceServiceCom|KFTravelPopupCom|DADForceShowActivityCenterView|DPSPopupWindow)$/i;
+const BAD_VALUE_RE = /(?:p_startpage|p_home_popup|home_pop_manual|channel_id=1300000014|entrance_channel=1300000014|prod\.huaxz\.cn\/imk-kf-index|imk-kf-index|KFHotTipCom|KFActivityInfoCom|KFResourceServiceCom|KFTravelPopupCom|DADForceShowActivityCenterView|DPSPopupWindow|DAD_force_btn_close|advertise_logo|ad_jump_detail|staticImage|static_icon_120_120|posterImage|kf_home_core|kf_home_other|upgrade-fission|img-ys011\.didistatic\.com\/static\/ad_oss\/)/i;
+const BAD_IDS = new Set(['14', '15', '416', '428', '434', '436', '454', '590', '620']);
+const BAD_COMPONENT_IDS = new Set(['10005', '10006', '14013', '15004']);
+
+function itemText(item) {
   if (!item || typeof item !== 'object') {
     return stringValue(item);
   }
@@ -417,15 +357,11 @@ function activityItemText(item) {
     item.resourceName,
     item.position_name,
     item.positionName,
-    item.rn,
-    item.name,
-    item.position,
     item.component_name,
     item.componentName,
     item.cname,
     item.popup_type,
     item.popupType,
-    item.desc,
     item.api_tpl_name,
     item.apiTplName,
     item.api_com_name,
@@ -433,7 +369,6 @@ function activityItemText(item) {
     item.title,
     item.T,
     item.tpl,
-    item.template,
     item.template_name,
     item.templateName,
     item.image,
@@ -445,8 +380,6 @@ function activityItemText(item) {
     item.link,
     item.landing_url,
     item.landingUrl,
-    item.log_data,
-    item.logData,
     item.custom_channel,
     item.customChannel,
     item.channel_id,
@@ -457,7 +390,7 @@ function activityItemText(item) {
   return fields.map(stringValue).join(' ');
 }
 
-function isBadActivityObject(item) {
+function isBadItem(item) {
   if (!item || typeof item !== 'object') {
     return false;
   }
@@ -473,21 +406,19 @@ function isBadActivityObject(item) {
     item.api_com_name ||
     item.apiComName
   );
-  const text = activityItemText(item);
-  return BAD_ACTIVITY_IDS[resourceId] === true ||
-    BAD_ACTIVITY_IDS[unitId] === true ||
-    BAD_TRAVEL_COMPONENT_IDS[componentId] === true ||
-    BAD_ACTIVITY_COMPONENT_RE.test(componentName) ||
-    BAD_ACTIVITY_VALUE_RE.test(text);
+  return BAD_IDS.has(resourceId) ||
+    BAD_IDS.has(unitId) ||
+    BAD_COMPONENT_IDS.has(componentId) ||
+    BAD_COMPONENT_RE.test(componentName) ||
+    BAD_VALUE_RE.test(itemText(item));
 }
 
-function patchJsonStringFlag(object, key, flag, value, state) {
-  const assign = object && object.assign;
-  const args = assign && assign.args;
-  if (!args || typeof args !== 'object' || typeof args[key] !== 'string') {
+function patchJsonFlag(object, key, flag, value, state) {
+  const args = object && object.assign && object.assign.args;
+  if (!args || typeof args[key] !== 'string') {
     return;
   }
-  const parsed = parseMaybeJson(args[key]);
+  const parsed = parseJson(args[key]);
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     return;
   }
@@ -498,169 +429,31 @@ function patchJsonStringFlag(object, key, flag, value, state) {
   }
 }
 
-function patchDaggerLaunchConfig(object, state) {
-  const assign = object && object.assign;
-  const args = assign && assign.args;
-  if (!args || typeof args !== 'object') {
-    return;
-  }
-  if (args.is_launch_enable !== undefined && args.is_launch_enable !== '0') {
-    args.is_launch_enable = '0';
-    state.changed = true;
-  }
-  if (typeof args.launch_config !== 'string') {
-    return;
-  }
-  const parsed = parseMaybeJson(args.launch_config);
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    return;
-  }
-  const original = JSON.stringify(parsed);
-  if (Array.isArray(parsed.page_names)) {
-    parsed.page_names = parsed.page_names.filter((name) => name !== 'DSplashViewController');
-  }
-  if (parsed.prewarming_threshold !== undefined) {
-    parsed.prewarming_threshold = '0';
-  }
-  if (JSON.stringify(parsed) !== original) {
-    args.launch_config = JSON.stringify(parsed);
-    state.changed = true;
-  }
-}
-
-function patchWebxProductPageConfig(object, state) {
-  const assign = object && object.assign;
-  const args = assign && assign.args;
-  if (!args || typeof args.config !== 'string') {
-    return;
-  }
-  const parsed = parseMaybeJson(args.config);
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    return;
-  }
-  if (Array.isArray(parsed.webviewPage) && parsed.webviewPage.length !== 0) {
-    parsed.webviewPage = [];
-    args.config = JSON.stringify(parsed);
-    state.changed = true;
-  }
-}
-
-const HOSTS_FOR_DOMAIN_MITM = [
-  'api.hongyibo.com.cn',
-  'res.hongyibo.com.cn',
-  'res.hongyibo.com',
-  'res-new.hongyibo.com.cn',
-  'res-new.hongyibo.com',
-];
-
-const WEBX_NA_CLOSE_TOGGLE_NAMES = new Set([
-  'Webx_nasdk_close_cover_request',
-  'Webx_nasdk_close_getProdPageConf_request',
-  'Webx_nasdk_close_launch_enter_params',
-  'Webx_nasdk_close_omega',
-  'Webx_nasdk_close_page_did_show',
-  'Webx_nasdk_close_product_init_request',
-  'webx_nasdk_close_all',
-]);
-
-function isApiHostEntry(value, host) {
-  const text = stringValue(value).toLowerCase();
-  return text === host ||
-    text === `https://${host}` ||
-    text.indexOf(`${host}/*`) === 0 ||
-    text.indexOf(`https://${host}/*`) === 0;
-}
-
-function cleanHostRoutingValue(value, host, state) {
-  if (Array.isArray(value)) {
-    const out = [];
-    for (const item of value) {
-      if (isApiHostEntry(item, host)) {
-        state.changed = true;
-        continue;
-      }
-      out.push(cleanHostRoutingValue(item, host, state));
-    }
-    return out;
-  }
-  if (value && typeof value === 'object') {
-    const out = {};
-    for (const key of Object.keys(value)) {
-      if (isApiHostEntry(key, host)) {
-        state.changed = true;
-        continue;
-      }
-      const item = value[key];
-      if (typeof item === 'string' && isApiHostEntry(item, host)) {
-        state.changed = true;
-        continue;
-      }
-      out[key] = cleanHostRoutingValue(item, host, state);
-    }
-    return out;
-  }
-  return value;
-}
-
-function cleanJsonHostRoutingString(value, host, state) {
-  if (typeof value !== 'string' || value.indexOf(host) === -1) {
-    return value;
-  }
-  const parsed = parseMaybeJson(value);
-  if (parsed === undefined) {
-    return value;
-  }
-  const before = JSON.stringify(parsed);
-  const cleaned = cleanHostRoutingValue(parsed, host, state);
-  if (JSON.stringify(cleaned) === before) {
-    return value;
-  }
-  return JSON.stringify(cleaned);
-}
-
-function patchKflowerHttpDnsConfig(object, state) {
-  const assign = object && object.assign;
-  const args = assign && assign.args;
-  if (!args || typeof args !== 'object') {
-    return;
-  }
-  for (const key of Object.keys(args)) {
-    for (const host of HOSTS_FOR_DOMAIN_MITM) {
-      args[key] = cleanJsonHostRoutingString(args[key], host, state);
-    }
-  }
-}
-
-function patchHuaxiaozhuToggleObject(object, state) {
+function patchToggle(object, state) {
   if (!object || typeof object !== 'object' || Array.isArray(object)) {
     return;
   }
   const name = stringValue(object.name);
-  if (name === 'IsDaggerEnable') {
-    patchDaggerLaunchConfig(object, state);
-  }
-  if (name === 'webx_get_prod_page_conf') {
-    patchWebxProductPageConfig(object, state);
-  }
-  if (name === 'HTTP_DNS_KFLOWER_PSNGER') {
-    patchKflowerHttpDnsConfig(object, state);
-  }
-  if (name === 'isUseHTTPDNS' || name === 'isEnableOKNetSwitcher') {
-    patchKflowerHttpDnsConfig(object, state);
-  }
-  if (name === 'psg_carrot_trans_toggle') {
-    patchKflowerHttpDnsConfig(object, state);
-  }
+
   if (name === 'IsLaunchTaskEnable' || name === 'LaunchEnableTest') {
-    patchJsonStringFlag(object, 'config', 'is_fast_ad', 0, state);
-    patchJsonStringFlag(object, 'config', 'is_resource', 0, state);
-    patchJsonStringFlag(object, 'config', 'is_webxnasdk', 0, state);
+    patchJsonFlag(object, 'config', 'is_fast_ad', 0, state);
+    patchJsonFlag(object, 'config', 'is_resource', 0, state);
+    patchJsonFlag(object, 'config', 'is_webxnasdk', 0, state);
     if (object.assign && object.assign.args && object.assign.args.delay_time !== undefined) {
       object.assign.args.delay_time = '0';
       state.changed = true;
     }
   }
-  if (BAD_TOGGLE_NAMES.has(name)) {
+
+  if (name === 'IsDaggerEnable') {
+    const args = object.assign && object.assign.args;
+    if (args && args.is_launch_enable !== undefined && args.is_launch_enable !== '0') {
+      args.is_launch_enable = '0';
+      state.changed = true;
+    }
+  }
+
+  if (DISABLE_TOGGLES.has(name)) {
     if (object.allow !== false) {
       object.allow = false;
       state.changed = true;
@@ -670,7 +463,8 @@ function patchHuaxiaozhuToggleObject(object, state) {
       state.changed = true;
     }
   }
-  if (WEBX_NA_CLOSE_TOGGLE_NAMES.has(name)) {
+
+  if (ENABLE_WEBX_CLOSE_TOGGLES.has(name)) {
     if (object.allow !== true) {
       object.allow = true;
       state.changed = true;
@@ -682,41 +476,42 @@ function patchHuaxiaozhuToggleObject(object, state) {
   }
 }
 
-function cleanStringifiedActivityJson(text, state) {
+function cleanStringJson(text, state) {
   const trimmed = String(text || '').trim();
   if (!/^[\[{]/.test(trimmed)) {
     return text;
   }
-  const parsed = parseMaybeJson(trimmed);
+  const parsed = parseJson(trimmed);
   if (parsed === undefined) {
     return text;
   }
   const before = JSON.stringify(parsed);
-  const cleaned = cleanActivityValue(parsed, state);
-  if (JSON.stringify(cleaned) !== before) {
+  const cleaned = cleanValue(parsed, state);
+  const after = JSON.stringify(cleaned);
+  if (after !== before) {
     state.changed = true;
-    return JSON.stringify(cleaned);
+    return after;
   }
   return text;
 }
 
-function cleanActivityArray(array, state) {
+function cleanArray(array, state) {
   const out = [];
   for (const item of array) {
     if (typeof item === 'string') {
-      const cleanedString = cleanStringifiedActivityJson(item, state);
-      if (BAD_ACTIVITY_VALUE_RE.test(cleanedString)) {
+      const cleaned = cleanStringJson(item, state);
+      if (BAD_VALUE_RE.test(cleaned)) {
         state.changed = true;
         continue;
       }
-      out.push(cleanedString);
+      out.push(cleaned);
       continue;
     }
-    if (isBadActivityObject(item)) {
+    if (isBadItem(item)) {
       state.changed = true;
       continue;
     }
-    out.push(cleanActivityValue(item, state));
+    out.push(cleanValue(item, state));
   }
   if (out.length !== array.length) {
     state.changed = true;
@@ -724,301 +519,148 @@ function cleanActivityArray(array, state) {
   return out;
 }
 
-function cleanActivityObject(object, state) {
-  patchHuaxiaozhuToggleObject(object, state);
+function cleanObject(object, state) {
+  patchToggle(object, state);
   const out = {};
   for (const key of Object.keys(object)) {
-    if (BAD_ACTIVITY_KEY_RE.test(key)) {
+    if (BAD_KEY_RE.test(key)) {
       state.changed = true;
       continue;
     }
     const value = object[key];
-    if (isBadActivityObject(value)) {
+    if (isBadItem(value)) {
       state.changed = true;
       continue;
     }
     if (typeof value === 'string') {
-      const cleanedString = cleanStringifiedActivityJson(value, state);
-      if (BAD_ACTIVITY_VALUE_RE.test(cleanedString) && /^(?:image|img|icon|url|link|landing_url|material|content)$/i.test(key)) {
+      const cleaned = cleanStringJson(value, state);
+      if (BAD_VALUE_RE.test(cleaned) && /^(?:image|img|icon|url|link|landing_url|file_url|fileUrl|material|content|resource_name|resourceName|template_name|templateName|api_tpl_name|apiTplName|tpl|T)$/i.test(key)) {
         out[key] = '';
         state.changed = true;
         continue;
       }
-      out[key] = cleanedString;
+      out[key] = cleaned;
       continue;
     }
-    out[key] = cleanActivityValue(value, state);
+    out[key] = cleanValue(value, state);
   }
   return out;
 }
 
-function cleanActivityValue(value, state) {
+function cleanValue(value, state) {
   if (Array.isArray(value)) {
-    return cleanActivityArray(value, state);
+    return cleanArray(value, state);
   }
   if (value && typeof value === 'object') {
-    return cleanActivityObject(value, state);
+    return cleanObject(value, state);
   }
   return value;
 }
 
-function finishJson(reason, value, marker) {
-  const headers = buildNoFillHeaders($response && $response.headers, marker || 'gdt-response-nofill-1');
-  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
-  done({
-    status: 200,
-    headers,
-    body: JSON.stringify(value),
-  });
-}
-
-function finishNoContent(reason, marker) {
-  const headers = buildNoContentHeaders($response && $response.headers, marker || 'no-content-1');
-  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
-  done({
-    status: 204,
-    headers,
-    body: '',
-  });
-}
-
-function finishDirectJson(reason, value, marker) {
-  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
-  done({
-    response: {
-      status: 200,
-      headers: {
-        'Cache-Control': 'no-store',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'Content-Type': 'text/json; charset=utf-8',
-        'X-uBO-Huaxiaozhu': marker || 'direct-json-1',
-      },
-      body: JSON.stringify(value),
-    },
-  });
-}
-
-function finishDirectNoContent(reason, marker) {
-  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
-  done({
-    response: {
-      status: 204,
-      headers: {
-        'Cache-Control': 'no-store',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'X-uBO-Huaxiaozhu': marker || 'direct-no-content-1',
-      },
-      body: '',
-    },
-  });
+function cleanJsonPayload(payload) {
+  const state = { changed: false };
+  const cleaned = cleanValue(payload, state);
+  return { cleaned, changed: state.changed };
 }
 
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
-  const urlInfo = parseUrl(request.url);
+  const response = typeof $response === 'object' && $response !== null ? $response : {};
   const argument = typeof $argument === 'string' ? $argument : '';
+  const urlInfo = parseUrl(request.url);
   let handled = false;
 
   if (/(?:^|&)phase=app-marker(?:&|$)/.test(argument)) {
-    if (
-      isHuaxiaozhuMarkerEndpoint(urlInfo) &&
-      (
-        urlInfo.path === '/syncconfig/ios/com.huaxiaozhu.rider' ||
-        /com\.huaxiaozhu\.rider|DSplashViewController|kf-passenger-app/i.test(bodyToText(request.body))
-      )
-    ) {
-      markHuaxiaozhuApp('Huaxiaozhu app marker refreshed');
+    if (isMarkerEndpoint(urlInfo)) {
+      markApp('app marker refreshed');
     }
     done({});
     handled = true;
   }
 
-  if (
-    handled === false &&
-    /(?:^|&)phase=toggles-request(?:&|$)/.test(argument) &&
-    isHuaxiaozhuToggleEndpoint(urlInfo)
-  ) {
+  if (handled === false && /(?:^|&)phase=toggles-request(?:&|$)/.test(argument) && isToggleEndpoint(urlInfo)) {
     const nextUrl = removeQueryParam(request.url, 'md5');
-    if (nextUrl !== request.url) {
-      console.log('uBO Huaxiaozhu ad clean: toggles md5 cache key removed');
-      done({ url: nextUrl });
+    done(nextUrl !== request.url ? { url: nextUrl } : {});
+    handled = true;
+  }
+
+  if (handled === false && /(?:^|&)phase=toggles-response(?:&|$)/.test(argument) && isToggleEndpoint(urlInfo)) {
+    markApp('toggles marker refreshed');
+    const payload = parseJson(bodyToText(response.body) || '{}') || {};
+    const result = cleanJsonPayload(payload);
+    if (result.changed) {
+      finishJson('startup/home popup toggles cleaned', result.cleaned, 'toggles-lite-clean-1');
     } else {
       done({});
     }
     handled = true;
   }
 
-  if (
-    handled === false &&
-    /(?:^|&)phase=gdt-request(?:&|$)/.test(argument) &&
-    isHuaxiaozhuGdtEndpoint(urlInfo)
-  ) {
-    if (isHuaxiaozhuGdtBody(request.body)) {
-      markHuaxiaozhuApp('Huaxiaozhu GDT bidding marker refreshed');
-      finishDirectJson(
-        'Tencent GDT Huaxiaozhu bidding request short-circuited with no-fill',
-        buildNoFillGdtPayload(request.body),
-        'gdt-request-fast-nofill-1'
-      );
+  if (handled === false && /(?:^|&)phase=sec-guard(?:&|$)/.test(argument) && isShieldEndpoint(urlInfo)) {
+    markApp('safety shield marker refreshed');
+    const payload = parseJson(bodyToText(response.body) || '{}') || {};
+    finishJson('safety shield promo emptied', noShieldPayload(payload), 'sec-guard-empty-1');
+    handled = true;
+  }
+
+  if (handled === false && /(?:^|&)phase=activity(?:&|$)/.test(argument) && isActivityEndpoint(urlInfo)) {
+    markApp('activity resource marker refreshed');
+    const payload = parseJson(bodyToText(response.body) || '{}') || {};
+    const result = cleanJsonPayload(payload);
+    if (result.changed) {
+      finishJson('activity marketing resources cleaned', result.cleaned, 'activity-lite-clean-1');
     } else {
       done({});
     }
     handled = true;
   }
 
-  if (
-    handled === false &&
-    /(?:^|&)phase=gdt-launch-request(?:&|$)/.test(argument) &&
-    isHuaxiaozhuGdtLaunchEndpoint(urlInfo)
-  ) {
-    if (hasRecentHuaxiaozhuMarker() || isGdtMobSdkRequest(request)) {
-      markHuaxiaozhuApp('Huaxiaozhu GDT launch marker refreshed');
-      finishDirectNoContent(
-        'Tencent GDT Huaxiaozhu launch request short-circuited',
-        'gdt-launch-fast-empty-1'
-      );
+  if (handled === false && /(?:^|&)phase=pdata(?:&|$)/.test(argument) && isPDataEndpoint(urlInfo)) {
+    markApp('pData marker refreshed');
+    const payload = parseJson(bodyToText(response.body) || '{}') || {};
+    const result = cleanJsonPayload(payload);
+    if (result.changed) {
+      finishJson('pData marketing resources cleaned', result.cleaned, 'pdata-lite-clean-1');
     } else {
       done({});
     }
     handled = true;
   }
 
-  if (
-    handled === false &&
-    /(?:^|&)phase=gdt-launch(?:&|$)/.test(argument) &&
-    isHuaxiaozhuGdtLaunchEndpoint(urlInfo)
-  ) {
-    if (hasRecentHuaxiaozhuMarker() || isGdtMobSdkRequest(request)) {
-      markHuaxiaozhuApp('Huaxiaozhu GDT launch marker refreshed');
-      finishNoContent(
-        'Tencent GDT Huaxiaozhu launch response emptied',
-        'gdt-launch-empty-1'
-      );
+  if (handled === false && /(?:^|&)phase=gdt-request(?:&|$)/.test(argument) && isGdtBiddingEndpoint(urlInfo)) {
+    if (isHuaxiaozhuGdtBody(request.body) || hasRecentAppMarker()) {
+      markApp('GDT bidding marker refreshed');
+      finishDirectJson('GDT bidding request no-fill', noFillGdtPayload(request.body), 'gdt-request-fast-nofill-1');
     } else {
       done({});
     }
     handled = true;
   }
 
-  if (
-    handled === false &&
-    /(?:^|&)phase=toggles-response(?:&|$)/.test(argument) &&
-    isHuaxiaozhuToggleEndpoint(urlInfo)
-  ) {
-    markHuaxiaozhuApp('Huaxiaozhu toggles marker refreshed');
-    const response = typeof $response === 'object' && $response !== null ? $response : {};
-    const payload = JSON.parse(bodyToText(response.body) || '{}');
-    const state = { changed: false };
-    const cleaned = cleanActivityValue(payload, state);
-    if (state.changed) {
-      finishJson(
-        'Huaxiaozhu startup/home popup toggles cleaned',
-        cleaned,
-        'toggles-trans-host-clean-1'
-      );
+  if (handled === false && /(?:^|&)phase=gdt-launch-request(?:&|$)/.test(argument) && isGdtLaunchEndpoint(urlInfo)) {
+    if (hasRecentAppMarker() || isGdtSdkRequest(request)) {
+      markApp('GDT launch marker refreshed');
+      finishDirectNoContent('GDT launch request emptied', 'gdt-launch-fast-empty-1');
     } else {
       done({});
     }
     handled = true;
   }
 
-  if (
-    handled === false &&
-    /(?:^|&)phase=sec-guard(?:&|$)/.test(argument) &&
-    isHuaxiaozhuShieldEndpoint(urlInfo)
-  ) {
-    markHuaxiaozhuApp('Huaxiaozhu safety shield promo marker refreshed');
-    const response = typeof $response === 'object' && $response !== null ? $response : {};
-    const payload = JSON.parse(bodyToText(response.body) || '{}');
-    finishJson(
-      'Huaxiaozhu safety shield promo panels emptied',
-      buildNoShieldPayload(payload),
-      'sec-guard-empty-1'
-    );
-    handled = true;
-  }
-
-  if (
-    handled === false &&
-    /(?:^|&)phase=activity(?:&|$)/.test(argument) &&
-    isHuaxiaozhuActivityEndpoint(urlInfo)
-  ) {
-    markHuaxiaozhuApp('Huaxiaozhu activity resource marker refreshed');
-    const response = typeof $response === 'object' && $response !== null ? $response : {};
-    const payload = JSON.parse(bodyToText(response.body) || '{}');
-    const state = { changed: false };
-    const cleaned = cleanActivityValue(payload, state);
-    if (state.changed) {
-      finishJson(
-        'Huaxiaozhu activity marketing resources cleaned',
-        cleaned,
-        'activity-mget-clean-1'
-      );
+  if (handled === false && /(?:^|&)phase=gdt-launch(?:&|$)/.test(argument) && isGdtLaunchEndpoint(urlInfo)) {
+    if (hasRecentAppMarker() || isGdtSdkRequest(request)) {
+      markApp('GDT launch marker refreshed');
+      finishNoContent('GDT launch response emptied', 'gdt-launch-empty-1');
     } else {
       done({});
     }
     handled = true;
   }
 
-  if (
-    handled === false &&
-    /(?:^|&)phase=pdata(?:&|$)/.test(argument) &&
-    isHuaxiaozhuBronzedoorEndpoint(urlInfo)
-  ) {
-    markHuaxiaozhuApp('Huaxiaozhu Bronzedoor resource marker refreshed');
-    const response = typeof $response === 'object' && $response !== null ? $response : {};
-    const payload = JSON.parse(bodyToText(response.body) || '{}');
-    const state = { changed: false };
-    const cleaned = cleanActivityValue(payload, state);
-    if (state.changed) {
-      finishJson(
-        'Huaxiaozhu Bronzedoor pData marketing resources cleaned',
-        cleaned,
-        'pdata-clean-1'
-      );
-    } else {
-      done({});
-    }
-    handled = true;
-  }
-
-  if (
-    handled === false &&
-    /(?:^|&)phase=webxna(?:&|$)/.test(argument) &&
-    isHuaxiaozhuWebxNaEndpoint(urlInfo)
-  ) {
-    markHuaxiaozhuApp('Huaxiaozhu WebX NA product marker refreshed');
-    const response = typeof $response === 'object' && $response !== null ? $response : {};
-    const payload = JSON.parse(bodyToText(response.body) || '{}');
-    const state = { changed: false };
-    const cleaned = cleanActivityValue(payload, state);
-    if (state.changed) {
-      finishJson(
-        'Huaxiaozhu WebX NA product marketing resources cleaned',
-        cleaned,
-        'webxna-clean-1'
-      );
-    } else {
-      done({});
-    }
-    handled = true;
-  }
-
-  if (
-    handled === false &&
-    isHuaxiaozhuGdtEndpoint(urlInfo) &&
-    (isHuaxiaozhuGdtBody(request.body) || hasRecentHuaxiaozhuMarker())
-  ) {
-    markHuaxiaozhuApp('Huaxiaozhu GDT bidding marker refreshed');
-    const response = typeof $response === 'object' && $response !== null ? $response : {};
-    const text = bodyToText(response.body);
-    const payload = JSON.parse(text);
-    finishJson(
-      'Tencent GDT Huaxiaozhu bidding response replaced with no-fill',
-      buildNoFillGdtPayload(request.body, payload)
-    );
+  if (handled === false && isGdtBiddingEndpoint(urlInfo) && (isHuaxiaozhuGdtBody(request.body) || hasRecentAppMarker())) {
+    markApp('GDT bidding marker refreshed');
+    const payload = parseJson(bodyToText(response.body) || '{}') || {};
+    finishJson('GDT bidding response no-fill', noFillGdtPayload(request.body, payload), 'gdt-response-nofill-1');
     handled = true;
   }
 

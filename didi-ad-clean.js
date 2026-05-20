@@ -126,7 +126,7 @@ const BAD_NAV_IDS = new Set([
   'yuantu',
 ]);
 
-const BAD_LINK_RE = /(?:manhattan\.webapp\.xiaojukeji\.com\/heranew|v\.didi\.cn\/prs\/M5Rj3dB|img-ys011\.didistatic\.com\/static\/ad_oss\/|s3-hnapuhdd-cdn\.didistatic\.com\/zhunxing-creative\/)/i;
+const BAD_LINK_RE = /(?:manhattan\.webapp\.xiaojukeji\.com\/heranew|v\.didi\.cn\/prs\/M5Rj3dB|img-ys011\.didistatic\.com\/static\/ad_oss\/|s3-hnapuhdd-cdn\.didistatic\.com\/zhunxing-creative\/|dpubstatic\.udache\.com\/static\/dpubimg\/(?:Tk4P7xStKnOCmzVkLK6af|0I0vBVH3WTFEHnnsru5aj|5I2hqVIZ3lCWECUFjXRje|ZJ4gPzS-atJwuY37qw2Zo)\.png)/i;
 const BAD_RESOURCE_RE = /(?:pas_start_page|pas_notice_webview|one_resource_start_page|casper_home_banner|na_home_marketing_card|home_marketing_card|home_banner_template|didipas_startpage_new_less_banner|bottom_marketing|marketing_banner|mult_home_banner|skyfall|popup)/i;
 const AD_IMAGE_RE = /img-ys011\.didistatic\.com\/static\/ad_oss\//i;
 const TOKEN_LIST_KEY_RE = /^(?:nav_id|bottom_menu_id|order_cards_list)$/i;
@@ -167,7 +167,7 @@ function isDidiShieldEndpoint(urlInfo) {
 }
 
 function looksLikeDidiYksPayload(text) {
-  return /ut-aggre-homepage|homepagemarketing|homepage\/v1\/core|homepageonestop|order_cards|order_cards_list|yuantu|didifinance|pas_start_page|pas_notice_webview|new_resource_sdk_toggle|ios_activity_download_config|activity_resource_15|valid_act_ids|na_home_marketing_card|home_marketing_card|resapi\/activity\/(?:mget|getValid)|IsDaggerEnable|launch_advertising_display_interval|didipas_splash_mp4control|webx_get_prod_page_conf|llm_assistant_experiment|qu_dialog_rn_new|com\.xiaojukeji\.didi/i.test(String(text || ''));
+  return /ut-aggre-homepage|homepagemarketing|homepage\/v1\/core|homepageonestop|order_cards|order_cards_list|yuantu|didifinance|pas_start_page|pas_notice_webview|new_resource_sdk_toggle|ios_activity_download_config|activity_resource_15|valid_act_ids|na_home_marketing_card|home_marketing_card|resapi\/activity\/(?:mget|getValid)|IsDaggerEnable|launch_advertising_display_interval|didipas_splash_mp4control|webx_get_prod_page_conf|llm_assistant_experiment|qu_dialog_rn_new|dpubstatic\.udache\.com\/static\/dpubimg\/|com\.xiaojukeji\.didi/i.test(String(text || ''));
 }
 
 function parseMaybeJson(text) {
