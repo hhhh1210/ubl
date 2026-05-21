@@ -141,6 +141,16 @@ const BAD_TOGGLE_NAMES = new Set([
   'launch_advertising_display_interval',
   'didipas_splash_mp4control',
 ]);
+const DIDI_NP_AD_URLPATHS = [
+  'conf.diditaxi.com.cn/homepage/v1/core',
+  'res.xiaojukeji.com/resapi/activity/getValid',
+];
+const DIDI_NP_AD_BLACKLIST = [
+  'conf.diditaxi.com.cn/homepage/v1/core',
+  'res.xiaojukeji.com/resapi/activity/mget',
+  'res.xiaojukeji.com/resapi/activity/getValid',
+  'adtrack.xiaojukeji.com/trackx',
+];
 
 function isDidiYksEndpoint(urlInfo) {
   if (urlInfo.host === 'as.xiaojukeji.com' && urlInfo.path === '/ep/as/toggles') {
@@ -378,6 +388,44 @@ function patchWebxProductPageConfig(object, state) {
   }
 }
 
+function parseJsonStringArray(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const parsed = parseMaybeJson(value);
+  return Array.isArray(parsed) ? parsed : null;
+}
+
+function removeJsonStringArrayItems(args, key, blockedItems, state) {
+  const array = parseJsonStringArray(args && args[key]);
+  if (!array) {
+    return;
+  }
+  const blocked = new Set(blockedItems);
+  const kept = array.filter((item) => !blocked.has(String(item)));
+  if (kept.length !== array.length) {
+    args[key] = JSON.stringify(kept);
+    state.changed = true;
+  }
+}
+
+function ensureJsonStringArrayItems(args, key, requiredItems, state) {
+  const array = parseJsonStringArray(args && args[key]) || [];
+  const seen = new Set(array.map((item) => String(item)));
+  let changed = false;
+  for (const item of requiredItems) {
+    if (!seen.has(item)) {
+      array.push(item);
+      seen.add(item);
+      changed = true;
+    }
+  }
+  if (changed) {
+    args[key] = JSON.stringify(array);
+    state.changed = true;
+  }
+}
+
 function patchDidiToggleObject(object, state) {
   if (!object || typeof object !== 'object' || Array.isArray(object)) {
     return;
@@ -401,6 +449,14 @@ function patchDidiToggleObject(object, state) {
 
   if (!args || typeof args !== 'object' || Array.isArray(args)) {
     return;
+  }
+
+  if (name === 'Omega_Http_Api_NP') {
+    removeJsonStringArrayItems(args, 'urlpaths', DIDI_NP_AD_URLPATHS, state);
+  }
+
+  if (name === 'Omega_Http_Api_Black_List') {
+    ensureJsonStringArrayItems(args, 'np_blacklist', DIDI_NP_AD_BLACKLIST, state);
   }
 
   if (name === 'new_resource_sdk_toggle') {
