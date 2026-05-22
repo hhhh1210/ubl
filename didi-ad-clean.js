@@ -140,6 +140,9 @@ const BAD_TOGGLE_NAMES = new Set([
   'gray_map_pt_hppop',
   'launch_advertising_display_interval',
   'didipas_splash_mp4control',
+  'home_Xpanel_notice_22',
+  'Request_Xpanel_notice_22',
+  'Xpanel_Notice',
 ]);
 const DIDI_NP_AD_URLPATHS = [
   'conf.diditaxi.com.cn/homepage/v1/core',
@@ -409,6 +412,27 @@ function removeJsonStringArrayItems(args, key, blockedItems, state) {
   }
 }
 
+function listEntryPath(value) {
+  return String(value || '').split(',')[0];
+}
+
+function removeJsonStringObjectListItems(args, key, blockedItems, state) {
+  if (!args || typeof args[key] !== 'string') {
+    return;
+  }
+  const parsed = parseMaybeJson(args[key]);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !Array.isArray(parsed.l)) {
+    return;
+  }
+  const blocked = new Set(blockedItems);
+  const kept = parsed.l.filter((item) => !blocked.has(listEntryPath(item)));
+  if (kept.length !== parsed.l.length) {
+    parsed.l = kept;
+    args[key] = JSON.stringify(parsed);
+    state.changed = true;
+  }
+}
+
 function ensureJsonStringArrayItems(args, key, requiredItems, state) {
   const array = parseJsonStringArray(args && args[key]) || [];
   const seen = new Set(array.map((item) => String(item)));
@@ -457,6 +481,10 @@ function patchDidiToggleObject(object, state) {
 
   if (name === 'Omega_Http_Api_Black_List') {
     ensureJsonStringArrayItems(args, 'np_blacklist', DIDI_NP_AD_BLACKLIST, state);
+  }
+
+  if (name === 'isEnableOKNetSwitcher') {
+    removeJsonStringObjectListItems(args, 'priority_manage_list', DIDI_NP_AD_URLPATHS, state);
   }
 
   if (name === 'new_resource_sdk_toggle') {
