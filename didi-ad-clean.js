@@ -127,12 +127,13 @@ const BAD_NAV_IDS = new Set([
 ]);
 
 const BAD_LINK_RE = /(?:manhattan\.webapp\.xiaojukeji\.com\/heranew|v\.didi\.cn\/prs\/M5Rj3dB|img-ys011\.didistatic\.com\/static\/ad_oss\/|s3-hnapuhdd-cdn\.didistatic\.com\/zhunxing-creative\/|dpubstatic\.udache\.com\/static\/dpubimg\/(?:Tk4P7xStKnOCmzVkLK6af|0I0vBVH3WTFEHnnsru5aj|5I2hqVIZ3lCWECUFjXRje|ZJ4gPzS-atJwuY37qw2Zo)\.png)/i;
-const BAD_RESOURCE_RE = /(?:pas_start_page|pas_notice_webview|one_resource_start_page|casper_home_banner|na_home_marketing_card|home_marketing_card|home_banner_template|didipas_startpage_new_less_banner|bottom_marketing|marketing_banner|mult_home_banner|skyfall|popup)/i;
+const BAD_RESOURCE_RE = /(?:pas_start_page|pas_notice_webview|didipas_drop_down_widget1|one_resource_start_page|casper_home_banner|na_home_marketing_card|home_marketing_card|home_banner_template|didipas_startpage_new_less_banner|bottom_marketing|marketing_banner|mult_home_banner|skyfall|popup)/i;
 const AD_IMAGE_RE = /img-ys011\.didistatic\.com\/static\/ad_oss\//i;
 const TOKEN_LIST_KEY_RE = /^(?:nav_id|bottom_menu_id|order_cards_list)$/i;
 const BAD_RESOURCE_IDS = new Set([
   '18',
   '63',
+  '1157',
   '21373',
 ]);
 const BAD_TOGGLE_NAMES = new Set([
@@ -153,6 +154,14 @@ const DIDI_NP_AD_BLACKLIST = [
   'res.xiaojukeji.com/resapi/activity/mget',
   'res.xiaojukeji.com/resapi/activity/getValid',
   'adtrack.xiaojukeji.com/trackx',
+];
+const DIDI_DISABLED_RESOURCE_TOGGLE_KEYS = [
+  'pas_start_page',
+  'pas_notice_webview',
+  'didipas_remote_index_notice',
+  'didipas_startpage_map',
+  'pas_home_activity',
+  'pas_swipe_sucess_notice',
 ];
 
 function isDidiYksEndpoint(urlInfo) {
@@ -488,7 +497,7 @@ function patchDidiToggleObject(object, state) {
   }
 
   if (name === 'new_resource_sdk_toggle') {
-    for (const key of ['pas_start_page', 'pas_notice_webview', 'didipas_startpage_map', 'pas_home_activity']) {
+    for (const key of DIDI_DISABLED_RESOURCE_TOGGLE_KEYS) {
       if (args[key] !== undefined && args[key] !== '0') {
         args[key] = '0';
         state.changed = true;
