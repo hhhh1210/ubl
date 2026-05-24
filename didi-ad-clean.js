@@ -143,7 +143,9 @@ const BAD_TOGGLE_NAMES = new Set([
   'didipas_splash_mp4control',
   'home_Xpanel_notice_22',
   'Request_Xpanel_notice_22',
+  'Request_Xpanel_22',
   'Xpanel_Notice',
+  'app_xpanel_request_toggle',
 ]);
 const DIDI_NP_AD_URLPATHS = [
   'conf.diditaxi.com.cn/homepage/v1/core',
@@ -500,6 +502,35 @@ function patchDidiToggleObject(object, state) {
     for (const key of DIDI_DISABLED_RESOURCE_TOGGLE_KEYS) {
       if (args[key] !== undefined && args[key] !== '0') {
         args[key] = '0';
+        state.changed = true;
+      }
+    }
+  }
+
+  if (name === 'new_rule_activity_card_toggle' && args.home !== 0) {
+    args.home = 0;
+    state.changed = true;
+  }
+
+  if (name === 'xpanel_revision') {
+    if (args.enable !== 0) {
+      args.enable = 0;
+      state.changed = true;
+    }
+    if (args.banner_enable !== '0') {
+      args.banner_enable = '0';
+      state.changed = true;
+    }
+    if (args.url) {
+      args.url = '';
+      state.changed = true;
+    }
+  }
+
+  if (name === 'min_drn_bundle_version_config') {
+    for (const key of Object.keys(args)) {
+      if (/dialog_popup_operation_banner|popup.*banner|operation_banner/i.test(key)) {
+        delete args[key];
         state.changed = true;
       }
     }
