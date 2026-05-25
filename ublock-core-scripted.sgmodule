@@ -111,6 +111,7 @@ hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsupe
 ^https?:\/\/xs\.gdt\.qq\.com\/style_factory\/module_list(?:\?.*)?$ data-type=text data="{\"modules\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
 ^https?:\/\/business\.msstatic\.com\/ssp\/material\/[^?#]+\.(?:png|jpe?g|webp|gif)(?:\?.*)?$ data-type=tiny-gif status-code=200
 ^https?:\/\/business\.msstatic\.com\/dsp\/public\/sdkconfig\.xml(?:\?.*)?$ data-type=text data="<?xml version=\"1.0\" encoding=\"UTF-8\"?><config><offlineCache><length>0</length></offlineCache><companies></companies></config>" status-code=200 header="Content-Type:text/xml; charset=utf-8"
+^https?:\/\/fileserver\.cdn\.huya\.com\/ladder_app_navigate\/[a-f0-9]{32}\.png(?:\?.*)?$ data-type=tiny-gif status-code=200
 ^https?:\/\/fileserver\.cdn\.huya\.com\/ladder_normalUpload\/(?:160076e8203549a88c95cd670da1a876|7c86fdb01ffd41c19651e19338c67de0|985b76e646a74f5686225c4de3bf1e6a|67d77b530925468cb6ca67c7f3f122ce|c7a8734dd38a482288606eed0824d65f|995ba281e6e2470c9448182cc715dbf9)\.png(?:\?.*)?$ data-type=tiny-gif status-code=200
 ^https?:\/\/v\.didi\.cn\/prs\/M5Rj3dB(?:\?.*)?$ data-type=text data="<!doctype html><html></html>" status-code=200 header="Content-Type:text/html; charset=utf-8"
 ^https?:\/\/dtrip\.xiaojukeji\.com\/poly-rebuild\/pages\/home\/index\?(?:[^#]*&)?dchn=M5Rj3dB(?:&|$)(?:[^#]*)$ data-type=text data="<!doctype html><html></html>" status-code=200 header="Content-Type:text/html; charset=utf-8"
