@@ -229,21 +229,25 @@ function cleanTmeGetInfo(payload, state) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     return payload;
   }
-  if (Array.isArray(payload.rpt_msg_pos_ad_info) && payload.rpt_msg_pos_ad_info.length !== 0) {
-    payload.rpt_msg_pos_ad_info = [];
-    state.changed = true;
-  }
-  if (Array.isArray(payload.rpt_msg_neg_feedback) && payload.rpt_msg_neg_feedback.length !== 0) {
-    payload.rpt_msg_neg_feedback = [];
-    state.changed = true;
+  if (Array.isArray(payload.rpt_msg_pos_ad_info)) {
+    for (const pos of payload.rpt_msg_pos_ad_info) {
+      if (pos && typeof pos === 'object') {
+        if (Array.isArray(pos.rpt_msg_ad_info) && pos.rpt_msg_ad_info.length !== 0) {
+          pos.rpt_msg_ad_info = [];
+          state.changed = true;
+        }
+        if (pos.ret !== 102006) {
+          pos.ret = 102006;
+          state.changed = true;
+        }
+        if (pos.msg !== 'no ad') {
+          pos.msg = 'no ad';
+          state.changed = true;
+        }
+      }
+    }
   }
   payload.ret = 0;
-  payload.msg = '';
-  payload.disable_feature_splash = 1;
-  payload.ad_cache_list = [];
-  payload.local_cache_pick = null;
-  payload.gdt_contract_splash_pak = null;
-  payload.gdt_contract_splash_pak_ver = null;
   return payload;
 }
 
