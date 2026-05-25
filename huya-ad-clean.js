@@ -210,7 +210,7 @@ function cleanPangolinPageAd(urlInfo) {
   }
   if (
     isHuyaPangolin &&
-    urlInfo.host === 'sf6-fe-tos.pglstatp-toutiao.com' &&
+    /^sf[36]-fe-tos\.pglstatp-toutiao\.com$/.test(urlInfo.host) &&
     urlInfo.path === '/obj/ad-pattern/renderer/package.json'
   ) {
     return {
