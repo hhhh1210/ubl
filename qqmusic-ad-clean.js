@@ -208,6 +208,16 @@ function finishDirectNoContent(reason, marker) {
   });
 }
 
+function finishProtoNoAd(reason, marker) {
+  const body = base64DecodeBinary('CAAov+eP9uUzOoABWUxOT29xbmhsbHRYQmJ0T2laeWFEeFd2MWpGeDczL3VaZUQzN1ZNWC8ycG8vWDJFTHA2UFFseUJUWHU1MFdGaHlyODZwNkNpU1lHRmsvUzVHNzEycEJ0Skd6TGM1Vk94SGhYQVFCR0tCTUMybkx0Q2lrWlQ0cnhEcW80bmlCTnVI/5Pr3ANQAFogZWFmMWFjMDkwMDAwMDAxODE1ZWMyNjdkNmExNDI5ZjhoAQ==');
+  console.log(`uBO QQMusic ad clean: ${reason}`);
+  done({
+    status: 200,
+    headers: buildHeaders($response && $response.headers, marker, 'application/proto'),
+    body,
+  });
+}
+
 function requestFingerprint(request, bodyText) {
   const headers = request && request.headers;
   return [
@@ -360,9 +370,9 @@ try {
 
   if (/^tmead\.y\.qq\.com$/.test(urlInfo.host) && urlInfo.path === '/maproxy/getPbCompressAd') {
     if (isQQMusic && /(?:^|&)phase=pb-request(?:&|$)/.test(argument)) {
-      finishDirectNoContent('QQMusic protobuf ad request short-circuited', 'pb-request-empty-1');
+      done({});
     } else if (isQQMusic && /(?:^|&)phase=pb-response(?:&|$)/.test(argument)) {
-      finishNoContent('QQMusic protobuf ad response emptied', 'pb-response-empty-1');
+      finishProtoNoAd('QQMusic protobuf ad response no-ad', 'pb-response-noad-proto-1');
     } else {
       done({});
     }
