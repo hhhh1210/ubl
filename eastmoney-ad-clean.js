@@ -109,62 +109,9 @@ function cleanInfoService(requestText, responseText) {
   return payload;
 }
 
-function hasMxAdMarker(data) {
-  const text = JSON.stringify(data || {});
-  return /sceneKey=AD|sceneKey=PopupMX|PopupMX/i.test(text);
-}
-
-function cleanMxEntrance(responseText) {
-  const payload = parseJson(responseText);
-  const data = payload && payload.data;
-  if (!data || typeof data !== 'object' || !hasMxAdMarker(data)) {
-    return null;
-  }
-
-  data.questions = [];
-  data.tired = [];
-  data.androidJumpUrl = '';
-  data.androidBaseJumpUrl = '';
-  data.iosJumpUrl = '';
-  data.iosBaseJumpUrl = '';
-  return payload;
-}
-
-const EASTMONEY_AD_PAGES = [
-  'app_lanuchpop',
-  'dlqp_index',
-  'app_sydty_1025',
-  'app_newhomepage',
-  'jggqp_index',
-  'app_index_dbqp',
-];
-
-const EASTMONEY_AD_POSITIONS = [
-  '5409146774515076242',
-  '4832686022211652752',
-  '4832686022211682682',
-  '2238612636846247049',
-  '6850298655273664882',
-  '3391534141453123891',
-  '3103303765301412211',
-  '6562068279121923010',
-  '4544455646059940804',
-  '1950382260694535114',
-  '4256225269908229059',
-  '8867911288335616969',
-  '1662151884542823365',
-  '8003220159880481734',
-  '2238612636846246855',
-  '1662151884542823368',
-  '221000003784264780',
-];
-
-const EASTMONEY_POPUP_ABTESTS = {
-  event_notification_pop: '0',
-  comment_popup_switch: '0',
-  popup1_signin: '0',
-  popup2_news: '0',
-};
+const EASTMONEY_AD_PAGES = 'app_lanuchpop,dlqp_index,app_sydty_1025,app_newhomepage,jggqp_index,app_index_dbqp'.split(',');
+const EASTMONEY_AD_POSITIONS = '5409146774515076242,4832686022211652752,4832686022211682682,2238612636846247049,6850298655273664882,3391534141453123891,3103303765301412211,6562068279121923010,4544455646059940804,1950382260694535114,4256225269908229059,8867911288335616969,1662151884542823365,8003220159880481734,2238612636846246855,1662151884542823368,221000003784264780'.split(',');
+const EASTMONEY_POPUP_FLAGS = 'event_notification_pop,comment_popup_switch,popup1_signin,popup2_news'.split(',');
 
 function mergeUnique(existing, extra) {
   const seen = {};
@@ -201,8 +148,8 @@ function cleanUserConfig(responseText) {
         continue;
       }
       for (const option of options) {
-        if (option && Object.prototype.hasOwnProperty.call(EASTMONEY_POPUP_ABTESTS, option.ID)) {
-          option.Value = EASTMONEY_POPUP_ABTESTS[option.ID];
+        if (option && EASTMONEY_POPUP_FLAGS.indexOf(option.ID) !== -1) {
+          option.Value = '0';
         }
       }
     }
@@ -217,9 +164,7 @@ try {
   const responseText = bodyToText($response && $response.body);
   let body = null;
   let marker = phase || 'ad-service';
-  if (phase === 'mx-entrance') {
-    body = cleanMxEntrance(responseText);
-  } else if (phase === 'user-config') {
+  if (phase === 'user-config') {
     body = cleanUserConfig(responseText);
     marker = 'user-config';
   } else {
