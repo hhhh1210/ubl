@@ -83,24 +83,29 @@ function isCfwIosRequest(request) {
 }
 
 function cleanInfoService(requestText, responseText) {
-  const request = parseJson(requestText);
-  if (!isCfwIosRequest(request) || !/^(?:marketad|bubblead)$/.test(String(request.method || ''))) {
+  const payload = parseJson(responseText);
+  const data = payload && payload.data;
+  if (!data || typeof data !== 'object') {
     return null;
   }
 
-  const payload = parseJson(responseText);
-  if (!payload || typeof payload !== 'object') {
+  const request = requestText ? parseJson(requestText) : null;
+  const hasRequestMarker = isCfwIosRequest(request)
+    && /^(?:marketad|bubblead)$/.test(String(request.method || ''));
+  const hasAdPayload = Array.isArray(data.adpositionidlist)
+    || Array.isArray(data.fundPositionList)
+    || data.isMarketingAd === true;
+  if (!hasRequestMarker && !hasAdPayload) {
     return null;
   }
 
   payload.code = 0;
   payload.message = payload.message || 'Success';
-  payload.data = payload.data && typeof payload.data === 'object' ? payload.data : {};
-  payload.data.adpositionidlist = [];
-  payload.data.fundPositionList = [];
-  payload.data.isMarketingAd = false;
-  payload.data.cacheExpire = Math.max(Number(payload.data.cacheExpire) || 0, 3600);
-  payload.data.cacheDataExpireMin = Math.max(Number(payload.data.cacheDataExpireMin) || 0, 4320);
+  data.adpositionidlist = [];
+  data.fundPositionList = [];
+  data.isMarketingAd = false;
+  data.cacheExpire = Math.max(Number(data.cacheExpire) || 0, 3600);
+  data.cacheDataExpireMin = Math.max(Number(data.cacheDataExpireMin) || 0, 4320);
   return payload;
 }
 
