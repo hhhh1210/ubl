@@ -30,7 +30,7 @@ DOMAIN-SUFFIX,sitetag.us,REJECT
 URL-REGEX,^https?:\/\/file\.52papa\.tv\/download\/dl[^/?#]*\.php(?:[?#]|$),REJECT
 # Jetpack Joyride iOS app-scoped ad endpoints observed from Surge capture.
 # Huaxiaozhu iOS app-scoped startup and popup ad resources observed from Surge capture.
-# DiDi iOS app-scoped homepage marketing cards and YKS promo entry suppressions observed from IPA/HAR capture.
+# DiDi iOS app-scoped homepage marketing cards, popup toggles, and YKS promo entry suppressions observed from IPA/HAR capture.
 
 [Header Rewrite]
 http-request ^https?:\/\/(?:www\.)?(?:hjw01|hjwang9)\.com(?:\/?(?:\?.*)?$|\/(?:archives\/\d+\/?|tag\/[^?#]+\/?|tags\/?|category\/[^?#]+\/?|author\/\d+\/new\/?|authors(?:_[^\/?#]+)?(?:\/post-\d+\/?)?|communitys\/?|consumers\/?|follow\/?|date\/?|history\/search\/?|my\/\d+\/?|order\/hot\/?|ai\/?|[^\/?#]+\.html)(?:\?.*)?$) header-del Accept-Encoding
@@ -58,3 +58,5 @@ hostname = %APPEND% hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsupe
 ^https?:\/\/adsmind\.ugdtimg\.com\/ads_svp_video__[^?#]+\.mp4(?:\?.*)?$ data-type=text data="" status-code=204
 ^https?:\/\/v\.didi\.cn\/prs\/M5Rj3dB(?:\?.*)?$ data-type=text data="<!doctype html><html></html>" status-code=200 header="Content-Type:text/html; charset=utf-8"
 ^https?:\/\/dtrip\.xiaojukeji\.com\/poly-rebuild\/pages\/home\/index\?(?:[^#]*&)?dchn=M5Rj3dB(?:&|$)(?:[^#]*)$ data-type=text data="<!doctype html><html></html>" status-code=200 header="Content-Type:text/html; charset=utf-8"
+^https?:\/\/img-ys011\.didistatic\.com\/static\/xjcfthanos\/do1_p9vQuSXkmSGEBIhWRyN8(?:\?.*)?$ data-type=text data="" status-code=204
+^https?:\/\/img-ys011\.didistatic\.com\/static\/xjcfthanos\/do1_HTHdfkfT2xyN3ctCzGUj(?:\?.*)?$ data-type=text data="" status-code=204

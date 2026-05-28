@@ -126,8 +126,8 @@ const BAD_NAV_IDS = new Set([
   'yuantu',
 ]);
 
-const BAD_LINK_RE = /(?:manhattan\.webapp\.xiaojukeji\.com\/heranew|v\.didi\.cn\/prs\/M5Rj3dB|img-ys011\.didistatic\.com\/static\/ad_oss\/|s3-hnapuhdd-cdn\.didistatic\.com\/zhunxing-creative\/|dpubstatic\.udache\.com\/static\/dpubimg\/(?:Tk4P7xStKnOCmzVkLK6af|0I0vBVH3WTFEHnnsru5aj|5I2hqVIZ3lCWECUFjXRje|ZJ4gPzS-atJwuY37qw2Zo)\.png)/i;
-const BAD_RESOURCE_RE = /(?:pas_start_page|pas_notice_webview|didipas_drop_down_widget1|one_resource_start_page|casper_home_banner|na_home_marketing_card|home_marketing_card|home_banner_template|didipas_startpage_new_less_banner|bottom_marketing|marketing_banner|mult_home_banner|skyfall|popup)/i;
+const BAD_LINK_RE = /(?:manhattan\.webapp\.xiaojukeji\.com\/heranew|v\.didi\.cn\/prs\/M5Rj3dB|img-ys011\.didistatic\.com\/static\/(?:ad_oss|xjcfthanos)\/|s3-hnapuhdd-cdn\.didistatic\.com\/zhunxing-creative\/|dpubstatic\.udache\.com\/static\/dpubimg\/(?:Tk4P7xStKnOCmzVkLK6af|0I0vBVH3WTFEHnnsru5aj|5I2hqVIZ3lCWECUFjXRje|ZJ4gPzS-atJwuY37qw2Zo)\.png)/i;
+const BAD_RESOURCE_RE = /(?:pas_start_page|pas_notice_webview|didipas_drop_down_widget1|one_resource_start_page|casper_home_banner|na_home_marketing_card|home_marketing_card|home_banner_template|didipas_startpage_new_less_banner|bottom_marketing|marketing_banner|mult_home_banner|skyfall|popup|xpanel|xbanner|coupon|cashier|ddpay|dialog|modal|mask|overlay)/i;
 const AD_IMAGE_RE = /img-ys011\.didistatic\.com\/static\/ad_oss\//i;
 const TOKEN_LIST_KEY_RE = /^(?:nav_id|bottom_menu_id|order_cards_list)$/i;
 const BAD_RESOURCE_IDS = new Set([
@@ -137,6 +137,15 @@ const BAD_RESOURCE_IDS = new Set([
   '21373',
 ]);
 const BAD_TOGGLE_NAMES = new Set([
+  'bottom_bar_coupon',
+  'coupon_cashier_highlight',
+  'ddpay_coupon_center',
+  'gj_zf_qb',
+  'setting_toggle_coupon_filter',
+  'Freight_Passenger_Union_Popup_Switch',
+  'app_hm_show_guide_popup',
+  'xbanner_toggle',
+  'min_drn_bundle_version_config_xpanel',
   'bts_config_client_blord_launch_ad',
   'gray_map_pt_hppop',
   'launch_advertising_display_interval',
@@ -147,6 +156,7 @@ const BAD_TOGGLE_NAMES = new Set([
   'Xpanel_Notice',
   'app_xpanel_request_toggle',
 ]);
+const BAD_TOGGLE_NAME_RE = /(?:coupon|cashier|ddpay|popup|dialog|modal|xpanel|xbanner|banner|grey|gray|mask|overlay)/i;
 const DIDI_NP_AD_URLPATHS = [
   'conf.diditaxi.com.cn/homepage/v1/core',
   'res.xiaojukeji.com/resapi/activity/getValid',
@@ -355,6 +365,56 @@ function disableToggle(object, state) {
   }
 }
 
+function cleanToggleValue(value, state) {
+  if (value === undefined || value === null) {
+    return value;
+  }
+  if (typeof value === 'number') {
+    state.changed = true;
+    return 0;
+  }
+  if (typeof value === 'boolean') {
+    state.changed = true;
+    return false;
+  }
+  if (typeof value === 'string') {
+    state.changed = true;
+    return value === '' ? value : '0';
+  }
+  if (Array.isArray(value)) {
+    if (value.length !== 0) {
+      state.changed = true;
+    }
+    return [];
+  }
+  if (typeof value === 'object') {
+    const out = { ...value };
+    let touched = false;
+    if (out.allow !== false) {
+      out.allow = false;
+      touched = true;
+      state.changed = true;
+    }
+    if (out.assign !== undefined) {
+      delete out.assign;
+      touched = true;
+      state.changed = true;
+    }
+    for (const key of Object.keys(out)) {
+      if (/^(?:r|enable|enabled|is_enable|isEnabled|switch|show|visible|status|value)$/i.test(key)) {
+        out[key] = cleanToggleValue(out[key], state);
+        touched = true;
+      }
+    }
+    if (!touched) {
+      out.r = 0;
+      state.changed = true;
+    }
+    return out;
+  }
+  return value;
+}
+
 function patchDaggerLaunchConfig(object, state) {
   const assign = object && object.assign;
   const args = assign && assign.args;
@@ -478,6 +538,11 @@ function patchDidiToggleObject(object, state) {
   }
 
   if (BAD_TOGGLE_NAMES.has(name)) {
+    disableToggle(object, state);
+    return;
+  }
+
+  if (state.toggleMode && BAD_TOGGLE_NAME_RE.test(name)) {
     disableToggle(object, state);
     return;
   }
@@ -614,6 +679,11 @@ function cleanObject(object, state) {
   patchDidiToggleObject(object, state);
   const out = {};
   for (const key of Object.keys(object)) {
+    if (state.toggleMode && (BAD_TOGGLE_NAMES.has(key) || BAD_TOGGLE_NAME_RE.test(key))) {
+      out[key] = cleanToggleValue(object[key], state);
+      continue;
+    }
+
     if (BAD_CARD_KEYS.has(key)) {
       state.changed = true;
       continue;
@@ -727,11 +797,18 @@ try {
     if (looksLikeDidiYksPayload(`${request.url}\n${requestText}\n${responseText}`)) {
       const payload = parseMaybeJson(responseText);
       if (payload !== undefined) {
-        const state = { changed: false };
+        const state = {
+          changed: false,
+          toggleMode: urlInfo.host === 'as.xiaojukeji.com' && urlInfo.path === '/ep/as/toggles',
+        };
         const cleaned = cleanValue(payload, state);
         if (state.changed) {
           handled = true;
-          finishJson('DiDi YKS homepage cards/resources cleaned', cleaned);
+          if (state.toggleMode) {
+            finishJson('DiDi popup toggles cleaned', cleaned, 'didi-popup-toggles-clean-1');
+          } else {
+            finishJson('DiDi YKS homepage cards/resources cleaned', cleaned);
+          }
         }
       }
     }
