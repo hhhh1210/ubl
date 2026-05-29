@@ -126,7 +126,7 @@ const BAD_NAV_IDS = new Set([
   'yuantu',
 ]);
 
-const BAD_LINK_RE = /(?:manhattan\.webapp\.xiaojukeji\.com\/heranew|v\.didi\.cn\/prs\/M5Rj3dB|img-ys011\.didistatic\.com\/static\/(?:ad_oss|xjcfthanos)\/|s3-hnapuhdd-cdn\.didistatic\.com\/zhunxing-creative\/|dpubstatic\.udache\.com\/static\/dpubimg\/(?:Tk4P7xStKnOCmzVkLK6af|0I0vBVH3WTFEHnnsru5aj|5I2hqVIZ3lCWECUFjXRje|ZJ4gPzS-atJwuY37qw2Zo)\.png)/i;
+const BAD_LINK_RE = /(?:manhattan\.webapp\.xiaojukeji\.com\/heranew|prod\.didi\.cn\/ut-main\/xtpl\/ip-collaboration-skin-swap-popup|ut-static\.udache\.com\/webx\/entry\/xtpl\/online\/ip-collaboration-skin-swap-popup\/|v\.didi\.cn\/prs\/M5Rj3dB|img-ys011\.didistatic\.com\/static\/(?:ad_oss|xjcfthanos)\/|s3-hnapuhdd-cdn\.didistatic\.com\/zhunxing-creative\/|dpubstatic\.udache\.com\/static\/dpubimg\/(?:Tk4P7xStKnOCmzVkLK6af|0I0vBVH3WTFEHnnsru5aj|5I2hqVIZ3lCWECUFjXRje|ZJ4gPzS-atJwuY37qw2Zo)\.png)/i;
 const BAD_RESOURCE_RE = /(?:pas_start_page|pas_notice_webview|didipas_drop_down_widget1|one_resource_start_page|casper_home_banner|na_home_marketing_card|home_marketing_card|home_banner_template|didipas_startpage_new_less_banner|bottom_marketing|marketing_banner|mult_home_banner|skyfall|popup|xpanel|xbanner|coupon|cashier|ddpay|dialog|modal|mask|overlay)/i;
 const AD_IMAGE_RE = /img-ys011\.didistatic\.com\/static\/ad_oss\//i;
 const TOKEN_LIST_KEY_RE = /^(?:nav_id|bottom_menu_id|order_cards_list)$/i;
@@ -200,8 +200,35 @@ function isDidiShieldEndpoint(urlInfo) {
     urlInfo.path === '/api/guard/psg/v2/getShieldStatus';
 }
 
+function isDidiSkinSwapPopupEndpoint(urlInfo) {
+  return (
+    urlInfo.host === 'prod.didi.cn' &&
+    urlInfo.path === '/ut-main/xtpl/ip-collaboration-skin-swap-popup'
+  ) || (
+    urlInfo.host === 'ut-static.udache.com' &&
+    /^\/webx\/entry\/xtpl\/online\/ip-collaboration-skin-swap-popup\//.test(urlInfo.path)
+  );
+}
+
 function looksLikeDidiYksPayload(text) {
-  return /ut-aggre-homepage|homepagemarketing|homepage\/v1\/core|homepageonestop|order_cards|order_cards_list|yuantu|didifinance|pas_start_page|pas_notice_webview|new_resource_sdk_toggle|ios_activity_download_config|activity_resource_15|valid_act_ids|na_home_marketing_card|home_marketing_card|resapi\/activity\/(?:mget|getValid)|IsDaggerEnable|launch_advertising_display_interval|didipas_splash_mp4control|webx_get_prod_page_conf|llm_assistant_experiment|qu_dialog_rn_new|dpubstatic\.udache\.com\/static\/dpubimg\/|com\.xiaojukeji\.didi/i.test(String(text || ''));
+  return /ut-aggre-homepage|homepagemarketing|homepage\/v1\/core|homepageonestop|order_cards|order_cards_list|yuantu|didifinance|pas_start_page|pas_notice_webview|new_resource_sdk_toggle|ios_activity_download_config|activity_resource_15|valid_act_ids|na_home_marketing_card|home_marketing_card|resapi\/activity\/(?:mget|getValid)|IsDaggerEnable|launch_advertising_display_interval|didipas_splash_mp4control|webx_get_prod_page_conf|llm_assistant_experiment|qu_dialog_rn_new|ip-collaboration-skin-swap-popup|dpubstatic\.udache\.com\/static\/dpubimg\/|com\.xiaojukeji\.didi/i.test(String(text || ''));
+}
+
+function buildEmptyHtml() {
+  return '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;background:transparent!important;width:0!important;height:0!important;overflow:hidden!important}</style></head><body><script>(function(){function c(){try{if(window.DidiJSBridge){if(DidiJSBridge.callHandler){DidiJSBridge.callHandler("closePage",{});DidiJSBridge.callHandler("closeWindow",{});DidiJSBridge.callHandler("goBack",{});}if(DidiJSBridge.callNative){DidiJSBridge.callNative("closePage",{});DidiJSBridge.callNative("closeWindow",{});}}}catch(e){}try{window.close();}catch(e){}}setTimeout(c,0);setTimeout(c,80);setTimeout(c,240);})();</script></body></html>';
+}
+
+function buildTextHeaders(baseHeaders, contentType, marker) {
+  const headers = cloneHeaders(baseHeaders);
+  deleteHeaderCaseInsensitive(headers, 'Content-Encoding');
+  deleteHeaderCaseInsensitive(headers, 'Content-Length');
+  deleteHeaderCaseInsensitive(headers, 'Transfer-Encoding');
+  setHeaderCaseInsensitive(headers, 'Cache-Control', 'no-store');
+  setHeaderCaseInsensitive(headers, 'Pragma', 'no-cache');
+  setHeaderCaseInsensitive(headers, 'Expires', '0');
+  setHeaderCaseInsensitive(headers, 'Content-Type', contentType);
+  setHeaderCaseInsensitive(headers, 'X-uBO-DiDi', marker);
+  return headers;
 }
 
 function parseMaybeJson(text) {
@@ -769,6 +796,16 @@ function finishJson(reason, value, marker) {
   });
 }
 
+function finishText(reason, body, contentType, marker, status) {
+  const headers = buildTextHeaders($response && $response.headers, contentType, marker);
+  console.log(`uBO DiDi ad clean: ${reason}`);
+  done({
+    status: status || 200,
+    headers,
+    body,
+  });
+}
+
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
   const response = typeof $response === 'object' && $response !== null ? $response : {};
@@ -789,6 +826,25 @@ try {
       done({});
     }
     handled = true;
+  }
+
+  if (handled === false && isDidiSkinSwapPopupEndpoint(urlInfo)) {
+    handled = true;
+    if (urlInfo.host === 'prod.didi.cn') {
+      finishText(
+        'DiDi skin-swap popup HTML self-closed',
+        buildEmptyHtml(),
+        'text/html; charset=utf-8',
+        'didi-skin-swap-popup-empty-1'
+      );
+    } else {
+      finishText(
+        'DiDi skin-swap popup asset emptied',
+        '',
+        /\.css(?:$|[?#])/i.test(urlInfo.path) ? 'text/css; charset=utf-8' : 'application/javascript; charset=utf-8',
+        'didi-skin-swap-popup-asset-empty-1'
+      );
+    }
   }
 
   if (handled === false && isDidiYksEndpoint(urlInfo)) {
