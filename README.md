@@ -18,7 +18,7 @@ Files:
 - `didi-ad-clean.js`: companion cleanup script for uBO DiDi iOS YKS Ad Clean.
 - `wechat-pay-ad-clean.js`: companion cleanup script for uBO WeChat Pay Ad Data Empty, GoldPlan Page Clean, and ICBC Ad URL Clean.
 - `huya-ad-clean.js`: companion cleanup script for uBO Huya iOS GDT Splash Setting Clean and Exapp Fill Clean.
-- `gf-ytj-ad-clean.js`: companion cleanup script for uBO GF Yitaojin iOS Startup/Marketing Clean.
+- `gf-ytj-ad-clean.js`: companion cleanup script for uBO GF Yitaojin iOS Startup Ad Clean.
 
 Recommended install order:
 1. Upload all module and companion script files to GitHub.
@@ -109,10 +109,10 @@ WeChat Pay iOS summary:
 - The 2026-05-01 17:32 HAR pass adds exact `mmbiz.qpic.cn` material mappings for the remaining WeChat Pay promo entrance images that are visible outside mmtls.
 
 GF Yitaojin iOS summary:
-- The IPA gateway config identifies explicit startup/activity popup endpoints including `config.gf.com.cn/ad/info`, `midend.gf.com.cn/gfmiddle/activity/popup/v2`, and `config.gf.com.cn/ytj_config/sys_popup`.
-- The response script empties confirmed startup/CMS popup endpoints and prunes selected banner, homepage grid, find-page marketing, account-open ad, holder-marketing, smart-assistant recommendation, trade-card, config promo, stock-index promo, and fund-ad payloads while avoiding broad `gf.com.cn` domain blocking.
-- The 2026-05-29 HAR pass confirmed active boot ad `/ad/info` plus additional active marketing surfaces `/gfmiddle/activity/homepage_elements/v2`, `/gfmiddle/activity/find_marketing/list`, `/ytj_config/info`, and `/stock_index/publish/info`.
-- Core login, quote, trading, account, and general config domains are intentionally not blocked; the module targets only named ad/marketing paths from the app gateway config and HAR capture.
+- The response script is intentionally narrowed to the confirmed startup ad endpoint `config.gf.com.cn/ad/info`.
+- The 2026-05-29 crash HAR showed that broad cleanup of `stock_index/publish/info`, `ytj_config/info`, `ytj_config/sys_popup`, and `my_page/open_account_marketing` can affect runtime/account-page initialization, so those paths are now allowed through untouched.
+- Homepage marketing, find-page marketing, account-open marketing, holder-marketing, smart-assistant recommendation, trade-card, stock-index config, and fund-ad payloads are not modified by this conservative profile.
+- Core login, quote, trading, account, RN/global config, and general config domains are intentionally not blocked; only the boot ad JSON is replaced with an empty success payload.
 
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.
