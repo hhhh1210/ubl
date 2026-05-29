@@ -18,6 +18,7 @@ Files:
 - `didi-ad-clean.js`: companion cleanup script for uBO DiDi iOS YKS Ad Clean.
 - `wechat-pay-ad-clean.js`: companion cleanup script for uBO WeChat Pay Ad Data Empty, GoldPlan Page Clean, and ICBC Ad URL Clean.
 - `huya-ad-clean.js`: companion cleanup script for uBO Huya iOS GDT Splash Setting Clean and Exapp Fill Clean.
+- `gf-ytj-ad-clean.js`: companion cleanup script for uBO GF Yitaojin iOS Startup/Marketing Clean.
 
 Recommended install order:
 1. Upload all module and companion script files to GitHub.
@@ -40,6 +41,7 @@ Example raw URLs after upload:
 - `https://raw.githubusercontent.com/hhhh1210/ubl/ios/didi-ad-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/ios/wechat-pay-ad-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/ios/huya-ad-clean.js`
+- `https://raw.githubusercontent.com/hhhh1210/ubl/ios/gf-ytj-ad-clean.js`
 
 Validation note:
 - `surge-cli --check` validates files as full profiles and will complain that rules must end with `FINAL`. That warning also appears for already-installed third-party `.sgmodule` files, so do not use it as the final installability test for modules.
@@ -106,8 +108,14 @@ WeChat Pay iOS summary:
 - The ICBC payment submit response keeps `pay_data` intact and only clears `ad_url`; the observed ICBC `weixin_payment.htm` promo landing page is mapped to an empty page.
 - The 2026-05-01 17:32 HAR pass adds exact `mmbiz.qpic.cn` material mappings for the remaining WeChat Pay promo entrance images that are visible outside mmtls.
 
+GF Yitaojin iOS summary:
+- The IPA gateway config identifies explicit startup/activity popup endpoints including `config.gf.com.cn/ad/info`, `midend.gf.com.cn/gfmiddle/activity/popup/v2`, and `config.gf.com.cn/ytj_config/sys_popup`.
+- The response script empties confirmed startup/CMS popup endpoints and prunes selected banner, homepage grid, find-page marketing, account-open ad, holder-marketing, smart-assistant recommendation, trade-card, config promo, stock-index promo, and fund-ad payloads while avoiding broad `gf.com.cn` domain blocking.
+- The 2026-05-29 HAR pass confirmed active boot ad `/ad/info` plus additional active marketing surfaces `/gfmiddle/activity/homepage_elements/v2`, `/gfmiddle/activity/find_marketing/list`, `/ytj_config/info`, and `/stock_index/publish/info`.
+- Core login, quote, trading, account, and general config domains are intentionally not blocked; the module targets only named ad/marketing paths from the app gateway config and HAR capture.
+
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.
-- The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a.applovin.com, a.applvn.com, a4.applovin.com, d.applovin.com, ms.applovin.com, rt.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, install.monetization-sdk.chartboost.com, config.monetization-sdk.chartboost.com, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, gift-static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, omgup.hongyibo.com.cn, sec-guard.hongyibo.com.cn, res-new.hongyibo.com.cn, as.hongyibo.com.cn, api.hongyibo.com.cn, as.xiaojukeji.com, conf.diditaxi.com.cn, yuantu.diditaxi.com.cn, res.xiaojukeji.com, api.udache.com, v.didi.cn, dtrip.xiaojukeji.com, payapp.weixin.qq.com, mp.weixin.qq.com, acq.icbc.com.cn, m.icbc.com.cn, mmbiz.qpic.cn, prod.huaxz.cn, api.didi.cn, us.l.qq.com, tangram.e.qq.com, xs.gdt.qq.com, business.msstatic.com, *.googlevideo.com.
-- This package intentionally excludes the broad uBO-derived rule dump. It keeps only verified hjw01, mytvsuper, coolinet, YouTube Web, YouTube iOS App, googlevideo, and app-scoped Jetpack Joyride/Huaxiaozhu/DiDi/WeChat Pay/Huya handling.
+- The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a.applovin.com, a.applvn.com, a4.applovin.com, d.applovin.com, ms.applovin.com, rt.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, install.monetization-sdk.chartboost.com, config.monetization-sdk.chartboost.com, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, gift-static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, omgup.hongyibo.com.cn, sec-guard.hongyibo.com.cn, res-new.hongyibo.com.cn, as.hongyibo.com.cn, api.hongyibo.com.cn, as.xiaojukeji.com, conf.diditaxi.com.cn, yuantu.diditaxi.com.cn, res.xiaojukeji.com, api.udache.com, v.didi.cn, dtrip.xiaojukeji.com, payapp.weixin.qq.com, mp.weixin.qq.com, acq.icbc.com.cn, m.icbc.com.cn, mmbiz.qpic.cn, prod.huaxz.cn, api.didi.cn, us.l.qq.com, tangram.e.qq.com, xs.gdt.qq.com, business.msstatic.com, config.gf.com.cn, midend.gf.com.cn, qd.gf.com.cn, *.googlevideo.com.
+- This package intentionally excludes the broad uBO-derived rule dump. It keeps only verified hjw01, mytvsuper, coolinet, YouTube Web, YouTube iOS App, googlevideo, and app-scoped Jetpack Joyride/Huaxiaozhu/DiDi/WeChat Pay/Huya/GF Yitaojin handling.
 - Cosmetic filters, scriptlets, HTML filtering, `removeparam=`, `urlskip=`, and source-domain constrained rules are not part of this lightweight export.
