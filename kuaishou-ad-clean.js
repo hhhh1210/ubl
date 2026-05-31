@@ -59,7 +59,7 @@ function buildJsonHeaders(baseHeaders, marker) {
 }
 
 function isRealtimeStartupEndpoint(urlInfo) {
-  return /^az[1-4]-api\.ksapisrv\.com$/.test(urlInfo.host) &&
+  return /^(?:az[1-4]-api\.ksapisrv\.com|az[1-4]-api-js\.gifshow\.com)$/.test(urlInfo.host) &&
     urlInfo.path === '/rest/n/system/realtime/startup';
 }
 
