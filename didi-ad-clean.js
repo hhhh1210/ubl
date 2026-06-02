@@ -130,6 +130,7 @@ const BAD_LINK_RE = /(?:manhattan\.webapp\.xiaojukeji\.com\/heranew|prod\.didi\.
 const BAD_RESOURCE_RE = /(?:pas_start_page|pas_notice_webview|didipas_drop_down_widget1|one_resource_start_page|casper_home_banner|na_home_marketing_card|home_marketing_card|home_banner_template|didipas_startpage_new_less_banner|bottom_marketing|marketing_banner|mult_home_banner|skyfall|popup|xpanel|xbanner|coupon|cashier|ddpay|dialog|modal|mask|overlay)/i;
 const AD_IMAGE_RE = /img-ys011\.didistatic\.com\/static\/ad_oss\//i;
 const TOKEN_LIST_KEY_RE = /^(?:nav_id|bottom_menu_id|order_cards_list)$/i;
+const URL_LIST_KEY_RE = /^(?:url_list|urlList)$/i;
 const BAD_RESOURCE_IDS = new Set([
   '18',
   '63',
@@ -306,13 +307,19 @@ function isBadStringItem(value) {
   return BAD_LINK_RE.test(value) || BAD_RESOURCE_RE.test(value);
 }
 
-function cleanTokenList(text, state) {
+function cleanTokenList(text, state, options) {
   const value = String(text || '');
   if (/^\s*[\[{]/.test(value)) {
     return text;
   }
+  const allowResourceNames = !!(options && options.allowResourceNames);
+  function isBadToken(token) {
+    return allowResourceNames
+      ? (BAD_CARD_KEYS.has(token) || BAD_NAV_IDS.has(token) || BAD_LINK_RE.test(token))
+      : isBadStringItem(token);
+  }
   if (value.indexOf(',') === -1) {
-    if (isBadStringItem(value.trim())) {
+    if (isBadToken(value.trim())) {
       state.changed = true;
       return '';
     }
@@ -322,7 +329,7 @@ function cleanTokenList(text, state) {
   const kept = [];
   for (const token of tokens) {
     const trimmed = token.trim();
-    if (!trimmed || isBadStringItem(trimmed)) {
+    if (!trimmed || isBadToken(trimmed)) {
       state.changed = true;
       continue;
     }
@@ -743,6 +750,11 @@ function cleanObject(object, state) {
 
     if ((key === 'bottom_menu' || key === 'nav_id_list' || TOKEN_LIST_KEY_RE.test(key)) && typeof value === 'string') {
       out[key] = cleanTokenList(cleanStringifiedJson(value, state), state);
+      continue;
+    }
+
+    if (URL_LIST_KEY_RE.test(key) && typeof value === 'string') {
+      out[key] = cleanTokenList(cleanStringifiedJson(value, state), state, { allowResourceNames: true });
       continue;
     }
 
