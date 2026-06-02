@@ -1,121 +1,42 @@
 'use strict';
 
-function done(payload) {
-  $done(payload || {});
-}
+const TARGET = /^https?:\/\/(?:az[1-4]-api\.ksapisrv\.com|az[1-4]-api-js\.gifshow\.com)\/rest\/n\/system\/realtime\/startup(?:[?#]|$)/i;
+const SPLASH_KEYS = ['splash', 'splashInfo', 'realtimeSplashInfo', 'splashLlsid'];
 
-function parseUrl(url) {
-  const match = String(url || '').match(/^https?:\/\/([^/?#:]+)([^?#]*)(?:\?([^#]*))?/i);
-  if (!match) {
-    return { host: '', path: '', query: '' };
-  }
-  return {
-    host: match[1].toLowerCase(),
-    path: match[2] || '/',
-    query: match[3] || '',
-  };
-}
-
-function cloneHeaders(headers) {
-  const result = {};
-  if (!headers || typeof headers !== 'object') {
-    return result;
-  }
-  Object.keys(headers).forEach((key) => {
-    result[key] = headers[key];
-  });
-  return result;
-}
-
-function deleteHeaderCaseInsensitive(headers, name) {
-  const target = String(name).toLowerCase();
-  Object.keys(headers).forEach((key) => {
-    if (key.toLowerCase() === target) {
-      delete headers[key];
+function cleanHeaders(headers) {
+  const cleaned = {};
+  Object.keys(headers || {}).forEach((key) => {
+    if (!/^(?:content-encoding|content-length|transfer-encoding)$/i.test(key)) {
+      cleaned[key] = headers[key];
     }
   });
-}
-
-function setHeaderCaseInsensitive(headers, name, value) {
-  const target = String(name).toLowerCase();
-  let existing = null;
-  Object.keys(headers).forEach((key) => {
-    if (key.toLowerCase() === target) {
-      existing = key;
-    }
-  });
-  headers[existing || name] = value;
-}
-
-function buildJsonHeaders(baseHeaders, marker) {
-  const headers = cloneHeaders(baseHeaders);
-  deleteHeaderCaseInsensitive(headers, 'Content-Encoding');
-  deleteHeaderCaseInsensitive(headers, 'Content-Length');
-  deleteHeaderCaseInsensitive(headers, 'Transfer-Encoding');
-  setHeaderCaseInsensitive(headers, 'Cache-Control', 'no-store');
-  setHeaderCaseInsensitive(headers, 'Content-Type', 'application/json; charset=utf-8');
-  setHeaderCaseInsensitive(headers, 'X-uBO-Kuaishou', marker);
-  return headers;
-}
-
-function isRealtimeStartupEndpoint(urlInfo) {
-  return /^(?:az[1-4]-api\.ksapisrv\.com|az[1-4]-api-js\.gifshow\.com)$/.test(urlInfo.host) &&
-    urlInfo.path === '/rest/n/system/realtime/startup';
-}
-
-function stripRealtimeSplash(payload) {
-  if (!payload || typeof payload !== 'object') {
-    return false;
-  }
-
-  let changed = false;
-  if (Object.prototype.hasOwnProperty.call(payload, 'splash')) {
-    delete payload.splash;
-    changed = true;
-  }
-  if (Object.prototype.hasOwnProperty.call(payload, 'splashInfo')) {
-    delete payload.splashInfo;
-    changed = true;
-  }
-  if (Object.prototype.hasOwnProperty.call(payload, 'realtimeSplashInfo')) {
-    delete payload.realtimeSplashInfo;
-    changed = true;
-  }
-  if (Object.prototype.hasOwnProperty.call(payload, 'splashLlsid')) {
-    delete payload.splashLlsid;
-    changed = true;
-  }
-
-  return changed;
-}
-
-function finishJson(reason, payload, marker) {
-  console.log('uBO Kuaishou ad clean: ' + reason);
-  done({
-    status: 200,
-    headers: buildJsonHeaders($response && $response.headers, marker),
-    body: JSON.stringify(payload),
-  });
+  cleaned['Content-Type'] = 'application/json; charset=utf-8';
+  cleaned['Cache-Control'] = 'no-store';
+  cleaned['X-uBO-Kuaishou'] = 'kuaishou-realtime-splash-empty-1';
+  return cleaned;
 }
 
 try {
-  const request = typeof $request === 'object' && $request !== null ? $request : {};
-  const response = typeof $response === 'object' && $response !== null ? $response : {};
-  const urlInfo = parseUrl(request.url);
-
-  if (!isRealtimeStartupEndpoint(urlInfo)) {
-    done({});
+  if (!TARGET.test(($request && $request.url) || '')) {
+    $done({});
   } else {
-    const body = response.body || '';
-    const payload = JSON.parse(body);
-    const changed = stripRealtimeSplash(payload);
-    if (changed) {
-      finishJson('realtime startup splash removed', payload, 'kuaishou-realtime-splash-empty-1');
-    } else {
-      done({});
-    }
+    const payload = JSON.parse(($response && $response.body) || '{}');
+    let changed = false;
+
+    SPLASH_KEYS.forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(payload, key)) {
+        delete payload[key];
+        changed = true;
+      }
+    });
+
+    $done(changed ? {
+      status: 200,
+      headers: cleanHeaders($response && $response.headers),
+      body: JSON.stringify(payload),
+    } : {});
   }
 } catch (error) {
   console.log('uBO Kuaishou ad clean failed: ' + (error && error.message ? error.message : String(error)));
-  done({});
+  $done({});
 }
