@@ -175,6 +175,11 @@ const DIDI_DISABLED_RESOURCE_TOGGLE_KEYS = [
   'didipas_startpage_map',
   'pas_home_activity',
   'pas_swipe_sucess_notice',
+  'didipas_second_floor_confirm_call',
+  'didipas_second_floor_index',
+  'didipas_second_floor_ride_end',
+  'didipas_second_floor_running',
+  'didipas_second_floor_wait_response',
 ];
 
 function isDidiYksEndpoint(urlInfo) {
