@@ -813,6 +813,21 @@ function finishJson(reason, value, marker) {
   });
 }
 
+function finishDirectJson(reason, value, marker) {
+  console.log(`uBO DiDi ad clean: ${reason}`);
+  done({
+    response: {
+      status: 200,
+      headers: buildJsonHeaders({}, marker),
+      body: JSON.stringify(value),
+    },
+  });
+}
+
+function hasPhase(argument, value) {
+  return new RegExp(`(?:^|&)phase=${value}(?:&|$)`).test(String(argument || ''));
+}
+
 function finishText(reason, body, contentType, marker, status) {
   const headers = buildTextHeaders($response && $response.headers, contentType, marker);
   console.log(`uBO DiDi ad clean: ${reason}`);
@@ -831,7 +846,7 @@ try {
   let handled = false;
 
   if (
-    /(?:^|&)phase=toggles-request(?:&|$)/.test(argument) &&
+    hasPhase(argument, 'toggles-request') &&
     urlInfo.host === 'as.xiaojukeji.com' &&
     urlInfo.path === '/ep/as/toggles'
   ) {
@@ -843,6 +858,19 @@ try {
       done({});
     }
     handled = true;
+  }
+
+  if (
+    handled === false &&
+    hasPhase(argument, 'shield-request') &&
+    isDidiShieldEndpoint(urlInfo)
+  ) {
+    handled = true;
+    finishDirectJson(
+      'DiDi safety shield request emptied',
+      buildNoShieldPayload({ errno: 0, errmsg: '' }),
+      'didi-shield-request-empty-1'
+    );
   }
 
   if (handled === false && isDidiSkinSwapPopupEndpoint(urlInfo)) {
