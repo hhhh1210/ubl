@@ -126,7 +126,7 @@ const BAD_NAV_IDS = new Set([
   'yuantu',
 ]);
 
-const BAD_LINK_RE = /(?:manhattan\.webapp\.xiaojukeji\.com\/heranew|prod\.didi\.cn\/ut-main\/xtpl\/ip-collaboration-skin-swap-popup|ut-static\.udache\.com\/webx\/(?:entry\/xtpl\/online\/ip-collaboration-skin-swap-popup\/|chitu-admin\/4473f441f93803c33acf015c62579fb8\.png)|v\.didi\.cn\/prs\/M5Rj3dB|img-ys011\.didistatic\.com\/static\/(?:ad_oss|xjcfthanos)\/|s3-hnapuhdd-cdn\.didistatic\.com\/zhunxing-creative\/|dpubstatic\.udache\.com\/static\/dpubimg\/(?:Tk4P7xStKnOCmzVkLK6af|0I0vBVH3WTFEHnnsru5aj|5I2hqVIZ3lCWECUFjXRje|ZJ4gPzS-atJwuY37qw2Zo)\.png)/i;
+const BAD_LINK_RE = /(?:manhattan\.webapp\.xiaojukeji\.com\/heranew|prod\.didi\.cn\/ut-main\/xtpl\/ip-collaboration-skin-swap-popup|ut-static\.udache\.com\/webx\/(?:entry\/xtpl\/online\/ip-collaboration-skin-swap-popup\/|chitu-admin\/4473f441f93803c33acf015c62579fb8\.png)|v\.didi\.cn\/prs\/M5Rj3dB|img-ys011\.didistatic\.com\/static\/(?:ad_oss|xjcfthanos)\/|s3-hnapuhdd-cdn\.didistatic\.com\/zhunxing-creative\/|dpubstatic\.udache\.com\/static\/dpubimg\/(?:BQay6JI2Y-semV2r01FbD\.jpg|Tk4P7xStKnOCmzVkLK6af\.png|0I0vBVH3WTFEHnnsru5aj\.png|5I2hqVIZ3lCWECUFjXRje\.png|ZJ4gPzS-atJwuY37qw2Zo\.png))/i;
 const BAD_RESOURCE_RE = /(?:pas_start_page|pas_notice_webview|didipas_drop_down_widget1|one_resource_start_page|casper_home_banner|na_home_marketing_card|home_marketing_card|home_banner_template|didipas_startpage_new_less_banner|bottom_marketing|marketing_banner|mult_home_banner|skyfall|popup|xpanel|xbanner|coupon|cashier|ddpay|dialog|modal|mask|overlay)/i;
 const AD_IMAGE_RE = /img-ys011\.didistatic\.com\/static\/ad_oss\//i;
 const TOKEN_LIST_KEY_RE = /^(?:nav_id|bottom_menu_id|order_cards_list)$/i;
@@ -813,21 +813,6 @@ function finishJson(reason, value, marker) {
   });
 }
 
-function finishDirectJson(reason, value, marker) {
-  console.log(`uBO DiDi ad clean: ${reason}`);
-  done({
-    response: {
-      status: 200,
-      headers: buildJsonHeaders({}, marker),
-      body: JSON.stringify(value),
-    },
-  });
-}
-
-function hasPhase(argument, value) {
-  return new RegExp(`(?:^|&)phase=${value}(?:&|$)`).test(String(argument || ''));
-}
-
 function finishText(reason, body, contentType, marker, status) {
   const headers = buildTextHeaders($response && $response.headers, contentType, marker);
   console.log(`uBO DiDi ad clean: ${reason}`);
@@ -846,7 +831,7 @@ try {
   let handled = false;
 
   if (
-    hasPhase(argument, 'toggles-request') &&
+    /(?:^|&)phase=toggles-request(?:&|$)/.test(argument) &&
     urlInfo.host === 'as.xiaojukeji.com' &&
     urlInfo.path === '/ep/as/toggles'
   ) {
@@ -858,19 +843,6 @@ try {
       done({});
     }
     handled = true;
-  }
-
-  if (
-    handled === false &&
-    hasPhase(argument, 'shield-request') &&
-    isDidiShieldEndpoint(urlInfo)
-  ) {
-    handled = true;
-    finishDirectJson(
-      'DiDi safety shield request emptied',
-      buildNoShieldPayload({ errno: 0, errmsg: '' }),
-      'didi-shield-request-empty-1'
-    );
   }
 
   if (handled === false && isDidiSkinSwapPopupEndpoint(urlInfo)) {
