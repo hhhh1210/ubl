@@ -181,6 +181,20 @@ function finishJson(value, headerName, marker) {
   });
 }
 
+function finishDirectJson(value, headerName, marker) {
+  done({
+    response: {
+      status: 200,
+      headers: buildJsonHeaders({}, headerName, marker),
+      body: JSON.stringify(value),
+    },
+  });
+}
+
+function hasPhase(value) {
+  return new RegExp(`(?:^|&)phase=${value}(?:&|$)`).test(String(typeof $argument === 'string' ? $argument : ''));
+}
+
 function requestFingerprint(requestText) {
   const headers = $request && $request.headers;
   const ua = getHeader(headers, 'User-Agent');
@@ -386,15 +400,23 @@ try {
   const urlInfo = parseUrl($request && $request.url);
 
   if (urlInfo.host === 'us.l.qq.com' && urlInfo.path === '/exapp') {
-    const qqmusic = cleanQQMusicExapp(requestText, responseText);
-    if (qqmusic) {
-      finishJson(qqmusic, 'X-uBO-QQMusic', 'gdt-exapp-nofill-2');
-    } else {
-      const huya = cleanHuyaExapp(requestText, responseText);
-      if (huya) {
-        finishJson(huya, 'X-uBO-Huya', 'huya-gdt-page-nofill-1');
+    if (hasPhase('qqmusic-exapp-request')) {
+      if (isQQMusicRequest(requestText)) {
+        finishDirectJson({ ret: 0, rpt: 0, msg: '', reqinterval: 3600, last_ads: {}, data: {} }, 'X-uBO-QQMusic', 'gdt-exapp-request-empty-1');
       } else {
         done({});
+      }
+    } else {
+      const qqmusic = cleanQQMusicExapp(requestText, responseText);
+      if (qqmusic) {
+        finishJson(qqmusic, 'X-uBO-QQMusic', 'gdt-exapp-nofill-2');
+      } else {
+        const huya = cleanHuyaExapp(requestText, responseText);
+        if (huya) {
+          finishJson(huya, 'X-uBO-Huya', 'huya-gdt-page-nofill-1');
+        } else {
+          done({});
+        }
       }
     }
   } else if (urlInfo.host === 'tangram.e.qq.com' && urlInfo.path === '/updateSetting') {
