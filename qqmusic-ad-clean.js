@@ -111,51 +111,11 @@ function base64DecodeBinary(input) {
   return output;
 }
 
-function base64EncodeBinary(input) {
-  if (typeof btoa === 'function') {
-    return btoa(input);
-  }
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-  let output = '';
-  let i = 0;
-  while (i < input.length) {
-    const c1 = input.charCodeAt(i++) & 0xff;
-    const c2 = i < input.length ? input.charCodeAt(i++) & 0xff : NaN;
-    const c3 = i < input.length ? input.charCodeAt(i++) & 0xff : NaN;
-    output += chars.charAt(c1 >> 2);
-    output += chars.charAt(((c1 & 3) << 4) | (isNaN(c2) ? 0 : c2 >> 4));
-    output += chars.charAt(isNaN(c2) ? 64 : (((c2 & 15) << 2) | (isNaN(c3) ? 0 : c3 >> 6)));
-    output += chars.charAt(isNaN(c3) ? 64 : (c3 & 63));
-  }
-  return output;
-}
-
-function base64DecodeJson(input) {
-  const compact = String(input || '').replace(/\s+/g, '');
-  const padded = compact + '==='.slice((compact.length + 3) % 4);
-  const binary = base64DecodeBinary(padded);
-  return JSON.parse(decodeURIComponent(escape(binary)));
-}
-
-function base64EncodeJson(value) {
-  return base64EncodeBinary(unescape(encodeURIComponent(JSON.stringify(value))));
-}
-
 function parseMaybeJson(text) {
   try {
     return JSON.parse(text);
   } catch (error) {
     return undefined;
-  }
-}
-
-function setIfDifferent(target, key, value, state) {
-  if (!target || typeof target !== 'object') {
-    return;
-  }
-  if (target[key] !== value) {
-    target[key] = value;
-    state.changed = true;
   }
 }
 
@@ -189,22 +149,6 @@ function finishNoContent(reason, marker) {
     status: 204,
     headers: buildHeaders($response && $response.headers, marker, ''),
     body: '',
-  });
-}
-
-function finishDirectNoContent(reason, marker) {
-  console.log(`uBO QQMusic ad clean: ${reason}`);
-  done({
-    response: {
-      status: 204,
-      headers: {
-        'Cache-Control': 'no-store',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'X-uBO-QQMusic': marker,
-      },
-      body: '',
-    },
   });
 }
 
@@ -261,103 +205,6 @@ function cleanTmeGetInfo(payload, state) {
   return payload;
 }
 
-function cleanGdtExapp(payload, state) {
-  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-    return payload;
-  }
-  const data = payload.data;
-  if (data && typeof data === 'object' && !Array.isArray(data)) {
-    for (const slotId of Object.keys(data)) {
-      const slot = data[slotId];
-      if (!slot || typeof slot !== 'object') {
-        continue;
-      }
-      if (Array.isArray(slot.list) && slot.list.length !== 0) {
-        slot.list = [];
-        state.changed = true;
-      }
-      if (slot.ret !== 102006) {
-        slot.ret = 102006;
-        state.changed = true;
-      }
-      if (slot.msg !== 'no ad') {
-        slot.msg = 'no ad';
-        state.changed = true;
-      }
-    }
-  }
-  payload.ret = 0;
-  payload.rpt = 0;
-  payload.msg = '';
-  payload.last_ads = {};
-  payload.reqinterval = Math.max(Number(payload.reqinterval) || 0, 3600);
-  return payload;
-}
-
-function cleanTangramSetting(requestText, responseText) {
-  const payload = parseMaybeJson(responseText || '{}');
-  if (!payload || !payload.setting || typeof payload.setting !== 'object') {
-    return null;
-  }
-  if (!/com\.tencent\.QQMusic|appkey"?\s*:\s*"?1107900362/i.test(requestText || '')) {
-    return null;
-  }
-
-  const state = { changed: false };
-  const sdk = payload.setting.sdk ? base64DecodeJson(payload.setting.sdk) : null;
-  const app = payload.setting.app ? base64DecodeJson(payload.setting.app) : null;
-
-  if (sdk) {
-    const zeroKeys = [
-      'openSplashDynamic',
-      'splashReqAdCount',
-      'splash_preload_material_download_retry',
-      'newDeviceIntoFetch',
-      'cookieForLastAds',
-      'hippyReward_clicked',
-      'hippyReward_notCloseAdOnClickExpe',
-      'inner_browser_on',
-      'miniCardSupport',
-      'mmaEnabled',
-      'native_loadad_count_limit',
-      'inter_loadad_count_limit',
-      'sscaad',
-      'appstore_jump_product',
-      'report_jump_appstore',
-      'rewardH5EffectiveTime',
-      'maxCount',
-    ];
-    for (const key of zeroKeys) {
-      setIfDifferent(sdk, key, 0, state);
-    }
-    for (const key of [
-      'iOSBannerPageUrl',
-      'iOSInterstitialPageUrl',
-      'tpl',
-      'mmaConfigURL',
-      'miniCardList',
-      'miniCardRef',
-      'rewardVideoUseJsCallbackJudgeWebSuccess',
-    ]) {
-      setIfDifferent(sdk, key, '', state);
-    }
-    setIfDifferent(sdk, 'stop', 1, state);
-    setIfDifferent(sdk, 'reqInterval', 86400, state);
-    payload.setting.sdk = base64EncodeJson(sdk);
-  }
-
-  if (app && typeof app === 'object') {
-    for (const slotId of Object.keys(app)) {
-      if (app[slotId] && typeof app[slotId] === 'object') {
-        setIfDifferent(app[slotId], 'dynamic_use_lgt', 0, state);
-      }
-    }
-    payload.setting.app = base64EncodeJson(app);
-  }
-
-  return state.changed ? payload : null;
-}
-
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
   const response = typeof $response === 'object' && $response !== null ? $response : {};
@@ -385,28 +232,6 @@ try {
       const state = { changed: false };
       cleanTmeGetInfo(payload, state);
       finishJson('QQMusic TME getInfo no-fill', payload, 'tme-getinfo-nofill-1');
-    } else {
-      done({});
-    }
-    handled = true;
-  }
-
-  if (handled === false && isQQMusic && urlInfo.host === 'us.l.qq.com' && urlInfo.path === '/exapp') {
-    const payload = parseMaybeJson(responseText);
-    if (payload !== undefined) {
-      const state = { changed: false };
-      cleanGdtExapp(payload, state);
-      finishJson('QQMusic GDT exapp no-fill', payload, 'gdt-exapp-nofill-1');
-    } else {
-      done({});
-    }
-    handled = true;
-  }
-
-  if (handled === false && urlInfo.host === 'tangram.e.qq.com' && urlInfo.path === '/updateSetting') {
-    const payload = cleanTangramSetting(requestText, responseText);
-    if (payload) {
-      finishJson('QQMusic Tangram splash/reward settings disabled', payload, 'tangram-setting-clean-1');
     } else {
       done({});
     }
