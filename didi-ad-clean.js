@@ -156,6 +156,7 @@ const BAD_TOGGLE_NAMES = new Set([
   'Request_Xpanel_22',
   'Xpanel_Notice',
   'app_xpanel_request_toggle',
+  'IsLaunchTaskEnable',
 ]);
 const BAD_TOGGLE_NAME_RE = /(?:coupon|cashier|ddpay|popup|dialog|modal|xpanel|xbanner|banner|grey|gray|mask|overlay)/i;
 const DIDI_NP_AD_URLPATHS = [
