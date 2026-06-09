@@ -129,6 +129,8 @@ const BAD_NAV_IDS = new Set([
 const BAD_LINK_RE = /(?:manhattan\.webapp\.xiaojukeji\.com\/heranew|prod\.didi\.cn\/ut-main\/xtpl\/ip-collaboration-skin-swap-popup|ut-static\.udache\.com\/webx\/(?:entry\/xtpl\/online\/ip-collaboration-skin-swap-popup\/|chitu-admin\/4473f441f93803c33acf015c62579fb8\.png)|v\.didi\.cn\/prs\/M5Rj3dB|img-ys011\.didistatic\.com\/static\/(?:ad_oss|xjcfthanos)\/|s3-hnapuhdd-cdn\.didistatic\.com\/zhunxing-creative\/|dpubstatic\.udache\.com\/static\/dpubimg\/(?:BQay6JI2Y-semV2r01FbD\.jpg|Tk4P7xStKnOCmzVkLK6af\.png|0I0vBVH3WTFEHnnsru5aj\.png|5I2hqVIZ3lCWECUFjXRje\.png|ZJ4gPzS-atJwuY37qw2Zo\.png))/i;
 const BAD_RESOURCE_RE = /(?:pas_start_page|pas_notice_webview|didipas_drop_down_widget1|one_resource_start_page|casper_home_banner|na_home_marketing_card|home_marketing_card|home_banner_template|didipas_startpage_new_less_banner|bottom_marketing|marketing_banner|mult_home_banner|skyfall|popup|xpanel|xbanner|coupon|cashier|ddpay|dialog|modal|mask|overlay)/i;
 const AD_IMAGE_RE = /img-ys011\.didistatic\.com\/static\/ad_oss\//i;
+const BAD_THANOS_MODULE_RE = /^(?:energy-wallet|xpanel-thanos|energy-coupons|mfe-energy-activity)$/i;
+const BAD_THANOS_TEXT_RE = /(?:xpanel-thanos|energy-coupons|mfe-energy-activity|energy-wallet|img-ys011\.didistatic\.com\/static\/xjcfthanos\/do1_HTHdfkfT2xyN3ctCzGUj)/i;
 const TOKEN_LIST_KEY_RE = /^(?:nav_id|bottom_menu_id|order_cards_list)$/i;
 const URL_LIST_KEY_RE = /^(?:url_list|urlList)$/i;
 const BAD_RESOURCE_IDS = new Set([
@@ -207,6 +209,11 @@ function isDidiShieldEndpoint(urlInfo) {
     urlInfo.path === '/api/guard/psg/v2/getShieldStatus';
 }
 
+function isDidiThanosUpdateEndpoint(urlInfo) {
+  return urlInfo.host === 'thanos.xiaojukeji.com' &&
+    urlInfo.path === '/api/thanos/update';
+}
+
 function isDidiSkinSwapPopupEndpoint(urlInfo) {
   return (
     urlInfo.host === 'prod.didi.cn' &&
@@ -254,6 +261,34 @@ function buildNoShieldPayload(originalPayload) {
     payload.data = {};
   }
   payload.data.shieldInfo = [];
+  return payload;
+}
+
+function isBadThanosModule(item) {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    return false;
+  }
+  const text = [
+    item.module_code,
+    item.name,
+    item.url,
+    item.bundle_url,
+    item.bundleUrl,
+  ].map(stringValue).join(' ');
+  return BAD_THANOS_MODULE_RE.test(stringValue(item.module_code || item.name)) || BAD_THANOS_TEXT_RE.test(text);
+}
+
+function cleanThanosUpdatePayload(payload, state) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return payload;
+  }
+  if (Array.isArray(payload.data)) {
+    const kept = payload.data.filter((item) => !isBadThanosModule(item));
+    if (kept.length !== payload.data.length) {
+      payload.data = kept;
+      state.changed = true;
+    }
+  }
   return payload;
 }
 
@@ -862,6 +897,18 @@ try {
         /\.css(?:$|[?#])/i.test(urlInfo.path) ? 'text/css; charset=utf-8' : 'application/javascript; charset=utf-8',
         'didi-skin-swap-popup-asset-empty-1'
       );
+    }
+  }
+
+  if (handled === false && isDidiThanosUpdateEndpoint(urlInfo)) {
+    const payload = parseMaybeJson(bodyToText(response.body));
+    if (payload !== undefined) {
+      const state = { changed: false };
+      const cleaned = cleanThanosUpdatePayload(payload, state);
+      if (state.changed) {
+        handled = true;
+        finishJson('DiDi Thanos popup module update cleaned', cleaned, 'didi-thanos-update-clean-1');
+      }
     }
   }
 
