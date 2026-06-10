@@ -13,6 +13,7 @@ URL-REGEX,^https?:\/\/www\.youtube\.com\/pagead\/,REJECT
 URL-REGEX,^https?:\/\/www\.youtube\.com\/api\/stats\/ads(?:[?#]|$),REJECT
 URL-REGEX,^https?:\/\/www\.youtube\.com\/pcs\/activeview\?,REJECT
 URL-REGEX,^https?:\/\/www\.youtube\.com\/ptracking\?.*(?:[?&](?:pltype=adpromoted|ptk=youtube_host|pltype=adhost)(?:&|$)),REJECT
+URL-REGEX,^https?:\/\/www\.google(?:\.com|\.com\.hk)\/pagead\/1p-user-list\/,REJECT
 DOMAIN,ad.doubleclick.net,REJECT
 DOMAIN,static.doubleclick.net,REJECT
 DOMAIN,ade.googlesyndication.com,REJECT
