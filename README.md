@@ -15,7 +15,7 @@ Files:
 - `youtube-player-clean.js`: companion cleanup script for uBO YouTube Player JSON Clean.
 - `jetpack-joyride-ad-clean.js`: companion cleanup script for uBO Jetpack Joyride iOS Ad Clean and uBO Jetpack Joyride BidMachine Request Clean and uBO Jetpack Joyride BidMachine Response Clean and uBO Jetpack Joyride Chartboost Request Clean.
 - `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS GDT Request Marker, Response Empty Ads, App Marker, GDT Launch Guard, Safety Shield Promo Clean, Activity Resource Clean, and Bronzedoor resource Clean.
-- `didi-ad-clean.js`: companion cleanup script for uBO DiDi iOS YKS Ad Clean.
+- `didi-ad-clean.js`: companion cleanup script for uBO DiDi iOS popup toggles, safety shield promo, and Thanos module cleanup.
 - `wechat-pay-ad-clean.js`: companion cleanup script for uBO WeChat Pay Ad Data Empty, GoldPlan Page Clean, and ICBC Ad URL Clean.
 - `huya-ad-clean.js`: companion cleanup script for uBO Huya iOS GDT Splash Setting Clean and Exapp Fill Clean.
 - `gf-ytj-ad-clean.js`: companion cleanup script for uBO GF Yitaojin iOS Startup Ad Clean.
@@ -81,20 +81,12 @@ Huaxiaozhu iOS summary:
 - Login, risk-control, Omega telemetry, update, weather/static UI assets, and ordinary GDT telemetry are intentionally allowed.
 
 DiDi iOS summary:
-- The 2026-04-30 IPA/HAR pass targets the YKS homepage/travel-card pipeline, not the core map, login, risk-control, update, or ride-order APIs.
-- The response script removes confirmed homepage marketing cards: `super_banner_card`, `new_loss_banner_card`, `marketing_card`, YKS banner cards, the `didifinance` loan tile, and the `yuantu` ticket bottom-entry when they appear in JSON/stringified JSON payloads.
-- The 2026-05-03 HAR pass adds the upstream `conf.diditaxi.com.cn/homepage/v1/core` and `res.xiaojukeji.com/resapi/activity/getValid` sources, cleaning stable `ut-aggre-homepage` / `homepagemarketing` card and token-list fields before rotating daily material IDs are rendered.
-- The start-page popup path clears `valid_act_ids` from `resapi/activity/getValid` and removes `pas_start_page` resource objects, covering the observed home overlay without blocking core map or ride APIs.
-- The 2026-05-04 HAR pass adds the upstream `as.xiaojukeji.com/ep/as/toggles` source, disabling only the verified `new_resource_sdk_toggle.pas_start_page` / `pas_notice_webview` and `ios_activity_download_config` activity package path used by cached start-page popups.
-- The follow-up toggles pass strips the `md5` cache validator before `as.xiaojukeji.com/ep/as/toggles`, forcing a full config response so the popup toggle cleanup also applies when the app would otherwise reuse local `304 CACHED` settings.
-- The 2026-05-09 Huaxiaozhu-style pass targets the remaining launch container instead of daily image URLs: `IsDaggerEnable.launch_config` now drops the splash controllers, `launch_advertising_display_interval` / `didipas_splash_mp4control` are disabled, and only the verified AI home popup / operation-banner flags are zeroed.
-- The 2026-05-11 HAR mirrors the Huaxiaozhu gray-overlay behavior: ad material under `img-ys011.didistatic.com/static/ad_oss` is already 204, but the native WebX shell can remain. The toggles cleanup now clears `webx_get_prod_page_conf.webviewPage` while preserving `productPage`, so the generic marketing webview route is not pre-created as a blank overlay.
-- The 2026-05-29 gray-overlay pass also disables verified popup/coupon/banner/xpanel toggles from `as.xiaojukeji.com/ep/as/toggles`, including the observed coupon, cashier, xbanner, xpanel, dialog, mask, and overlay-style switches.
-- The 2026-05-30 remaining gray overlay was traced to the WebX template `prod.didi.cn/ut-main/xtpl/ip-collaboration-skin-swap-popup` plus its `ut-static.udache.com/webx/entry/xtpl/online/ip-collaboration-skin-swap-popup/` assets; the scripted module now self-closes that exact popup page and empties only that exact template asset path.
-- The 2026-06-06 popup pass uses the `wyc_splash_ad_status_sw` evidence for `pas_start_page` / `eve_ut_common_resource_id_20260326111531004-random`: it now also disables the verified `didipas_second_floor_*` startup resource gates and returns `204` for `s3-hnapuhdd-cdn.didistatic.com/zhunxing-creative` material so the app follows its no-material path instead of rendering an empty timed interstitial.
-- The 2026-06-11 gray-screen pass traces the empty overlay to `drn-sk-dialog-rn@2.1.30/2258906`; the module now blocks that exact DRN dialog bundle before its native/RN shell can create the dim popup after material images are removed.
-- `Map Local` suppresses the observed `M5Rj3dB` ticket promo short-link/page chain, two verified `xjcfthanos` offline marketing bundles, and the exact `drn-sk-dialog-rn` gray-overlay bundle so they cannot reopen as promo webviews/offline popups.
-- Generic DiDi static hosts such as `dpubstatic.udache.com` stay allowed except for the already verified `img-ys011.didistatic.com/static/ad_oss` material rule, the selected `xjcfthanos` bundles, and the exact DRN dialog bundle observed in captures.
+- The 2026-06-13 successful HAR keeps the active path small: `as.xiaojukeji.com/ep/as/toggles`, `guard.sec.xiaojukeji.com/api/guard/psg/v2/getShieldStatus`, `thanos.xiaojukeji.com/api/thanos/update`, and verified material `Map Local` rules.
+- The request script removes the `md5` cache validator from `as.xiaojukeji.com/ep/as/toggles` so the response script can clean fresh popup, xpanel, coupon, banner, dialog, mask, overlay, splash, and WebX toggle data.
+- The safety shield response is preserved as JSON but emptied at `data.shieldInfo`, matching the successful HAR responses.
+- The Thanos update response removes only known marketing/offline popup module references such as `drn-sk-dialog-rn`, `xpanel-thanos`, `energy-coupons`, `mfe-energy-activity`, `energy-wallet`, `xjcfthanos`, `ad_oss`, and `zhunxing-creative`. In the successful HAR this leaves `data: []`.
+- `Map Local` still returns `204` for observed ad material under `img-ys011.didistatic.com/static/ad_oss`, `s3-hnapuhdd-cdn.didistatic.com/zhunxing-creative`, selected `dpubstatic.udache.com/static/dpubimg` files, two verified `xjcfthanos` offline bundles, and the exact `drn-sk-dialog-rn@2.1.30/2258906` gray-overlay bundle fallback.
+- The older homepage/YKS and skin-swap response-script hooks were removed from the active module because they did not appear in the 2026-06-13 success HAR; their narrow static fallbacks remain only where already verified.
 
 Huya iOS summary:
 - The 2026-05-10 13.2.80 IPA/HAR pass keeps this deliberately narrow after the earlier broad-reject attempts hurt正文 content. It targets only the verified GDT splash slot `3026774105282411` on `us.l.qq.com/exapp`, returning no-fill while preserving the response shape.
