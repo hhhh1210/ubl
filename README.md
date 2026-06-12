@@ -18,7 +18,7 @@ Files:
 - `didi-ad-clean.js`: companion cleanup script for uBO DiDi iOS popup toggles, safety shield promo, and Thanos module cleanup.
 - `wechat-pay-ad-clean.js`: companion cleanup script for uBO WeChat Pay Ad Data Empty, GoldPlan Page Clean, and ICBC Ad URL Clean.
 - `huya-ad-clean.js`: companion cleanup script for uBO Huya iOS GDT Splash Setting Clean and Exapp Fill Clean.
-- `gf-ytj-ad-clean.js`: companion cleanup script for uBO GF Yitaojin iOS Startup Ad Clean.
+- `gf-ytj-ad-clean.js`: companion cleanup script for uBO GF Yitaojin iOS startup, launch, credit-menu, and promo-notice cleanup.
 - `kuaishou-ad-clean.js`: companion cleanup script for uBO Kuaishou iOS Realtime Splash Clean.
 
 Recommended install order:
@@ -107,9 +107,13 @@ WeChat Pay iOS summary:
 
 GF Yitaojin iOS summary:
 - The response script is intentionally narrowed to the confirmed startup ad endpoint `config.gf.com.cn/ad/info` and the gateway `launch_ad_config` field on `gw.gf.com.cn/gateway`.
-- The 2026-05-29 crash HAR showed that broad cleanup of `stock_index/publish/info`, `ytj_config/info`, `ytj_config/sys_popup`, and `my_page/open_account_marketing` can affect runtime/account-page initialization, so those paths are now allowed through untouched.
-- Homepage marketing, find-page marketing, account-open marketing, holder-marketing, smart-assistant recommendation, trade-card, stock-index config, and fund-ad payloads are not modified by this conservative profile.
-- Core login, quote, trading, account, RN/global config, and general config domains are intentionally not blocked; only the boot ad JSON is replaced with an empty success payload.
+- The 2026-05-29 crash HAR showed that broad cleanup of `stock_index/publish/info`, `ytj_config/info`, `ytj_config/sys_popup`, and `my_page/open_account_marketing` can affect runtime/account-page initialization, so those paths must not be broadly rewritten.
+- The 2026-06-13 HAR shows the startup path is already handled: `config.gf.com.cn/ad/info` returns an empty ad payload and `gw.gf.com.cn/gateway` is modified with `station.launch_ad_config: []`.
+- The same HAR still exposes a narrow credit menu ad path on `config.gf.com.cn/credit/menu`: `data.footerAd` contains `credit_bottom_ad`, and `data.middle` contains the exact `credit_middle_ad` item. The cleaner now empties `footerAd` and removes only that exact middle item.
+- The same HAR also shows section promo notices on `config.gf.com.cn/ytj_config/info`, such as `diagnostic_report`, `zxg_top`, `credit_top_notice`, `plate_top_notice`, `hs_top_notice`, and other top/bottom notice slots. The cleaner preserves each config entry but replaces only those notice payloads with empty same-shape data.
+- The 13.3.2 App Store IPA main binary is FairPlay-encrypted (`cryptid 1`), so the native consumer class names cannot be fully recovered from the IPA alone. The rule stays HAR-field driven and avoids reopening broad `stock_index/publish/info` or trade-menu cleanup.
+- Other homepage marketing, find-page marketing, account-open marketing, holder-marketing, smart-assistant recommendation, trade-card, stock-index config, trade-menu, and fund-ad payloads are not modified by this conservative profile.
+- Core login, quote, trading, account, RN/global config, and general config domains are intentionally not blocked; only verified startup, launch, credit-menu ad, and promo-notice fields are rewritten.
 
 Kuaishou iOS summary:
 - The 2026-05-30 14.4.30 HARs showed a plain JSON startup response at `az4-api.ksapisrv.com/rest/n/system/realtime/startup`, and the follow-up capture with remaining splash ads showed the same response on `az1-api.ksapisrv.com/rest/n/system/realtime/startup`. The 2026-05-31 22:19 capture then showed the same `splash` response shape on `az4-api-js.gifshow.com/rest/n/system/realtime/startup`. These carry `splash.realtimeSplashInfo`, `splashLlsid`, callback metadata, and motion-sensitive splash controls; the response script removes only those splash fields and preserves the rest of startup navigation/config data.

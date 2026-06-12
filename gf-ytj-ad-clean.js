@@ -59,6 +59,14 @@ function isGatewayEndpoint(urlInfo) {
   return urlInfo.host === 'gw.gf.com.cn' && urlInfo.path === '/gateway';
 }
 
+function isCreditMenuEndpoint(urlInfo) {
+  return urlInfo.host === 'config.gf.com.cn' && urlInfo.path === '/credit/menu';
+}
+
+function isYtjConfigEndpoint(urlInfo) {
+  return urlInfo.host === 'config.gf.com.cn' && urlInfo.path === '/ytj_config/info';
+}
+
 function noAdPayload() {
   return {
     code: 0,
@@ -137,6 +145,79 @@ function cleanGatewayLaunchAdConfig(value, state) {
   return value;
 }
 
+function cleanCreditMenu(value, state) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return value;
+  }
+  const data = value.data && typeof value.data === 'object' && !Array.isArray(value.data)
+    ? value.data
+    : null;
+  if (!data) {
+    return value;
+  }
+  if (Array.isArray(data.footerAd) && data.footerAd.length !== 0) {
+    data.footerAd = [];
+    state.changed = true;
+  }
+  if (Array.isArray(data.middle)) {
+    const kept = data.middle.filter((item) => !item || item.id !== 'credit_middle_ad');
+    if (kept.length !== data.middle.length) {
+      data.middle = kept;
+      state.changed = true;
+    }
+  }
+  return value;
+}
+
+function emptyNoticeData(data) {
+  if (Array.isArray(data)) {
+    return [];
+  }
+  if (data && typeof data === 'object') {
+    return {
+      id: 0,
+      title: '',
+      url: '',
+      content: '',
+      frequency: '',
+      source: '',
+      sub_source: '',
+      data_id: '',
+      strategy_id: '',
+    };
+  }
+  return data;
+}
+
+function isPromoNoticeId(id) {
+  return id === 'diagnostic_report' ||
+    id === 'zxg_top' ||
+    id === 'gg_notice' ||
+    id === 'cash_notice' ||
+    /_(?:top|bottom)_notice$/.test(id);
+}
+
+function cleanYtjConfigInfo(value, state) {
+  if (!value || typeof value !== 'object' || !Array.isArray(value.data)) {
+    return value;
+  }
+  for (const item of value.data) {
+    if (!item || typeof item !== 'object') {
+      continue;
+    }
+    const id = String(item.id || '');
+    if (!isPromoNoticeId(id)) {
+      continue;
+    }
+    const before = JSON.stringify(item.data);
+    item.data = emptyNoticeData(item.data);
+    if (JSON.stringify(item.data) !== before) {
+      state.changed = true;
+    }
+  }
+  return value;
+}
+
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
   const urlInfo = parseUrl(request.url);
@@ -154,6 +235,32 @@ try {
       cleanGatewayLaunchAdConfig(payload, state);
       if (state.changed) {
         finishJson('gateway launch ad config emptied', payload, 'gfytj-gateway-launch-ad-empty-1');
+      } else {
+        done({});
+      }
+    } else {
+      done({});
+    }
+  } else if (isCreditMenuEndpoint(urlInfo)) {
+    const payload = parseMaybeJson(bodyToText($response && $response.body));
+    if (payload && typeof payload === 'object') {
+      const state = { changed: false };
+      cleanCreditMenu(payload, state);
+      if (state.changed) {
+        finishJson('credit menu ads emptied', payload, 'gfytj-credit-menu-ad-empty-1');
+      } else {
+        done({});
+      }
+    } else {
+      done({});
+    }
+  } else if (isYtjConfigEndpoint(urlInfo)) {
+    const payload = parseMaybeJson(bodyToText($response && $response.body));
+    if (payload && typeof payload === 'object') {
+      const state = { changed: false };
+      cleanYtjConfigInfo(payload, state);
+      if (state.changed) {
+        finishJson('ytj config promo notices emptied', payload, 'gfytj-config-notice-empty-1');
       } else {
         done({});
       }
