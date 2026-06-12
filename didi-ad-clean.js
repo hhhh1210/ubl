@@ -154,6 +154,52 @@ function isThanosEndpoint(urlInfo) {
     urlInfo.path === '/api/thanos/update';
 }
 
+function isHomepageCoreEndpoint(urlInfo) {
+  return urlInfo.host === 'conf.diditaxi.com.cn' && urlInfo.path === '/homepage/v1/core';
+}
+
+function isHomepageFastEndpoint(urlInfo) {
+  return urlInfo.host === 'conf.diditaxi.com.cn' && urlInfo.path === '/homepage/v1/other/fast';
+}
+
+function isActivityMgetEndpoint(urlInfo) {
+  return urlInfo.host === 'res.xiaojukeji.com' && urlInfo.path === '/resapi/activity/mget';
+}
+
+function isUserCenterLayoutEndpoint(urlInfo) {
+  return urlInfo.host === 'common.diditaxi.com.cn' && urlInfo.path === '/common/v5/usercenter/layout';
+}
+
+const HOME_BOTTOM_NAV_IDS = new Set([
+  'home_page',
+  'user_center',
+]);
+
+const HOME_NAV_IDS = new Set([
+  'dache_anycar',
+  'carmate',
+  'driverservice',
+  'zhandianbashi',
+  'yuancheng',
+  'pincheche',
+  'bike',
+  'special_ride',
+  'nav_more_v3',
+]);
+
+const USER_CENTER_INSTANCE_IDS = new Set([
+  'center_base_info_card',
+  'center_tool_card',
+  'center_wallet_finance_card',
+  'center_order_related_card',
+]);
+
+const USER_CENTER_WALLET_TITLES = new Set([
+  '优惠卡券',
+  '余额',
+  '福利金',
+]);
+
 const BAD_TOGGLE_NAMES = new Set([
   'Freight_Passenger_Union_Popup_Switch',
   'app_hm_show_guide_popup',
@@ -232,6 +278,91 @@ function cleanThanosPayload(payload, state) {
     const kept = payload.data.filter((item) => !isBadThanosModule(item));
     if (kept.length !== payload.data.length) {
       payload.data = kept;
+      state.changed = true;
+    }
+  }
+  return payload;
+}
+
+function deleteOwn(object, key, state) {
+  if (object && typeof object === 'object' && !Array.isArray(object) && Object.prototype.hasOwnProperty.call(object, key)) {
+    delete object[key];
+    state.changed = true;
+  }
+}
+
+function filterArrayProperty(object, key, predicate, state) {
+  if (!object || typeof object !== 'object' || !Array.isArray(object[key])) {
+    return;
+  }
+  const kept = object[key].filter(predicate);
+  if (kept.length !== object[key].length) {
+    object[key] = kept;
+    state.changed = true;
+  }
+}
+
+function cleanHomepageCore(payload, state) {
+  const data = payload && payload.data;
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return payload;
+  }
+  const disorderCards = data.disorder_cards;
+  const orderCards = data.order_cards;
+  if (disorderCards && disorderCards.bottom_nav_list && disorderCards.bottom_nav_list.data) {
+    filterArrayProperty(disorderCards.bottom_nav_list, 'data', (item) => HOME_BOTTOM_NAV_IDS.has(String(item && item.id || '')), state);
+  }
+  if (orderCards && orderCards.nav_list_card && orderCards.nav_list_card.data) {
+    filterArrayProperty(orderCards.nav_list_card, 'data', (item) => HOME_NAV_IDS.has(String(item && item.nav_id || '')), state);
+  }
+  return payload;
+}
+
+function cleanHomepageFast(payload, state) {
+  const data = payload && payload.data;
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return payload;
+  }
+  const disorderCards = data.disorder_cards;
+  const orderCards = data.order_cards;
+  for (const key of ['communicate_card', 'not_login_bottom_bar', 'riding_code_card']) {
+    deleteOwn(disorderCards, key, state);
+  }
+  for (const key of ['car_owner_widget_card', 'marketing_card', 'super_banner_card']) {
+    deleteOwn(orderCards, key, state);
+  }
+  if (disorderCards && disorderCards.car_icon && disorderCards.car_icon.data) {
+    deleteOwn(disorderCards.car_icon.data, 'icon_info_new_agreement', state);
+  }
+  return payload;
+}
+
+function cleanActivityMget(payload, state) {
+  const data = payload && payload.data;
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    deleteOwn(data, 'mult_home_banner', state);
+  }
+  return payload;
+}
+
+function cleanUserCenterLayout(payload, state) {
+  const data = payload && payload.data;
+  const instances = data && data.instances;
+  if (!instances || typeof instances !== 'object' || Array.isArray(instances)) {
+    return payload;
+  }
+  for (const key of Object.keys(instances)) {
+    if (!USER_CENTER_INSTANCE_IDS.has(key)) {
+      delete instances[key];
+      state.changed = true;
+    }
+  }
+  const wallet = instances.center_wallet_finance_card;
+  const walletData = wallet && wallet.data;
+  if (walletData && Array.isArray(walletData.view_info)) {
+    const kept = walletData.view_info.filter((item) => USER_CENTER_WALLET_TITLES.has(String(item && item.title || '')));
+    if (kept.length !== walletData.view_info.length) {
+      walletData.view_info = kept;
       state.changed = true;
     }
   }
@@ -479,6 +610,58 @@ try {
       cleanThanosPayload(payload, state);
       if (state.changed) {
         finishJson('DiDi Thanos popup modules cleaned', payload, 'didi-lite-thanos-20260613-1');
+      } else {
+        done({});
+      }
+    } else {
+      done({});
+    }
+  } else if (isHomepageCoreEndpoint(urlInfo)) {
+    const payload = parseMaybeJson(bodyToText(response.body));
+    if (payload !== undefined) {
+      const state = { changed: false };
+      cleanHomepageCore(payload, state);
+      if (state.changed) {
+        finishJson('DiDi homepage nav cleaned', payload, 'didi-lite-home-core-20260613-1');
+      } else {
+        done({});
+      }
+    } else {
+      done({});
+    }
+  } else if (isHomepageFastEndpoint(urlInfo)) {
+    const payload = parseMaybeJson(bodyToText(response.body));
+    if (payload !== undefined) {
+      const state = { changed: false };
+      cleanHomepageFast(payload, state);
+      if (state.changed) {
+        finishJson('DiDi homepage banner cards cleaned', payload, 'didi-lite-home-fast-20260613-1');
+      } else {
+        done({});
+      }
+    } else {
+      done({});
+    }
+  } else if (isActivityMgetEndpoint(urlInfo)) {
+    const payload = parseMaybeJson(bodyToText(response.body));
+    if (payload !== undefined) {
+      const state = { changed: false };
+      cleanActivityMget(payload, state);
+      if (state.changed) {
+        finishJson('DiDi activity banner cleaned', payload, 'didi-lite-activity-banner-20260613-1');
+      } else {
+        done({});
+      }
+    } else {
+      done({});
+    }
+  } else if (isUserCenterLayoutEndpoint(urlInfo)) {
+    const payload = parseMaybeJson(bodyToText(response.body));
+    if (payload !== undefined) {
+      const state = { changed: false };
+      cleanUserCenterLayout(payload, state);
+      if (state.changed) {
+        finishJson('DiDi user center ads cleaned', payload, 'didi-lite-user-center-20260613-1');
       } else {
         done({});
       }

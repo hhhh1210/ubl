@@ -15,7 +15,7 @@ Files:
 - `youtube-player-clean.js`: companion cleanup script for uBO YouTube Player JSON Clean.
 - `jetpack-joyride-ad-clean.js`: companion cleanup script for uBO Jetpack Joyride iOS Ad Clean and uBO Jetpack Joyride BidMachine Request Clean and uBO Jetpack Joyride BidMachine Response Clean and uBO Jetpack Joyride Chartboost Request Clean.
 - `huaxiaozhu-ad-clean.js`: companion cleanup script for uBO Huaxiaozhu iOS GDT Request Marker, Response Empty Ads, App Marker, GDT Launch Guard, Safety Shield Promo Clean, Activity Resource Clean, and Bronzedoor resource Clean.
-- `didi-ad-clean.js`: companion cleanup script for uBO DiDi iOS popup toggles, safety shield promo, and Thanos module cleanup.
+- `didi-ad-clean.js`: companion cleanup script for uBO DiDi iOS popup toggles, homepage/banner, bottom-nav, user-center, safety shield promo, and Thanos module cleanup.
 - `wechat-pay-ad-clean.js`: companion cleanup script for uBO WeChat Pay Ad Data Empty, GoldPlan Page Clean, and ICBC Ad URL Clean.
 - `huya-ad-clean.js`: companion cleanup script for uBO Huya iOS GDT Splash Setting Clean and Exapp Fill Clean.
 - `gf-ytj-ad-clean.js`: companion cleanup script for uBO GF Yitaojin iOS startup, launch, credit-menu, and promo-notice cleanup.
@@ -87,6 +87,8 @@ DiDi iOS summary:
 - The Thanos update response removes only known marketing/offline popup module references such as `drn-sk-dialog-rn`, `xpanel-thanos`, `energy-coupons`, `mfe-energy-activity`, `energy-wallet`, `xjcfthanos`, `ad_oss`, and `zhunxing-creative`. In the successful HAR this leaves `data: []`.
 - `Map Local` still returns `204` for observed ad material under `img-ys011.didistatic.com/static/ad_oss`, `s3-hnapuhdd-cdn.didistatic.com/zhunxing-creative`, selected `dpubstatic.udache.com/static/dpubimg` files, two verified `xjcfthanos` offline bundles, and the exact `drn-sk-dialog-rn@2.1.30/2258906` gray-overlay bundle fallback.
 - The older homepage/YKS and skin-swap response-script hooks were removed from the active module because they did not appear in the 2026-06-13 success HAR; their narrow static fallbacks remain only where already verified.
+- The 2026-06-13 follow-up references QingRex/LoonKissSurge's DiDi module but keeps the integration field-level: `homepage/v1/core` keeps only the two bottom-nav ids `home_page` and `user_center` plus the verified nav ids, `homepage/v1/other/fast` removes only known banner/marketing cards, `resapi/activity/mget` drops `mult_home_banner`, and `common/v5/usercenter/layout` keeps the base/tool/wallet/order cards while trimming wallet items to coupon, balance, and welfare money.
+- This follow-up intentionally does not import the reference module's broader daijia, bike, intercity, feed, recommendation, or broad Map Local rules; those remain out of scope until a local HAR proves they are needed.
 
 Huya iOS summary:
 - The 2026-05-10 13.2.80 IPA/HAR pass keeps this deliberately narrow after the earlier broad-reject attempts hurt正文 content. It targets only the verified GDT splash slot `3026774105282411` on `us.l.qq.com/exapp`, returning no-fill while preserving the response shape.
