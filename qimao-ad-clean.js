@@ -87,10 +87,23 @@ function isUserPopupConfigs(urlInfo) {
   return urlInfo.host === 'qm-sf.wtzw.com' && urlInfo.path === '/api/v2/sfo/user_popup_configs';
 }
 
+const QIMAO_GDT_SLOTS = {
+  '1160339633993603': true,
+  '2026212585765216': true,
+  '7053344540756528': true,
+  '8035514834672656': true,
+  '8120532693295569': true,
+  '1067616752819125': true,
+};
+
 function looksLikeQimaoBaiduAd(ad) {
   const text = JSON.stringify(ad || {});
-  return /59229808/.test(text) &&
-    (/"native_rsplash":true/.test(text) || /qh-material\.taobao\.com/i.test(text) || /mobads-pre-config\.cdn\.bcebos\.com\/splash\/SDK200(?:10|3[234])\.png/i.test(text));
+  const hasVerifiedMaterial = /qh-material\.taobao\.com/i.test(text) ||
+    /mobads-pre-config\.cdn\.bcebos\.com\/splash\/SDK200(?:10|3[234])\.png/i.test(text);
+  const hasNativeSplash = /"native_rsplash":true/.test(text);
+  const hasKnownDsp = /59229808/.test(text);
+  const hasObservedTaobaoSplash = /"adslot":46/.test(text) && /"pk":"com\.taobao\.taobao"/.test(text);
+  return hasVerifiedMaterial && (hasNativeSplash || hasKnownDsp || hasObservedTaobaoSplash);
 }
 
 function cleanBaiduMads(payload, state) {
@@ -105,15 +118,13 @@ function cleanBaiduMads(payload, state) {
   return payload;
 }
 
-function extractParam(text, name) {
-  const re = new RegExp('(?:^|&)' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^&]*)');
-  const match = String(text || '').match(re);
-  return match ? decodeURIComponent(match[1].replace(/\+/g, '%20')) : '';
-}
-
 function isQimaoGdtRequest(text) {
   return /com\.yueyou\.cyreader/i.test(decodeURIComponent(String(text || ''))) ||
     /%22c_pkgname%22%3A%22com\.yueyou\.cyreader%22/i.test(String(text || ''));
+}
+
+function isKnownQimaoGdtSlot(slotId) {
+  return !!QIMAO_GDT_SLOTS[String(slotId || '')];
 }
 
 function noFillGdtSlot(slot) {
@@ -128,17 +139,18 @@ function noFillGdtSlot(slot) {
 }
 
 function cleanGdtMview(payload, requestText, state) {
-  if (!isQimaoGdtRequest(requestText) || !payload || typeof payload !== 'object') {
+  if (!payload || typeof payload !== 'object') {
     return payload;
   }
-  const posid = extractParam(requestText, 'posid');
+  const qimaoRequest = isQimaoGdtRequest(requestText);
   const data = payload.data && typeof payload.data === 'object' ? payload.data : null;
   if (!data) {
     return payload;
   }
   const targetKeys = Object.keys(data).filter((key) => {
     const slot = data[key];
-    return key === posid || (slot && Array.isArray(slot.list) && slot.list.length > 0);
+    const hasFill = slot && Array.isArray(slot.list) && slot.list.length > 0;
+    return hasFill && (qimaoRequest || isKnownQimaoGdtSlot(key));
   });
   if (targetKeys.length === 0) {
     return payload;
