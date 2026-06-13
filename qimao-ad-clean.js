@@ -116,6 +116,19 @@ function isPangolinGetAds(urlInfo) {
     /(?:^|&)aid=5000546(?:&|$)/.test(urlInfo.query);
 }
 
+function isPangolinSettings(urlInfo) {
+  return /^api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com$/i.test(urlInfo.host) &&
+    urlInfo.path === '/api/ad/union/sdk/settings/' &&
+    /(?:^|&)aid=5000546(?:&|$)/.test(urlInfo.query);
+}
+
+function isWebcastPangleSetting(urlInfo) {
+  return urlInfo.host === 'webcast-open.douyin.com' &&
+    urlInfo.path === '/webcast/openapi/pangle/setting/' &&
+    (/(?:^|&)app_id=395670(?:&|$)/.test(urlInfo.query) ||
+      /(?:^|&)package_name=com\.yueyou\.cyreader(?:&|$)/.test(urlInfo.query));
+}
+
 function isGdtSdkControl(urlInfo) {
   return urlInfo.host === 'sdk.e.qq.com' && /^(?:\/launch|\/msg)$/.test(urlInfo.path);
 }
@@ -161,6 +174,10 @@ function isKnownQimaoGdtSlot(slotId) {
   return !!QIMAO_GDT_SLOTS[String(slotId || '')];
 }
 
+function hasOwnEnumerableKeys(value) {
+  return value && typeof value === 'object' && Object.keys(value).length > 0;
+}
+
 function noFillGdtSlot(slot) {
   return {
     ret: 102006,
@@ -184,8 +201,7 @@ function cleanGdtMview(payload, requestText, state) {
   const targetKeys = Object.keys(data).filter((key) => {
     const slot = data[key];
     const hasFill = slot && Array.isArray(slot.list) && slot.list.length > 0;
-    const hasReusableLastAd = payload.last_ads && typeof payload.last_ads === 'object' &&
-      Object.keys(payload.last_ads).length > 0;
+    const hasReusableLastAd = hasOwnEnumerableKeys(payload.last_ads);
     return (hasFill || hasReusableLastAd || isKnownQimaoGdtSlot(key)) &&
       (qimaoRequest || isKnownQimaoGdtSlot(key));
   });
@@ -199,8 +215,9 @@ function cleanGdtMview(payload, requestText, state) {
       state.changed = true;
     }
   }
-  if (state.changed) {
+  if (hasOwnEnumerableKeys(payload.last_ads)) {
     payload.last_ads = {};
+    state.changed = true;
   }
   return payload;
 }
@@ -282,6 +299,40 @@ function pangleNoFillPayload() {
   };
 }
 
+function cleanWebcastPangleSetting(payload, state) {
+  if (!payload || typeof payload !== 'object') {
+    return payload;
+  }
+  const data = payload.data && typeof payload.data === 'object' ? payload.data : null;
+  if (!data) {
+    return payload;
+  }
+  if (data.setting_url) {
+    data.setting_url = '';
+    state.changed = true;
+  }
+  const extra = data.extra_settings && typeof data.extra_settings === 'object' ? data.extra_settings : null;
+  if (extra) {
+    if (hasOwnEnumerableKeys(extra.ad_id)) {
+      extra.ad_id = {};
+      state.changed = true;
+    }
+    if (extra.init_enable !== false) {
+      extra.init_enable = false;
+      state.changed = true;
+    }
+    if (extra.enable_feed_no_ad !== true) {
+      extra.enable_feed_no_ad = true;
+      state.changed = true;
+    }
+    if (extra.use_pangle_plugin !== false) {
+      extra.use_pangle_plugin = false;
+      state.changed = true;
+    }
+  }
+  return payload;
+}
+
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
   const response = typeof $response === 'object' && $response !== null ? $response : {};
@@ -295,6 +346,8 @@ try {
     finishDirectNoContent('GDT launch/msg request emptied', 'qimao-gdt-sdk-empty-1');
   } else if (isPangolinGetAds(urlInfo)) {
     finishJson('Pangle get_ads no-fill', pangleNoFillPayload(), 'qimao-pangle-getads-nofill-1');
+  } else if (isPangolinSettings(urlInfo)) {
+    finishNoContent('Pangle settings emptied', 'qimao-pangle-settings-empty-1');
   } else if (isUbixInitEndpoint(urlInfo)) {
     finishNoContent('Ubix init emptied', 'qimao-ubix-init-empty-1');
   } else if (isUbixEndpoint(urlInfo) && looksLikeQimaoUbixJdPayload(responseText, requestText)) {
@@ -322,6 +375,14 @@ try {
     cleanUserPopupConfigs(payload, state);
     if (state.changed) {
       finishJson('user popup configs emptied', payload, 'qimao-user-popup-empty-1');
+    } else {
+      done({});
+    }
+  } else if (isWebcastPangleSetting(urlInfo)) {
+    const state = { changed: false };
+    cleanWebcastPangleSetting(payload, state);
+    if (state.changed) {
+      finishJson('Webcast Pangle setting disabled', payload, 'qimao-webcast-pangle-setting-1');
     } else {
       done({});
     }
