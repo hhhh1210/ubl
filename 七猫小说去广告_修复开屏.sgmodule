@@ -1,0 +1,102 @@
+#!name=七猫小说去广告_修复开屏
+#!desc=基于 QingRex 原模块 + 2026-06-14 HAR/IPA 静态分析补充。重点修复 8.0 版开屏广告：a6-remad.qm989.com/v3/get-splash/index 与 /v3/get-contract/index（ad_unit_id=10295, scene=10, start_mode=1）。
+#!author=QingRex 原规则 + Cowork 3P 本地分析
+#!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/SevenCat.png
+#!category=iKeLee
+#!openUrl=https://apps.apple.com/app/id1387717110
+#!tag=去广告,开屏广告
+#!date=2026-06-14
+
+# 分析依据：
+# 1. 参考模块已处理旧版 api-cfg.wtzw.com/v*/splash，但 HAR 显示 8.0 版开屏广告实际命中 a6-remad.qm989.com/v3/get-splash/index 与 /v3/get-contract/index。
+# 2. 两个请求均为 POST，ad_unit_id=10295、scene=10、ad_format=2、start_mode=1、flow_id=4468，响应 ads_list 含京东开屏广告素材。
+# 3. IPA 静态字符串确认存在 QXMAdSDK、QXMQuMengAdapter、QuMengAdSDK、QuMengSplashAd、QXMSplash、QMSplash、SplashCacheKeyPath。
+
+[Rule]
+# 原模块规则
+DOMAIN,cdn-ad.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,cdn-new-ad.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,gdt.qq.com,REJECT,extended-matching,pre-matching
+
+# 8.0 HAR 中出现的开屏/聚合广告 SDK 与素材域名
+DOMAIN,a6-remad.qm989.com,REJECT,extended-matching,pre-matching
+DOMAIN,ad-drs.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pangolin-sdk-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pangolin-sdk-toutiao1.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pangolin-sdk-toutiao-b.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,bytescm.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,gdtimg.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdkquic.e.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdk.e.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,v2mi.gdt.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,mobads.baidu.com,REJECT,extended-matching,pre-matching
+DOMAIN,mobads-logs.baidu.com,REJECT,extended-matching,pre-matching
+DOMAIN,bgg.baidu.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdk.1rtb.net,REJECT,extended-matching,pre-matching
+DOMAIN,cpc-service-square.aiclk.com,REJECT,extended-matching,pre-matching
+DOMAIN,logrcv.aiclk.com,REJECT,extended-matching,pre-matching
+DOMAIN,tracelog-debug.aiclk.com,REJECT,extended-matching,pre-matching
+DOMAIN,api.qttunion.com,REJECT,extended-matching,pre-matching
+DOMAIN,service.qttunion.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdk.zhangyuyidong.cn,REJECT,extended-matching,pre-matching
+DOMAIN,cfgc.zztfly.com,REJECT,extended-matching,pre-matching
+DOMAIN,cdn-api-auth.zztfly.com,REJECT,extended-matching,pre-matching
+
+[URL Rewrite]
+# 原模块规则
+^https:\/\/sf3-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ - reject
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/reward\/ - reject
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/adv\/ - reject
+
+# 8.0 开屏关键路径。Map Local 在下方返回空广告列表；这里作为不支持 Map Local 时的兜底拒绝。
+^https:\/\/a6-remad\.qm989\.com\/v3\/(get-splash|get-contract)\/index - reject
+
+# HAR 中的聚合广告 SDK 请求兜底
+^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1)?\.com\/api\/ad\/union\/sdk\/(get_ads|settings|material\/check|stats\/batch)\/ - reject
+^https?:\/\/log-api\.pangolin-sdk-toutiao-b\.com\/service\/2\/app_log\/ - reject
+^https?:\/\/sdk\.1rtb\.net\/sdk\/(config|req_ad) - reject
+^https?:\/\/v2mi\.gdt\.qq\.com\/gdt_mview\.fcg - reject
+^https?:\/\/sdkquic\.e\.qq\.com\/launch - reject
+^https?:\/\/sdk\.e\.qq\.com\/ola\/v2 - reject
+^https?:\/\/mobads\.baidu\.com\/cpro\/ui\/mads\.php - reject
+^https?:\/\/mobads-logs\.baidu\.com\/ - reject
+^https?:\/\/bgg\.baidu\.com\/bgg\/produce - reject
+^https?:\/\/cpc-service-square\.aiclk\.com\/v1\/getConfig - reject
+^https?:\/\/tracelog-debug\.aiclk\.com\/ - reject
+^https?:\/\/logrcv\.aiclk\.com\/ - reject
+^https?:\/\/api\.qttunion\.com\/v5\/json - reject
+^https?:\/\/service\.qttunion\.com\/qmcd\/get - reject
+^https?:\/\/sdk\.zhangyuyidong\.cn\/sdk\/config - reject
+^https?:\/\/cfgc\.zztfly\.com\/v5\/gcf - reject
+^https?:\/\/cdn-api-auth\.zztfly\.com\/api\/initSecCdn\/ - reject
+
+[Body Rewrite]
+# 原模块规则：个人中心功能区广告位
+http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'delpaths([["data","func_area",1]])'
+http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'delpaths([["data","func_area",2]])'
+
+[Map Local]
+# 8.0 开屏广告真正命中点：返回空广告列表，避免客户端继续渲染 ads_list 中的开屏素材。
+^https:\/\/a6-remad\.qm989\.com\/v3\/get-splash\/index data-type=text data="{\"data\":{\"ads_list\":[]}}" status-code=200 header="Content-Type:application/json"
+^https:\/\/a6-remad\.qm989\.com\/v3\/get-contract\/index data-type=text data="{\"data\":{\"ads_list\":[]}}" status-code=200 header="Content-Type:application/json"
+
+# 原模块 Map Local
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/splash\/ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-bc\.wtzw\.com\/api\/v4\/search\/dispose data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-bc\.wtzw\.com\/api\/v\d\/book-store\/config data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-bc\.wtzw\.com\/api\/v\d\/book-store\/push-book data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-bc\.wtzw\.com\/api\/v\d\/operation data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-gw\.wtzw\.com\/welf\/app\/v\d\/task\/red-packet data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/cdn\.wtzw\.com\/bookimg\/free\/api\/v\d\/reader\/reader-copy-paragraph-all\.json data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/offline-adv\/index data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/operation\/index\?ad_personal_switch data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/withdraw\/init data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+# JSON 广告 SDK 的空响应兜底
+^https?:\/\/v2mi\.gdt\.qq\.com\/gdt_mview\.fcg data-type=text data="{\"ret\":0,\"msg\":\"\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/mobads\.baidu\.com\/cpro\/ui\/mads\.php data-type=text data="{\"ad\":[],\"n\":0,\"error_code\":0}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-access\.pangolin-sdk-toutiao1?\.com\/api\/ad\/union\/sdk\/stats\/batch\/ data-type=text data="{\"code\":\"20000\",\"data\":\"\"}" status-code=200 header="Content-Type:application/json"
+
+[MITM]
+hostname = %APPEND% api-cfg.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, a6-remad.qm989.com, ad-drs.52qumao.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, log-api.pangolin-sdk-toutiao-b.com, lf-cdn-tos.bytescm.com, v2mi.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, qzs.gdtimg.com, mobads.baidu.com, mobads-logs.baidu.com, bgg.baidu.com, sdk.1rtb.net, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, cfgc.zztfly.com, cdn-api-auth.zztfly.com, xiaoshuo.wtzw.com
