@@ -18,6 +18,7 @@
 # 8. 04:54 修复恢复 HAR 未再出现 Pangle get_ads、1RTB req_ad、Baidu/QTT 素材、Kuaishou open/univ 等广告载荷；剩余 md-data-u1.ubixioe.com/md2、gdfp.gifshow.com、Umeng/Bugly/易盾/基础配置等按非广告/状态上报处理。
 # 9. 05:14/05:17 短剧栏目修复：无拦截 HAR 中短剧可见时 drs-ipv6/cgcr/abtest 正常返回大体积配置；广告模块开启后这些配置被拦截，短剧入口可能被远程配置隐藏。Lite 版改为放行七猫远程配置，只拦截实际广告 SDK/广告载荷接口。
 # 10. 07:08 短剧连续播放 HAR：播放核心是 cdn-vod-playlet.wtzw.com 的 m3u8/m4s 分片，同时伴随 drs/i4、mon.zijieapi、Pangle stats、mobads-logs、ad-drs i4 等状态/统计请求；为避免“网络异常”，放行这些播放期状态链路，只保留广告请求型接口。
+# 11. 07:25 广告模块下大量点击 HAR：点击后没有任何 cdn-vod-playlet/m3u8/m4s 请求，失败发生在进入播放器/获取播放地址之前。IPA 静态字符串显示短剧链路含 Playlet/ShortVideo、play_multi_video、ad_preload_episode_config/show_preload_episode_config、PlayletBottomFreeAd；因此继续放行播放期统计/预加载状态回调，避免因广告预加载回调缺失导致短剧不进入播放。
 
 [Rule]
 # 原模块保留：静态广告素材与旧广告域名
@@ -46,8 +47,7 @@ DOMAIN,klink.volceapplog.com,REJECT,extended-matching,pre-matching
 DOMAIN,log-klink.zijieapi.com,REJECT,extended-matching,pre-matching
 # mon.zijieapi.com/cloudcontrol 在 07:08 短剧播放期出现，放行避免播放网络异常。
 DOMAIN,tnc3-alisc1.zijieapi.com,REJECT,extended-matching,pre-matching
-DOMAIN,mssdk.volces.com,REJECT,extended-matching,pre-matching
-DOMAIN,vod-license-m.volccdn.com,REJECT,extended-matching,pre-matching
+# mssdk.volces.com / vod-license-m.volccdn.com 不再整域拦截：IPA 短剧逻辑含 VOD/Video，避免误伤播放许可或状态链路。
 
 # 七猫 drs/cgcr/abtest 远程配置已放行：05:14 HAR 证明短剧栏目依赖这些配置；不要在 Rule 层拦截。
 
@@ -58,12 +58,8 @@ DOMAIN-SUFFIX,kuaishou.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,kuaishou.cn,REJECT,extended-matching,pre-matching
 
 # 04:42 Lite 失效补回：Pangle/穿山甲、1RTB、Baidu、QTT、Aiclk、Zhangyu 等通用 SDK 回退链路
-# api-access.pangolin-sdk-toutiao.com 不做整域拦截：07:08 短剧播放期会调用 stats/batch；仅在 URL Rewrite 中拦截 get_ads/settings/material/check。
-DOMAIN,log-api.pangolin-sdk-toutiao-b.com,REJECT,extended-matching,pre-matching
+# api-access/pangolin 主域不做 Rule 层整域拦截：07:08/07:25 短剧播放和点击期会调用 stats/batch 等状态回调；仅在 URL Rewrite 中拦截 get_ads/settings/material/check。
 DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
-DOMAIN-SUFFIX,pangolin-sdk-toutiao.com,REJECT,extended-matching,pre-matching
-DOMAIN-SUFFIX,pangolin-sdk-toutiao1.com,REJECT,extended-matching,pre-matching
-DOMAIN-SUFFIX,pangolin-sdk-toutiao-b.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,douyinpic.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,bytescm.com,REJECT,extended-matching,pre-matching
 DOMAIN,sdk.1rtb.net,REJECT,extended-matching,pre-matching
@@ -119,8 +115,7 @@ DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/log-klink\.zijieapi\.com\/service\/2\/device_register\/ - reject
 # mon.zijieapi.com/cloudcontrol 放行，避免短剧连续播放网络异常。
 ^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ - reject
-^https?:\/\/mssdk\.volces\.com\/ri\/report_otob - reject
-^https?:\/\/vod-license-m\.volccdn\.com\/vod-license\/ - reject
+# mssdk.volces.com 与 vod-license-m.volccdn.com 放行，避免影响短剧 VOD 播放许可/状态。
 
 # Kuaishou/KSAd 回退开屏
 ^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/univ - reject
@@ -205,4 +200,4 @@ http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'de
 ^https?:\/\/usr-api\.1sapp\.com\/report\/v1 data-type=text data="{\"code\":\"000\",\"msg\":\"ok\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
 
 [MITM]
-hostname = %APPEND% api-cfg.wtzw.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, xiaoshuo.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, a6-remad.qm989.com, ad-drs-ipv6.52qumao.com, api-adx.52qumao.com, api-cfg.52qumao.com, entry-su1.ubixioe.com, md-cfg-u1.ubixioe.com, adx-cfg-u1.ubixioe.com, e-u1.ubixioe.com, partner.uc.cn, hc-ssp.sm.cn, tencent-ssp.66mobi.com, static.66mobi.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, mssdk.volces.com, vod-license-m.volccdn.com, open.e.kuaishou.com, open.e.kuaishou.cn, log-api.pangolin-sdk-toutiao-b.com, *.pglstatp-toutiao.com, *.douyinpic.com, lf-cdn-tos.bytescm.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, cfgc.zztfly.com, cdn-api-auth.zztfly.com, api-auth.zztfly.com, qh-material.taobao.com, atoken.m.taobao.com, img1.360buyimg.com, usr-api.1sapp.com
+hostname = %APPEND% api-cfg.wtzw.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, xiaoshuo.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, a6-remad.qm989.com, api-adx.52qumao.com, api-cfg.52qumao.com, entry-su1.ubixioe.com, md-cfg-u1.ubixioe.com, adx-cfg-u1.ubixioe.com, e-u1.ubixioe.com, partner.uc.cn, hc-ssp.sm.cn, tencent-ssp.66mobi.com, static.66mobi.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, open.e.kuaishou.com, open.e.kuaishou.cn, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, log-api.pangolin-sdk-toutiao-b.com, *.pglstatp-toutiao.com, *.douyinpic.com, lf-cdn-tos.bytescm.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, cfgc.zztfly.com, cdn-api-auth.zztfly.com, api-auth.zztfly.com, qh-material.taobao.com, atoken.m.taobao.com, img1.360buyimg.com, usr-api.1sapp.com
