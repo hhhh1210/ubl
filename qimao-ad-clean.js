@@ -178,6 +178,11 @@ function isKnownQimaoGdtSlot(slotId) {
   return !!QIMAO_GDT_SLOTS[String(slotId || '')];
 }
 
+function parseGdtPosid(requestText) {
+  const match = String(requestText || '').match(/(?:^|&)posid=([^&]+)/);
+  return match ? decodeSafe(match[1]) : '';
+}
+
 function hasOwnEnumerableKeys(value) {
   return value && typeof value === 'object' && Object.keys(value).length > 0;
 }
@@ -190,6 +195,22 @@ function noFillGdtSlot(slot) {
       msg: 'Match no ad.',
     },
     msg: "Match no ad. Please DON'T retry immediately.",
+  };
+}
+
+function buildGdtNoFillPayload(requestText) {
+  const posid = parseGdtPosid(requestText);
+  const data = {};
+  if (posid) {
+    data[posid] = noFillGdtSlot();
+  }
+  return {
+    ret: 0,
+    msg: '',
+    seq: '5040',
+    reqinterval: 3600,
+    last_ads: {},
+    data,
   };
 }
 
@@ -298,6 +319,17 @@ function finishDirectNoContent(reason, marker) {
   });
 }
 
+function finishDirectJson(reason, value, marker) {
+  console.log('uBO Qimao ad clean: ' + reason);
+  done({
+    response: {
+      status: 200,
+      headers: buildJsonHeaders({}, marker),
+      body: JSON.stringify(value),
+    },
+  });
+}
+
 function pangleNoFillPayload() {
   return {
     request_id: 'ubo-qimao-nofill',
@@ -349,10 +381,15 @@ try {
   const urlInfo = parseUrl(request.url);
   const payload = parseMaybeJson(bodyToText(response.body));
   const requestText = bodyToText(request.body);
+  const argument = typeof $argument === 'string' ? $argument : '';
 
   const responseText = bodyToText(response.body);
 
-  if (isGdtSdkControl(urlInfo) && !response.body) {
+  if (/(?:^|&)phase=gdt-mview-request(?:&|$)/.test(argument) &&
+    isGdtMview(urlInfo) &&
+    (isKnownQimaoGdtSlot(parseGdtPosid(requestText)) || isQimaoGdtRequest(requestText))) {
+    finishDirectJson('GDT mview request short-circuited with no-fill', buildGdtNoFillPayload(requestText), 'qimao-gdt-mview-fast-nofill-1');
+  } else if (isGdtSdkControl(urlInfo) && !response.body) {
     finishDirectNoContent('GDT SDK control request emptied', 'qimao-gdt-sdk-empty-2');
   } else if (isBaiduBggProduce(urlInfo) && isQimaoBaiduBggRequest(requestText) && !response.body) {
     finishDirectNoContent('Baidu BGG produce request emptied', 'qimao-baidu-bgg-empty-1');
