@@ -1,5 +1,5 @@
 #!name=七猫小说去广告_修复开屏
-#!desc=基于 QingRex 原模块 + 2026-06-14 HAR/IPA 静态分析补充。重点修复 8.0 版开屏广告：a6-remad.qm989.com/v3/get-splash/index 与 /v3/get-contract/index（ad_unit_id=10295, scene=10, start_mode=1）。
+#!desc=基于 QingRex 原模块 + 2026-06-14 两份 HAR/IPA 静态分析补充。重点修复 8.0 版开屏广告：a6-remad.qm989.com 与 Ubix/66mobi 聚合链路。
 #!author=QingRex 原规则 + Cowork 3P 本地分析
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/SevenCat.png
 #!category=iKeLee
@@ -9,8 +9,9 @@
 
 # 分析依据：
 # 1. 参考模块已处理旧版 api-cfg.wtzw.com/v*/splash，但 HAR 显示 8.0 版开屏广告实际命中 a6-remad.qm989.com/v3/get-splash/index 与 /v3/get-contract/index。
-# 2. 两个请求均为 POST，ad_unit_id=10295、scene=10、ad_format=2、start_mode=1、flow_id=4468，响应 ads_list 含京东开屏广告素材。
-# 3. IPA 静态字符串确认存在 QXMAdSDK、QXMQuMengAdapter、QuMengAdSDK、QuMengSplashAd、QXMSplash、QMSplash、SplashCacheKeyPath。
+# 2. 03:40 HAR：a6-remad 两个请求均为 POST，ad_unit_id=10295、scene=10、ad_format=2、start_mode=1、flow_id=4468，响应 ads_list 含京东开屏广告素材。
+# 3. 04:02 HAR：开屏广告改走 Ubix/66mobi 聚合链路，entry-su1.ubixioe.com/mob/sdk/v2/endpoint 响应中含京东素材、66mobi 追踪、adsource_show=true、interaction_type=3。
+# 4. IPA 静态字符串确认存在 QXMAdSDK、QXMQuMengAdapter、QuMengAdSDK、QuMengSplashAd、QXMSplash、QMSplash、SplashCacheKeyPath。
 
 [Rule]
 # 原模块规则
@@ -42,6 +43,26 @@ DOMAIN,service.qttunion.com,REJECT,extended-matching,pre-matching
 DOMAIN,sdk.zhangyuyidong.cn,REJECT,extended-matching,pre-matching
 DOMAIN,cfgc.zztfly.com,REJECT,extended-matching,pre-matching
 DOMAIN,cdn-api-auth.zztfly.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-auth.zztfly.com,REJECT,extended-matching,pre-matching
+
+# 04:02 HAR 追加：Ubix/66mobi/神马/UC/52qumao 聚合开屏链路
+DOMAIN,entry-su1.ubixioe.com,REJECT,extended-matching,pre-matching
+DOMAIN,md-cfg-u1.ubixioe.com,REJECT,extended-matching,pre-matching
+DOMAIN,adx-cfg-u1.ubixioe.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,ubixioe.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,66mobi.com,REJECT,extended-matching,pre-matching
+DOMAIN,partner.uc.cn,REJECT,extended-matching,pre-matching
+DOMAIN,hc-ssp.sm.cn,REJECT,extended-matching,pre-matching
+DOMAIN,api-adx.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-cfg.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,ad-drs-ipv6.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,img1.360buyimg.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,360buyimg.com,REJECT,extended-matching,pre-matching
+DOMAIN,ccc-x.jd.com,REJECT,extended-matching,pre-matching
+DOMAIN,im-x.jd.com,REJECT,extended-matching,pre-matching
+DOMAIN,linkst.m.jd.com,REJECT,extended-matching,pre-matching
+DOMAIN,atoken.m.taobao.com,REJECT,extended-matching,pre-matching
 
 [URL Rewrite]
 # 原模块规则
@@ -70,6 +91,25 @@ DOMAIN,cdn-api-auth.zztfly.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/sdk\.zhangyuyidong\.cn\/sdk\/config - reject
 ^https?:\/\/cfgc\.zztfly\.com\/v5\/gcf - reject
 ^https?:\/\/cdn-api-auth\.zztfly\.com\/api\/initSecCdn\/ - reject
+^https?:\/\/api-auth\.zztfly\.com\/api\/initSec - reject
+
+# 04:02 HAR：实际残留开屏素材来自 Ubix/66mobi 聚合返回，响应为 base64/protobuf-like，包含 JD 素材与 66mobi 追踪。
+^https?:\/\/entry-su1\.ubixioe\.com\/mob\/sdk\/v2\/endpoint - reject
+^https?:\/\/md-cfg-u1\.ubixioe\.com\/mob\/mediation\/v3\/conf - reject
+^https?:\/\/adx-cfg-u1\.ubixioe\.com\/mob\/sdk\/v3\/init - reject
+^https?:\/\/e-u1\.ubixioe\.com\/ - reject
+^https?:\/\/partner\.uc\.cn\/mediations - reject
+^https?:\/\/hc-ssp\.sm\.cn\/ - reject
+^https?:\/\/api-adx\.52qumao\.com\/v2\/get-bz-ads\/index - reject
+^https?:\/\/api-cfg\.52qumao\.com\/v1\/init - reject
+^https?:\/\/ad-drs-ipv6\.52qumao\.com\/v1\/(config|attribute|log) - reject
+^https?:\/\/tencent-ssp\.66mobi\.com\/ - reject
+^https?:\/\/static\.66mobi\.com\/ - reject
+^https?:\/\/img1\.360buyimg\.com\/ - reject
+^https?:\/\/ccc-x\.jd\.com\/ - reject
+^https?:\/\/im-x\.jd\.com\/ - reject
+^https?:\/\/linkst\.m\.jd\.com\/ - reject
+^https?:\/\/atoken\.m\.taobao\.com\/ - reject
 
 [Body Rewrite]
 # 原模块规则：个人中心功能区广告位
@@ -98,5 +138,14 @@ http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'de
 ^https?:\/\/mobads\.baidu\.com\/cpro\/ui\/mads\.php data-type=text data="{\"ad\":[],\"n\":0,\"error_code\":0}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/api-access\.pangolin-sdk-toutiao1?\.com\/api\/ad\/union\/sdk\/stats\/batch\/ data-type=text data="{\"code\":\"20000\",\"data\":\"\"}" status-code=200 header="Content-Type:application/json"
 
+# Ubix/66mobi 聚合链路空响应：用于避免 04:02 HAR 中 entry-su1 返回可渲染开屏素材。
+^https?:\/\/entry-su1\.ubixioe\.com\/mob\/sdk\/v2\/endpoint data-type=text data="" status-code=204 header="Content-Type:application/octet-stream"
+^https?:\/\/md-cfg-u1\.ubixioe\.com\/mob\/mediation\/v3\/conf data-type=text data="" status-code=204 header="Content-Type:application/octet-stream"
+^https?:\/\/adx-cfg-u1\.ubixioe\.com\/mob\/sdk\/v3\/init data-type=text data="" status-code=204 header="Content-Type:application/octet-stream"
+^https?:\/\/partner\.uc\.cn\/mediations data-type=text data="{\"code\":0,\"msg\":\"OK\",\"data\":{\"api_ver\":\"2.0\",\"ad_units\":[],\"placements\":[],\"extended_resources\":[]}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-adx\.52qumao\.com\/v2\/get-bz-ads\/index data-type=text data="{\"errors\":{\"code\":\"44010102\",\"status\":\"200\",\"title\":\"无竞胜方\",\"details\":\"无竞胜方\"}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/ad-drs-ipv6\.52qumao\.com\/v1\/(config|attribute|log) data-type=text data="{\"code\":200,\"data\":\"\",\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/hc-ssp\.sm\.cn\/ data-type=text data="{\"code\":\"137\",\"reason\":\"Filtered\",\"server_time\":\"0\",\"slot_ad\":[]}" status-code=200 header="Content-Type:application/json"
+
 [MITM]
-hostname = %APPEND% api-cfg.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, a6-remad.qm989.com, ad-drs.52qumao.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, log-api.pangolin-sdk-toutiao-b.com, lf-cdn-tos.bytescm.com, v2mi.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, qzs.gdtimg.com, mobads.baidu.com, mobads-logs.baidu.com, bgg.baidu.com, sdk.1rtb.net, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, cfgc.zztfly.com, cdn-api-auth.zztfly.com, xiaoshuo.wtzw.com
+hostname = %APPEND% api-cfg.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, a6-remad.qm989.com, ad-drs.52qumao.com, ad-drs-ipv6.52qumao.com, api-adx.52qumao.com, api-cfg.52qumao.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, log-api.pangolin-sdk-toutiao-b.com, lf-cdn-tos.bytescm.com, v2mi.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, qzs.gdtimg.com, mobads.baidu.com, mobads-logs.baidu.com, bgg.baidu.com, sdk.1rtb.net, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, cfgc.zztfly.com, cdn-api-auth.zztfly.com, api-auth.zztfly.com, entry-su1.ubixioe.com, md-cfg-u1.ubixioe.com, adx-cfg-u1.ubixioe.com, e-u1.ubixioe.com, partner.uc.cn, hc-ssp.sm.cn, tencent-ssp.66mobi.com, static.66mobi.com, img1.360buyimg.com, ccc-x.jd.com, im-x.jd.com, linkst.m.jd.com, atoken.m.taobao.com, xiaoshuo.wtzw.com
