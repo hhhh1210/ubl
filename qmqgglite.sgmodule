@@ -1,0 +1,146 @@
+#!name=七猫小说去广告_修复开屏_Lite
+#!desc=基于成功去除开屏后的 2026-06-14 多份 HAR 精简。保留真实命中的 a6-remad、Ubix/66mobi、Pangle/Volc 配置与 Kuaishou/KSAd 回退开屏链路，移除大部分统计/崩溃/风控规则。
+#!author=QingRex 原规则 + Cowork 3P 本地 HAR/IPA 分析精简
+#!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/SevenCat.png
+#!category=iKeLee
+#!openUrl=https://apps.apple.com/app/id1387717110
+#!tag=去广告,开屏广告,Lite
+#!date=2026-06-14
+
+# 精简依据：
+# 1. 旧模块只处理 api-cfg.wtzw.com/v*/splash，不覆盖七猫小说 8.0 的实际开屏链路。
+# 2. 03:40 HAR 命中 a6-remad.qm989.com/v3/get-splash/index 与 /v3/get-contract/index，响应 ads_list 含开屏广告。
+# 3. 04:02 HAR 回退到 Ubix/66mobi 聚合，entry-su1.ubixioe.com/mob/sdk/v2/endpoint 响应含素材、追踪与 adsource_show=true。
+# 4. 04:12 HAR 出现 Pangle/Volc 初始化与远程配置，其中 pangle setting 返回 init_enable=true 和广告位配置。
+# 5. 04:21/04:27 HAR 回退到 Kuaishou/KSAd，open.e.kuaishou.com/.cn 的 open/univ 曾返回 hasAd=true；补齐 .cn 后广告去除成功。
+# 6. 04:34 成功后 HAR 不再出现 a6-remad、Ubix/66mobi、open.e.kuaishou.com/.cn 的有效广告载荷，仅剩 Umeng/Bugly/网易易盾/风控/基础配置等非广告链路，本 Lite 版不再阻断这些接口。
+
+[Rule]
+# 原模块保留：静态广告素材与旧广告域名
+DOMAIN,cdn-ad.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,cdn-new-ad.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,gdt.qq.com,REJECT,extended-matching,pre-matching
+
+# 七猫 8.0 开屏主链：a6-remad / QuMeng
+DOMAIN,a6-remad.qm989.com,REJECT,extended-matching,pre-matching
+DOMAIN,ad-drs.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,ad-drs-ipv6.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-adx.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-cfg.52qumao.com,REJECT,extended-matching,pre-matching
+
+# Ubix/66mobi 回退聚合链
+DOMAIN,entry-su1.ubixioe.com,REJECT,extended-matching,pre-matching
+DOMAIN,md-cfg-u1.ubixioe.com,REJECT,extended-matching,pre-matching
+DOMAIN,adx-cfg-u1.ubixioe.com,REJECT,extended-matching,pre-matching
+DOMAIN,e-u1.ubixioe.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,66mobi.com,REJECT,extended-matching,pre-matching
+DOMAIN,partner.uc.cn,REJECT,extended-matching,pre-matching
+DOMAIN,hc-ssp.sm.cn,REJECT,extended-matching,pre-matching
+
+# Pangle/Volc 配置链：只保留开屏初始化相关域名，移除更宽泛的 douyin.com/douyinstatic.com 后缀拦截
+DOMAIN,webcast-open.douyin.com,REJECT,extended-matching,pre-matching
+DOMAIN,klink.volceapplog.com,REJECT,extended-matching,pre-matching
+DOMAIN,log-klink.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,mon.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,tnc3-alisc1.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,mssdk.volces.com,REJECT,extended-matching,pre-matching
+DOMAIN,vod-license-m.volccdn.com,REJECT,extended-matching,pre-matching
+
+# 远程配置：Lite 版只保留此前与开屏残留关联最强的三类配置
+DOMAIN,abtest.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,cgcr.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,drs-ipv6.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,drs.wtzw.com,REJECT,extended-matching,pre-matching
+
+# 成功关键：Kuaishou/KSAd 回退开屏，04:27 HAR 证明需要同时覆盖 .com 与 .cn
+DOMAIN,open.e.kuaishou.com,REJECT,extended-matching,pre-matching
+DOMAIN,open.e.kuaishou.cn,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,kuaishou.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,kuaishou.cn,REJECT,extended-matching,pre-matching
+
+[URL Rewrite]
+# 原模块规则
+^https:\/\/sf3-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ - reject
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/reward\/ - reject
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/adv\/ - reject
+
+# a6-remad / QuMeng 开屏
+^https:\/\/a6-remad\.qm989\.com\/v3\/(get-splash|get-contract)\/index - reject
+^https?:\/\/api-adx\.52qumao\.com\/v2\/get-bz-ads\/index - reject
+^https?:\/\/api-cfg\.52qumao\.com\/v1\/init - reject
+^https?:\/\/ad-drs-ipv6\.52qumao\.com\/v1\/(config|attribute|log) - reject
+
+# Ubix/66mobi 聚合开屏
+^https?:\/\/entry-su1\.ubixioe\.com\/mob\/sdk\/v2\/endpoint - reject
+^https?:\/\/md-cfg-u1\.ubixioe\.com\/mob\/mediation\/v3\/conf - reject
+^https?:\/\/adx-cfg-u1\.ubixioe\.com\/mob\/sdk\/v3\/init - reject
+^https?:\/\/e-u1\.ubixioe\.com\/ - reject
+^https?:\/\/partner\.uc\.cn\/mediations - reject
+^https?:\/\/hc-ssp\.sm\.cn\/ - reject
+^https?:\/\/tencent-ssp\.66mobi\.com\/ - reject
+^https?:\/\/static\.66mobi\.com\/ - reject
+
+# Pangle/Volc 与七猫远程配置
+^https?:\/\/drs-ipv6\.wtzw\.com\/api\/v3\/config - reject
+^https?:\/\/drs-ipv6\.wtzw\.com\/client-aggregate\/reader_free_ios - reject
+^https?:\/\/drs\.wtzw\.com\/api\/v1\/i4 - reject
+^https?:\/\/cgcr\.wtzw\.com\/client\/api\/v1\/config - reject
+^https?:\/\/abtest\.wtzw\.com\/client\/params - reject
+^https?:\/\/webcast-open\.douyin\.com\/webcast\/openapi\/pangle\/setting\/ - reject
+^https?:\/\/klink\.volceapplog\.com\/service\/2\/device_register\/ - reject
+^https?:\/\/log-klink\.zijieapi\.com\/service\/2\/device_register\/ - reject
+^https?:\/\/mon\.zijieapi\.com\/monitor\/collect\/c\/cloudcontrol\/get - reject
+^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ - reject
+^https?:\/\/mssdk\.volces\.com\/ri\/report_otob - reject
+^https?:\/\/vod-license-m\.volccdn\.com\/vod-license\/ - reject
+
+# Kuaishou/KSAd 回退开屏
+^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/univ - reject
+^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/logBatch - reject
+
+[Body Rewrite]
+# 原模块规则：个人中心功能区广告位
+http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'delpaths([["data","func_area",1]])'
+http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'delpaths([["data","func_area",2]])'
+
+[Map Local]
+# 原模块 Map Local
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/splash\/ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-bc\.wtzw\.com\/api\/v4\/search\/dispose data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-bc\.wtzw\.com\/api\/v\d\/book-store\/config data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-bc\.wtzw\.com\/api\/v\d\/book-store\/push-book data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-bc\.wtzw\.com\/api\/v\d\/operation data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-gw\.wtzw\.com\/welf\/app\/v\d\/task\/red-packet data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/cdn\.wtzw\.com\/bookimg\/free\/api\/v\d\/reader\/reader-copy-paragraph-all\.json data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/offline-adv\/index data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/operation\/index\?ad_personal_switch data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/withdraw\/init data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+# a6-remad 开屏空广告
+^https:\/\/a6-remad\.qm989\.com\/v3\/get-splash\/index data-type=text data="{\"data\":{\"ads_list\":[]}}" status-code=200 header="Content-Type:application/json"
+^https:\/\/a6-remad\.qm989\.com\/v3\/get-contract\/index data-type=text data="{\"data\":{\"ads_list\":[]}}" status-code=200 header="Content-Type:application/json"
+
+# Ubix/66mobi 与 52qumao 空响应
+^https?:\/\/entry-su1\.ubixioe\.com\/mob\/sdk\/v2\/endpoint data-type=text data="" status-code=204 header="Content-Type:application/octet-stream"
+^https?:\/\/md-cfg-u1\.ubixioe\.com\/mob\/mediation\/v3\/conf data-type=text data="" status-code=204 header="Content-Type:application/octet-stream"
+^https?:\/\/adx-cfg-u1\.ubixioe\.com\/mob\/sdk\/v3\/init data-type=text data="" status-code=204 header="Content-Type:application/octet-stream"
+^https?:\/\/partner\.uc\.cn\/mediations data-type=text data="{\"code\":0,\"msg\":\"OK\",\"data\":{\"api_ver\":\"2.0\",\"ad_units\":[],\"placements\":[],\"extended_resources\":[]}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-adx\.52qumao\.com\/v2\/get-bz-ads\/index data-type=text data="{\"errors\":{\"code\":\"44010102\",\"status\":\"200\",\"title\":\"无竞胜方\",\"details\":\"无竞胜方\"}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/ad-drs-ipv6\.52qumao\.com\/v1\/(config|attribute|log) data-type=text data="{\"code\":200,\"data\":\"\",\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/hc-ssp\.sm\.cn\/ data-type=text data="{\"code\":\"137\",\"reason\":\"Filtered\",\"server_time\":\"0\",\"slot_ad\":[]}" status-code=200 header="Content-Type:application/json"
+
+# 七猫远程配置与 Pangle/Volc 空响应
+^https?:\/\/drs-ipv6\.wtzw\.com\/client-aggregate\/reader_free_ios data-type=text data="{\"code\":\"200\",\"data\":\"\",\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/drs\.wtzw\.com\/api\/v1\/i4 data-type=text data="{\"code\":200,\"data\":{\"i4\":\"\"},\"msg\":\"success\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/cgcr\.wtzw\.com\/client\/api\/v1\/config data-type=text data="{\"code\":200,\"data\":\"\",\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/abtest\.wtzw\.com\/client\/params data-type=text data="{\"code\":200,\"data\":\"\",\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/webcast-open\.douyin\.com\/webcast\/openapi\/pangle\/setting\/ data-type=text data="{\"data\":{\"init_enable\":false,\"extra_settings\":{\"init_enable\":false,\"use_pangle_plugin\":false,\"enable_feed_no_ad\":true,\"ad_id\":{}}},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/mon\.zijieapi\.com\/monitor\/collect\/c\/cloudcontrol\/get data-type=text data="{\"data\":\"\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ data-type=text data="{\"data\":{},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
+
+# Kuaishou/KSAd：返回无广告
+^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/univ data-type=text data="{\"llsid\":0,\"result\":1,\"errorMsg\":\"OK\",\"hasMore\":false,\"impAdInfo\":\"\",\"extra\":\"\",\"adGlobalConfigInfo\":\"\",\"hasAd\":false}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/logBatch data-type=text data="{\"llsid\":0,\"result\":1,\"errorMsg\":\"OK\",\"hasMore\":false,\"interval\":3600}" status-code=200 header="Content-Type:application/json"
+
+[MITM]
+hostname = %APPEND% api-cfg.wtzw.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, xiaoshuo.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, a6-remad.qm989.com, ad-drs.52qumao.com, ad-drs-ipv6.52qumao.com, api-adx.52qumao.com, api-cfg.52qumao.com, entry-su1.ubixioe.com, md-cfg-u1.ubixioe.com, adx-cfg-u1.ubixioe.com, e-u1.ubixioe.com, partner.uc.cn, hc-ssp.sm.cn, tencent-ssp.66mobi.com, static.66mobi.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, mon.zijieapi.com, tnc3-alisc1.zijieapi.com, mssdk.volces.com, vod-license-m.volccdn.com, abtest.wtzw.com, cgcr.wtzw.com, drs-ipv6.wtzw.com, drs.wtzw.com, open.e.kuaishou.com, open.e.kuaishou.cn
