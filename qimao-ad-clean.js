@@ -57,6 +57,13 @@ function bodyToText(body) {
   if (typeof body === 'string') {
     return body;
   }
+  if (typeof ArrayBuffer !== 'undefined') {
+    if (body instanceof ArrayBuffer) {
+      body = new Uint8Array(body);
+    } else if (body && typeof ArrayBuffer.isView === 'function' && ArrayBuffer.isView(body)) {
+      body = new Uint8Array(body.buffer, body.byteOffset || 0, body.byteLength);
+    }
+  }
   if (body && typeof body.length === 'number') {
     let text = '';
     for (let i = 0; i < body.length; i++) {
@@ -85,6 +92,10 @@ function isGdtMview(urlInfo) {
 
 function isUserPopupConfigs(urlInfo) {
   return urlInfo.host === 'qm-sf.wtzw.com' && urlInfo.path === '/api/v2/sfo/user_popup_configs';
+}
+
+function isUbixEndpoint(urlInfo) {
+  return urlInfo.host === 'tx-cfg-u1.ubixioe.com' && urlInfo.path === '/mob/sdk/v2/endpoint';
 }
 
 const QIMAO_GDT_SLOTS = {
@@ -194,12 +205,30 @@ function cleanUserPopupConfigs(payload, state) {
   return payload;
 }
 
+function looksLikeQimaoUbixJdPayload(responseText, requestText) {
+  const combined = responseText + '\n' + requestText;
+  const hasQimaoScope = /com\.yueyou\.cyreader|YYReader|vlffmhp|14095310|42650/i.test(combined);
+  const hasJdCreative = /com\.360buy\.jdmobile|360buyimg\.com\/pop\/jfs|ccc-x\.jd\.com\/dsp\/|im-x\.jd\.com\/dsp\/np|openApp\.jdMobile/i.test(responseText);
+  return hasQimaoScope && hasJdCreative;
+}
+
 function finishJson(reason, value, marker) {
   console.log('uBO Qimao ad clean: ' + reason);
   done({
     status: 200,
     headers: buildJsonHeaders($response && $response.headers, marker),
     body: JSON.stringify(value),
+  });
+}
+
+function finishNoContent(reason, marker) {
+  const headers = buildJsonHeaders($response && $response.headers, marker);
+  setHeaderCaseInsensitive(headers, 'Content-Type', 'text/plain; charset=utf-8');
+  console.log('uBO Qimao ad clean: ' + reason);
+  done({
+    status: 204,
+    headers,
+    body: '',
   });
 }
 
@@ -210,7 +239,11 @@ try {
   const payload = parseMaybeJson(bodyToText(response.body));
   const requestText = bodyToText(request.body);
 
-  if (!payload || typeof payload !== 'object') {
+  const responseText = bodyToText(response.body);
+
+  if (isUbixEndpoint(urlInfo) && looksLikeQimaoUbixJdPayload(responseText, requestText)) {
+    finishNoContent('Ubix JD DSP payload emptied', 'qimao-ubix-jd-empty-1');
+  } else if (!payload || typeof payload !== 'object') {
     done({});
   } else if (isBaiduMads(urlInfo)) {
     const state = { changed: false };
