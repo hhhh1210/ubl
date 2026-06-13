@@ -15,6 +15,7 @@
 # 5. 04:21/04:27 HAR 回退到 Kuaishou/KSAd，open.e.kuaishou.com/.cn 的 open/univ 曾返回 hasAd=true；补齐 .cn 后广告去除成功。
 # 6. 04:34 成功后 HAR 不再出现 a6-remad、Ubix/66mobi、open.e.kuaishou.com/.cn 的有效广告载荷，仅剩 Umeng/Bugly/网易易盾/风控/基础配置等非广告链路。
 # 7. 04:42 Lite 失效 HAR 证明不能删掉通用广告 SDK 回退链路：Pangle get_ads 返回 10KB~23KB 载荷，并加载 douyinpic、1RTB、Baidu、QTT、Zhangyu、Aiclk、Taobao/JD 素材。
+# 8. 04:54 修复恢复 HAR 未再出现 Pangle get_ads、1RTB req_ad、Baidu/QTT 素材、Kuaishou open/univ 等广告载荷；剩余 md-data-u1.ubixioe.com/md2、gdfp.gifshow.com、Umeng/Bugly/易盾/基础配置等按非广告/状态上报处理。
 
 [Rule]
 # 原模块保留：静态广告素材与旧广告域名
