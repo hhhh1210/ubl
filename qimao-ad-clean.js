@@ -82,6 +82,14 @@ function parseMaybeJson(text) {
   }
 }
 
+function decodeSafe(text) {
+  try {
+    return decodeURIComponent(String(text || '').replace(/\+/g, ' '));
+  } catch (error) {
+    return String(text || '');
+  }
+}
+
 function isBaiduMads(urlInfo) {
   return urlInfo.host === 'mobads.baidu.com' && urlInfo.path === '/cpro/ui/mads.php';
 }
@@ -98,6 +106,20 @@ function isUbixEndpoint(urlInfo) {
   return urlInfo.host === 'tx-cfg-u1.ubixioe.com' && urlInfo.path === '/mob/sdk/v2/endpoint';
 }
 
+function isUbixInitEndpoint(urlInfo) {
+  return urlInfo.host === 'tx-cfg-u1.ubixioe.com' && urlInfo.path === '/mob/sdk/v3/init';
+}
+
+function isPangolinGetAds(urlInfo) {
+  return /^api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com$/i.test(urlInfo.host) &&
+    urlInfo.path === '/api/ad/union/sdk/get_ads/' &&
+    /(?:^|&)aid=5000546(?:&|$)/.test(urlInfo.query);
+}
+
+function isGdtSdkControl(urlInfo) {
+  return urlInfo.host === 'sdk.e.qq.com' && /^(?:\/launch|\/msg)$/.test(urlInfo.path);
+}
+
 const QIMAO_GDT_SLOTS = {
   '1160339633993603': true,
   '2026212585765216': true,
@@ -105,6 +127,7 @@ const QIMAO_GDT_SLOTS = {
   '8035514834672656': true,
   '8120532693295569': true,
   '1067616752819125': true,
+  '7034844680253349': true,
 };
 
 function looksLikeQimaoBaiduAd(ad) {
@@ -130,7 +153,7 @@ function cleanBaiduMads(payload, state) {
 }
 
 function isQimaoGdtRequest(text) {
-  return /com\.yueyou\.cyreader/i.test(decodeURIComponent(String(text || ''))) ||
+  return /com\.yueyou\.cyreader/i.test(decodeSafe(text)) ||
     /%22c_pkgname%22%3A%22com\.yueyou\.cyreader%22/i.test(String(text || ''));
 }
 
@@ -161,14 +184,17 @@ function cleanGdtMview(payload, requestText, state) {
   const targetKeys = Object.keys(data).filter((key) => {
     const slot = data[key];
     const hasFill = slot && Array.isArray(slot.list) && slot.list.length > 0;
-    return hasFill && (qimaoRequest || isKnownQimaoGdtSlot(key));
+    const hasReusableLastAd = payload.last_ads && typeof payload.last_ads === 'object' &&
+      Object.keys(payload.last_ads).length > 0;
+    return (hasFill || hasReusableLastAd || isKnownQimaoGdtSlot(key)) &&
+      (qimaoRequest || isKnownQimaoGdtSlot(key));
   });
   if (targetKeys.length === 0) {
     return payload;
   }
   for (const key of targetKeys) {
     const slot = data[key];
-    if (slot && Array.isArray(slot.list) && slot.list.length > 0) {
+    if (slot && slot.ret !== 102006) {
       data[key] = noFillGdtSlot(slot);
       state.changed = true;
     }
@@ -232,6 +258,30 @@ function finishNoContent(reason, marker) {
   });
 }
 
+function finishDirectNoContent(reason, marker) {
+  const headers = buildJsonHeaders({}, marker);
+  setHeaderCaseInsensitive(headers, 'Content-Type', 'text/plain; charset=utf-8');
+  console.log('uBO Qimao ad clean: ' + reason);
+  done({
+    response: {
+      status: 204,
+      headers,
+      body: '',
+    },
+  });
+}
+
+function pangleNoFillPayload() {
+  return {
+    request_id: 'ubo-qimao-nofill',
+    status_code: 20001,
+    reason: 141,
+    desc: 'no ad',
+    ads: [],
+    data: null,
+  };
+}
+
 try {
   const request = typeof $request === 'object' && $request !== null ? $request : {};
   const response = typeof $response === 'object' && $response !== null ? $response : {};
@@ -241,7 +291,13 @@ try {
 
   const responseText = bodyToText(response.body);
 
-  if (isUbixEndpoint(urlInfo) && looksLikeQimaoUbixJdPayload(responseText, requestText)) {
+  if (isGdtSdkControl(urlInfo) && !response.body) {
+    finishDirectNoContent('GDT launch/msg request emptied', 'qimao-gdt-sdk-empty-1');
+  } else if (isPangolinGetAds(urlInfo)) {
+    finishJson('Pangle get_ads no-fill', pangleNoFillPayload(), 'qimao-pangle-getads-nofill-1');
+  } else if (isUbixInitEndpoint(urlInfo)) {
+    finishNoContent('Ubix init emptied', 'qimao-ubix-init-empty-1');
+  } else if (isUbixEndpoint(urlInfo) && looksLikeQimaoUbixJdPayload(responseText, requestText)) {
     finishNoContent('Ubix JD DSP payload emptied', 'qimao-ubix-jd-empty-1');
   } else if (!payload || typeof payload !== 'object') {
     done({});
