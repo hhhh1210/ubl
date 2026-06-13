@@ -1,5 +1,5 @@
 #!name=七猫小说去广告_修复开屏
-#!desc=基于 QingRex 原模块 + 2026-06-14 三份 HAR/IPA 静态分析补充。重点修复 8.0 版开屏广告：a6-remad.qm989.com、Ubix/66mobi 聚合链路与 Pangle/Volc 远程配置链路。
+#!desc=基于 QingRex 原模块 + 2026-06-14 四份 HAR/IPA 静态分析补充。重点修复 8.0 版开屏广告：a6-remad、Ubix/66mobi、Pangle/Volc 与 Kuaishou/KSAd 回退链路。
 #!author=QingRex 原规则 + Cowork 3P 本地分析
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/SevenCat.png
 #!category=iKeLee
@@ -12,7 +12,8 @@
 # 2. 03:40 HAR：a6-remad 两个请求均为 POST，ad_unit_id=10295、scene=10、ad_format=2、start_mode=1、flow_id=4468，响应 ads_list 含京东开屏广告素材。
 # 3. 04:02 HAR：开屏广告改走 Ubix/66mobi 聚合链路，entry-su1.ubixioe.com/mob/sdk/v2/endpoint 响应中含京东素材、66mobi 追踪、adsource_show=true、interaction_type=3。
 # 4. 04:12 HAR：残留启动链路集中在 drs/cgcr/abtest 远程配置与 Douyin/Pangle/Volc 初始化接口，其中 pangle setting 返回 init_enable=true 与广告位配置。
-# 5. IPA 静态字符串确认存在 QXMAdSDK、QXMQuMengAdapter、QuMengAdSDK、QuMengSplashAd、QXMSplash、QMSplash、SplashCacheKeyPath。
+# 5. 04:21 HAR：开屏回退到 Kuaishou/KSAd，open.e.kuaishou.com/rest/e/v3/open/univ 连续请求，其中一条响应 hasAd=true 且 impAdInfo 体积约 13KB。
+# 6. IPA 静态字符串确认存在 QXMAdSDK、QXMQuMengAdapter、QuMengAdSDK、QuMengSplashAd、QXMSplash、QMSplash、SplashCacheKeyPath、KSSplashAdView。
 
 [Rule]
 # 原模块规则
@@ -81,6 +82,15 @@ DOMAIN,cgcr.wtzw.com,REJECT,extended-matching,pre-matching
 DOMAIN,drs-ipv6.wtzw.com,REJECT,extended-matching,pre-matching
 DOMAIN,drs.wtzw.com,REJECT,extended-matching,pre-matching
 
+# 04:21 HAR 追加：Kuaishou/KSAd 回退开屏链路与广告日志
+DOMAIN,open.e.kuaishou.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,kuaishou.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,ksapisrv.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,gifshow.com,REJECT,extended-matching,pre-matching
+DOMAIN,toblog.ctobsnssdk.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdklog.zhangyuyidong.cn,REJECT,extended-matching,pre-matching
+DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
+
 [URL Rewrite]
 # 原模块规则
 ^https:\/\/sf3-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ - reject
@@ -144,6 +154,12 @@ DOMAIN,drs.wtzw.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/vod-license-m\.volccdn\.com\/vod-license\/ - reject
 ^https?:\/\/sdk-log\.partner\.sm\.cn\/sdk_log - reject
 
+# 04:21 HAR：Kuaishou/KSAd 回退开屏链路；open/univ 返回 hasAd=true 时携带加密 impAdInfo，可直接阻断或用 Map Local 置空。
+^https?:\/\/open\.e\.kuaishou\.com\/rest\/e\/v3\/open\/univ - reject
+^https?:\/\/toblog\.ctobsnssdk\.com\/service\/2\/(log_settings|device_register_only)\/ - reject
+^https?:\/\/sdklog\.zhangyuyidong\.cn\/sdk\/logReport - reject
+^https?:\/\/usr-api\.1sapp\.com\/report\/v1 - reject
+
 [Body Rewrite]
 # 原模块规则：个人中心功能区广告位
 http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'delpaths([["data","func_area",1]])'
@@ -189,5 +205,12 @@ http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'de
 ^https?:\/\/mon\.zijieapi\.com\/monitor\/collect\/c\/cloudcontrol\/get data-type=text data="{\"data\":\"\"}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ data-type=text data="{\"data\":{},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
 
+# 04:21 HAR Kuaishou/KSAd 空响应：该 HAR 中 open.e.kuaishou.com/rest/e/v3/open/univ 连续请求，命中一条 hasAd=true 的开屏候选。
+^https?:\/\/open\.e\.kuaishou\.com\/rest\/e\/v3\/open\/univ data-type=text data="{\"llsid\":0,\"result\":1,\"errorMsg\":\"OK\",\"hasMore\":false,\"impAdInfo\":\"\",\"extra\":\"\",\"adGlobalConfigInfo\":\"\",\"hasAd\":false}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/toblog\.ctobsnssdk\.com\/service\/2\/log_settings\/ data-type=text data="{\"server_time\":0,\"magic_tag\":\"ss_app_log\",\"config\":{\"bav_log_collect\":false,\"bav_ab_config\":false,\"bav_monitor_rate\":0,\"batch_event_interval\":3600,\"real_time_events\":[],\"send_launch_timely\":0,\"session_interval\":3600}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/toblog\.ctobsnssdk\.com\/service\/2\/device_register_only\/ data-type=text data="{\"server_time\":0,\"device_id\":0,\"device_id_str\":\"\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/sdklog\.zhangyuyidong\.cn\/sdk\/logReport data-type=text data="" status-code=204
+^https?:\/\/usr-api\.1sapp\.com\/report\/v1 data-type=text data="{\"code\":\"000\",\"msg\":\"ok\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
+
 [MITM]
-hostname = %APPEND% api-cfg.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, a6-remad.qm989.com, ad-drs.52qumao.com, ad-drs-ipv6.52qumao.com, api-adx.52qumao.com, api-cfg.52qumao.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, log-api.pangolin-sdk-toutiao-b.com, lf-cdn-tos.bytescm.com, v2mi.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, qzs.gdtimg.com, mobads.baidu.com, mobads-logs.baidu.com, bgg.baidu.com, sdk.1rtb.net, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, cfgc.zztfly.com, cdn-api-auth.zztfly.com, api-auth.zztfly.com, entry-su1.ubixioe.com, md-cfg-u1.ubixioe.com, adx-cfg-u1.ubixioe.com, e-u1.ubixioe.com, partner.uc.cn, hc-ssp.sm.cn, tencent-ssp.66mobi.com, static.66mobi.com, img1.360buyimg.com, ccc-x.jd.com, im-x.jd.com, linkst.m.jd.com, atoken.m.taobao.com, webcast-open.douyin.com, *.douyinstatic.com, klink.volceapplog.com, log-klink.zijieapi.com, mon.zijieapi.com, tnc3-alisc1.zijieapi.com, mssdk.volces.com, vod-license-m.volccdn.com, sdk-log.partner.sm.cn, abtest.wtzw.com, cgcr.wtzw.com, drs-ipv6.wtzw.com, drs.wtzw.com, xiaoshuo.wtzw.com
+hostname = %APPEND% api-cfg.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, a6-remad.qm989.com, ad-drs.52qumao.com, ad-drs-ipv6.52qumao.com, api-adx.52qumao.com, api-cfg.52qumao.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, log-api.pangolin-sdk-toutiao-b.com, lf-cdn-tos.bytescm.com, v2mi.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, qzs.gdtimg.com, mobads.baidu.com, mobads-logs.baidu.com, bgg.baidu.com, sdk.1rtb.net, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, cfgc.zztfly.com, cdn-api-auth.zztfly.com, api-auth.zztfly.com, entry-su1.ubixioe.com, md-cfg-u1.ubixioe.com, adx-cfg-u1.ubixioe.com, e-u1.ubixioe.com, partner.uc.cn, hc-ssp.sm.cn, tencent-ssp.66mobi.com, static.66mobi.com, img1.360buyimg.com, ccc-x.jd.com, im-x.jd.com, linkst.m.jd.com, atoken.m.taobao.com, webcast-open.douyin.com, *.douyinstatic.com, klink.volceapplog.com, log-klink.zijieapi.com, mon.zijieapi.com, tnc3-alisc1.zijieapi.com, mssdk.volces.com, vod-license-m.volccdn.com, sdk-log.partner.sm.cn, abtest.wtzw.com, cgcr.wtzw.com, drs-ipv6.wtzw.com, drs.wtzw.com, open.e.kuaishou.com, *.kuaishou.com, toblog.ctobsnssdk.com, sdklog.zhangyuyidong.cn, usr-api.1sapp.com, xiaoshuo.wtzw.com
