@@ -94,6 +94,10 @@ function isBaiduMads(urlInfo) {
   return urlInfo.host === 'mobads.baidu.com' && urlInfo.path === '/cpro/ui/mads.php';
 }
 
+function isBaiduBggProduce(urlInfo) {
+  return urlInfo.host === 'bgg.baidu.com' && urlInfo.path === '/bgg/produce';
+}
+
 function isGdtMview(urlInfo) {
   return urlInfo.host === 'mi.gdt.qq.com' && urlInfo.path === '/gdt_mview.fcg';
 }
@@ -130,7 +134,7 @@ function isWebcastPangleSetting(urlInfo) {
 }
 
 function isGdtSdkControl(urlInfo) {
-  return urlInfo.host === 'sdk.e.qq.com' && /^(?:\/launch|\/msg)$/.test(urlInfo.path);
+  return urlInfo.host === 'sdk.e.qq.com' && /^(?:\/launch|\/msg|\/event)$/.test(urlInfo.path);
 }
 
 const QIMAO_GDT_SLOTS = {
@@ -255,6 +259,12 @@ function looksLikeQimaoUbixJdPayload(responseText, requestText) {
   return hasQimaoScope && hasJdCreative;
 }
 
+function isQimaoBaiduBggRequest(requestText) {
+  const text = decodeSafe(requestText);
+  return /(?:^|&)bundleId=com\.yueyou\.cyreader(?:&|$)/.test(text) ||
+    /(?:^|&)appn=七猫小说(?:&|$)/.test(text);
+}
+
 function finishJson(reason, value, marker) {
   console.log('uBO Qimao ad clean: ' + reason);
   done({
@@ -343,11 +353,15 @@ try {
   const responseText = bodyToText(response.body);
 
   if (isGdtSdkControl(urlInfo) && !response.body) {
-    finishDirectNoContent('GDT launch/msg request emptied', 'qimao-gdt-sdk-empty-1');
+    finishDirectNoContent('GDT SDK control request emptied', 'qimao-gdt-sdk-empty-2');
+  } else if (isBaiduBggProduce(urlInfo) && isQimaoBaiduBggRequest(requestText) && !response.body) {
+    finishDirectNoContent('Baidu BGG produce request emptied', 'qimao-baidu-bgg-empty-1');
   } else if (isPangolinGetAds(urlInfo)) {
     finishJson('Pangle get_ads no-fill', pangleNoFillPayload(), 'qimao-pangle-getads-nofill-1');
   } else if (isPangolinSettings(urlInfo)) {
     finishNoContent('Pangle settings emptied', 'qimao-pangle-settings-empty-1');
+  } else if (isBaiduBggProduce(urlInfo) && isQimaoBaiduBggRequest(requestText)) {
+    finishNoContent('Baidu BGG produce emptied', 'qimao-baidu-bgg-empty-1');
   } else if (isUbixInitEndpoint(urlInfo)) {
     finishNoContent('Ubix init emptied', 'qimao-ubix-init-empty-1');
   } else if (isUbixEndpoint(urlInfo) && looksLikeQimaoUbixJdPayload(responseText, requestText)) {
