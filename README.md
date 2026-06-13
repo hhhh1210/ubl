@@ -20,7 +20,6 @@ Files:
 - `huya-ad-clean.js`: companion cleanup script for uBO Huya iOS GDT Splash Setting Clean and Exapp Fill Clean.
 - `gf-ytj-ad-clean.js`: companion cleanup script for uBO GF Yitaojin iOS startup, launch, credit-menu, and promo-notice cleanup.
 - `kuaishou-ad-clean.js`: companion cleanup script for uBO Kuaishou iOS Realtime Splash Clean.
-- `qimao-ad-clean.js`: companion cleanup script for uBO Qimao iOS Baidu/GDT fill cleanup and user popup config cleanup.
 
 Recommended install order:
 1. Upload all module and companion script files to GitHub.
@@ -45,7 +44,6 @@ Example raw URLs after upload:
 - `https://raw.githubusercontent.com/hhhh1210/ubl/ios/huya-ad-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/ios/gf-ytj-ad-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/ios/kuaishou-ad-clean.js`
-- `https://raw.githubusercontent.com/hhhh1210/ubl/ios/qimao-ad-clean.js`
 
 Validation note:
 - `surge-cli --check` validates files as full profiles and will complain that rules must end with `FINAL`. That warning also appears for already-installed third-party `.sgmodule` files, so do not use it as the final installability test for modules.
@@ -125,17 +123,6 @@ Kuaishou iOS summary:
 - The deeper 14.4.30 IPA pass confirms the native opening-ad stack is `gif/AdSplash/Splash`: `KSSplashAdService`, `KSSplashAdDownloadManagerV2`, `KSSplashAdViewModel`, and interaction views for shake, rotate, slide, and up-slide. Static assets such as `ad_shake.json`, `ad_rotate.json`, `splash_click_guide*.json`, `splash_ball_rotate.json`, and `commercial_lottie_splash_slide_up` match the HAR's `splashAdInfo` / `realtimeSplashInfo` path, so the network-side cleanup stays centered on realtime startup splash fields rather than broad feed/config blocking.
 - `kste.ksapisrv.com/rest/kste/startupconfig` appears repeatedly in the startup sequence and likely participates in deeper splash configuration, but the request/response payload is encrypted (`encData` / `data`), so this conservative profile records it as a candidate rather than rewriting it blindly.
 - Broad Kuaishou config and feed endpoints are intentionally allowed, including `rest/system/startup`, `rest/system/keyconfig`, `rest/n/feed/selectionFast`, `rest/n/spot`, `nearby/operationCard/list`, `api.kuaishouzt.com/rest/zt/appsupport/*`, `gdfp.gifshow.com`, `gdfpsec.ksapisrv.com`, and HTTPDNS/CDN resolver traffic, because the capture does not yet prove a safe field-level cleanup for them.
-
-Qimao iOS summary:
-- The 2026-06-13 七猫 8.0 IPA identifies `com.yueyou.cyreader` / `YYReader`, but the main executable is FairPlay-encrypted (`cryptid 1`), so native class recovery is limited without a decrypted runtime dump.
-- The unencrypted IPA resources confirm a heavy ad stack: `GDTMobSDK.framework`, `CSJAdSDK.bundle`, `baidumobadsdk.bundle`, `QXMAdSDK`, `QMAdSDK`, `QMADBundle`, `QMAppAdBundle`, `KSAdSDK`, `TanxID`, and local Noah ad/reward templates.
-- The HAR shows two clear fill paths: Baidu `mobads.baidu.com/cpro/ui/mads.php` returns `ad[]` with `native_rsplash`, Baidu DSP id `59229808`, and `qh-material.taobao.com` material; GDT `mi.gdt.qq.com/gdt_mview.fcg` carries `c_pkgname=com.yueyou.cyreader` and returns filled slots.
-- The 2026-06-13 05:30 HAR maps the screenshot ads to GDT: bottom/banner Qianwen slots `8120532693295569`, `1160339633993603`, `1067616752819125`, and `2026212585765216`; page-insert Douyin/Meituan slots `7053344540756528` and `8035514834672656`. The cleaner empties any Qimao-scoped GDT slot whose response has `list[]`, preserving no-fill slots.
-- The 2026-06-13 05:42 retry showed the first Baidu splash response dropped the old `59229808` marker while keeping `native_rsplash`, `qh-material.taobao.com`, `SDK20034.png`, `adslot=46`, and `pk=com.taobao.taobao`; the matcher now uses those verified material/package signals. GDT also uses the observed Qimao slot ids as a fallback when Surge does not expose request body text to the response script.
-- The 2026-06-13 08:11 retry showed Baidu and GDT were already being cleaned, while a separate Ubix/JD DSP path still filled ads through `tx-cfg-u1.ubixioe.com/mob/sdk/v2/endpoint`: the binary payload contains Qimao placement markers `vlffmhp` / `14095310` / `42650`, `com.360buy.jdmobile`, `img1.360buyimg.com/pop/jfs/...jpg`, `ccc-x.jd.com/dsp/nc`, and `im-x.jd.com/dsp/np`. The cleaner now returns no-content for that verified Ubix JD payload and maps the observed material/click/monitor fallbacks.
-- The same HAR exposes a QttUnion/QuMeng candidate (`api.qttunion.com/v4/json`, `adslot.id=9018496`, package `com.yueyou.cyreader`) and AICLK config/log routes, but that request currently returns 204/no material, so it is recorded as a candidate rather than blocked broadly.
-- The cleaner empties only verified Baidu and Qimao-scoped GDT fill responses. It also watches the exact app-owned popup endpoint `qm-sf.wtzw.com/api/v2/sfo/user_popup_configs`, but the provided HARs currently return only `{code:200}`, so no field is rewritten unless popup lists appear.
-- `Map Local` adds exact material fallbacks for the observed Taobao material video/image, Baidu splash SDK backgrounds/preload probe, Baidu win/loss tracking pixel, GDT material, Pangle signed image hosts, and the Ubix/JD DSP material/click/monitor chain. App config, AB test, reader config, account, bookstore, encrypted `wtzw.com` config, QttUnion, AICLK, and generic SDK launch/config endpoints are intentionally allowed until a HAR shows safe field-level cleanup.
 
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.
