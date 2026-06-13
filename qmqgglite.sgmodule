@@ -17,6 +17,7 @@
 # 7. 04:42 Lite 失效 HAR 证明不能删掉通用广告 SDK 回退链路：Pangle get_ads 返回 10KB~23KB 载荷，并加载 douyinpic、1RTB、Baidu、QTT、Zhangyu、Aiclk、Taobao/JD 素材。
 # 8. 04:54 修复恢复 HAR 未再出现 Pangle get_ads、1RTB req_ad、Baidu/QTT 素材、Kuaishou open/univ 等广告载荷；剩余 md-data-u1.ubixioe.com/md2、gdfp.gifshow.com、Umeng/Bugly/易盾/基础配置等按非广告/状态上报处理。
 # 9. 05:14/05:17 短剧栏目修复：无拦截 HAR 中短剧可见时 drs-ipv6/cgcr/abtest 正常返回大体积配置；广告模块开启后这些配置被拦截，短剧入口可能被远程配置隐藏。Lite 版改为放行七猫远程配置，只拦截实际广告 SDK/广告载荷接口。
+# 10. 07:08 短剧连续播放 HAR：播放核心是 cdn-vod-playlet.wtzw.com 的 m3u8/m4s 分片，同时伴随 drs/i4、mon.zijieapi、Pangle stats、mobads-logs、ad-drs i4 等状态/统计请求；为避免“网络异常”，放行这些播放期状态链路，只保留广告请求型接口。
 
 [Rule]
 # 原模块保留：静态广告素材与旧广告域名
@@ -26,8 +27,7 @@ DOMAIN-SUFFIX,gdt.qq.com,REJECT,extended-matching,pre-matching
 
 # 七猫 8.0 开屏主链：a6-remad / QuMeng
 DOMAIN,a6-remad.qm989.com,REJECT,extended-matching,pre-matching
-DOMAIN,ad-drs.52qumao.com,REJECT,extended-matching,pre-matching
-DOMAIN,ad-drs-ipv6.52qumao.com,REJECT,extended-matching,pre-matching
+# ad-drs.52qumao.com / ad-drs-ipv6.52qumao.com 是播放期 i4/config/log 状态链路，07:08 HAR 证明短剧连续播放会使用；不在 Rule 层整域拦截。
 DOMAIN,api-adx.52qumao.com,REJECT,extended-matching,pre-matching
 DOMAIN,api-cfg.52qumao.com,REJECT,extended-matching,pre-matching
 
@@ -44,7 +44,7 @@ DOMAIN,hc-ssp.sm.cn,REJECT,extended-matching,pre-matching
 DOMAIN,webcast-open.douyin.com,REJECT,extended-matching,pre-matching
 DOMAIN,klink.volceapplog.com,REJECT,extended-matching,pre-matching
 DOMAIN,log-klink.zijieapi.com,REJECT,extended-matching,pre-matching
-DOMAIN,mon.zijieapi.com,REJECT,extended-matching,pre-matching
+# mon.zijieapi.com/cloudcontrol 在 07:08 短剧播放期出现，放行避免播放网络异常。
 DOMAIN,tnc3-alisc1.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,mssdk.volces.com,REJECT,extended-matching,pre-matching
 DOMAIN,vod-license-m.volccdn.com,REJECT,extended-matching,pre-matching
@@ -58,7 +58,7 @@ DOMAIN-SUFFIX,kuaishou.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,kuaishou.cn,REJECT,extended-matching,pre-matching
 
 # 04:42 Lite 失效补回：Pangle/穿山甲、1RTB、Baidu、QTT、Aiclk、Zhangyu 等通用 SDK 回退链路
-DOMAIN,api-access.pangolin-sdk-toutiao.com,REJECT,extended-matching,pre-matching
+# api-access.pangolin-sdk-toutiao.com 不做整域拦截：07:08 短剧播放期会调用 stats/batch；仅在 URL Rewrite 中拦截 get_ads/settings/material/check。
 DOMAIN,log-api.pangolin-sdk-toutiao-b.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,pangolin-sdk-toutiao.com,REJECT,extended-matching,pre-matching
@@ -69,7 +69,7 @@ DOMAIN-SUFFIX,bytescm.com,REJECT,extended-matching,pre-matching
 DOMAIN,sdk.1rtb.net,REJECT,extended-matching,pre-matching
 DOMAIN,cdn.1rtb.com,REJECT,extended-matching,pre-matching
 DOMAIN,mobads.baidu.com,REJECT,extended-matching,pre-matching
-DOMAIN,mobads-logs.baidu.com,REJECT,extended-matching,pre-matching
+# mobads-logs.baidu.com/dz.zb 在短剧播放期出现，保留日志放行，只拦截 mobads.baidu.com 广告 HTML。
 DOMAIN,bgg.baidu.com,REJECT,extended-matching,pre-matching
 DOMAIN,feed-image.baidu.com,REJECT,extended-matching,pre-matching
 DOMAIN,sdkquic.e.qq.com,REJECT,extended-matching,pre-matching
@@ -101,7 +101,7 @@ DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 ^https:\/\/a6-remad\.qm989\.com\/v3\/(get-splash|get-contract)\/index - reject
 ^https?:\/\/api-adx\.52qumao\.com\/v2\/get-bz-ads\/index - reject
 ^https?:\/\/api-cfg\.52qumao\.com\/v1\/init - reject
-^https?:\/\/ad-drs-ipv6\.52qumao\.com\/v1\/(config|attribute|log) - reject
+# ad-drs-ipv6.52qumao.com/v1/config/attribute/log 放行，短剧播放期依赖 52qumao 状态链路。
 
 # Ubix/66mobi 聚合开屏
 ^https?:\/\/entry-su1\.ubixioe\.com\/mob\/sdk\/v2\/endpoint - reject
@@ -117,7 +117,7 @@ DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/webcast-open\.douyin\.com\/webcast\/openapi\/pangle\/setting\/ - reject
 ^https?:\/\/klink\.volceapplog\.com\/service\/2\/device_register\/ - reject
 ^https?:\/\/log-klink\.zijieapi\.com\/service\/2\/device_register\/ - reject
-^https?:\/\/mon\.zijieapi\.com\/monitor\/collect\/c\/cloudcontrol\/get - reject
+# mon.zijieapi.com/cloudcontrol 放行，避免短剧连续播放网络异常。
 ^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ - reject
 ^https?:\/\/mssdk\.volces\.com\/ri\/report_otob - reject
 ^https?:\/\/vod-license-m\.volccdn\.com\/vod-license\/ - reject
@@ -127,7 +127,7 @@ DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/logBatch - reject
 
 # 04:42 Lite 失效补回：通用广告 SDK 请求与素材
-^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1)?\.com\/api\/ad\/union\/sdk\/(get_ads|settings|material\/check|stats\/batch)\/ - reject
+^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1)?\.com\/api\/ad\/union\/sdk\/(get_ads|settings|material\/check)\/ - reject
 ^https?:\/\/log-api\.pangolin-sdk-toutiao-b\.com\/service\/2\/app_log\/ - reject
 ^https?:\/\/[^\/]+\.douyinpic\.com\/ - reject
 ^https?:\/\/[^\/]+\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ - reject
@@ -135,7 +135,7 @@ DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/sdk\.1rtb\.net\/sdk\/(config|req_ad|notice) - reject
 ^https?:\/\/cdn\.1rtb\.com\/ - reject
 ^https?:\/\/mobads\.baidu\.com\/cpro\/ui\/mads\.php - reject
-^https?:\/\/mobads-logs\.baidu\.com\/ - reject
+# mobads-logs.baidu.com 放行：07:08 短剧播放期只有 dz.zb 日志，无广告素材。
 ^https?:\/\/bgg\.baidu\.com\/bgg\/produce - reject
 ^https?:\/\/feed-image\.baidu\.com\/ - reject
 ^https?:\/\/sdkquic\.e\.qq\.com\/launch - reject
@@ -184,12 +184,11 @@ http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'de
 ^https?:\/\/adx-cfg-u1\.ubixioe\.com\/mob\/sdk\/v3\/init data-type=text data="" status-code=204 header="Content-Type:application/octet-stream"
 ^https?:\/\/partner\.uc\.cn\/mediations data-type=text data="{\"code\":0,\"msg\":\"OK\",\"data\":{\"api_ver\":\"2.0\",\"ad_units\":[],\"placements\":[],\"extended_resources\":[]}}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/api-adx\.52qumao\.com\/v2\/get-bz-ads\/index data-type=text data="{\"errors\":{\"code\":\"44010102\",\"status\":\"200\",\"title\":\"无竞胜方\",\"details\":\"无竞胜方\"}}" status-code=200 header="Content-Type:application/json"
-^https?:\/\/ad-drs-ipv6\.52qumao\.com\/v1\/(config|attribute|log) data-type=text data="{\"code\":200,\"data\":\"\",\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
+# ad-drs-ipv6.52qumao.com/v1/config/attribute/log 不再 Map Local，避免影响短剧播放。
 ^https?:\/\/hc-ssp\.sm\.cn\/ data-type=text data="{\"code\":\"137\",\"reason\":\"Filtered\",\"server_time\":\"0\",\"slot_ad\":[]}" status-code=200 header="Content-Type:application/json"
 
 # Pangle/Volc 空响应。七猫 drs/cgcr/abtest 配置不再 Map Local，避免短剧栏目被隐藏。
 ^https?:\/\/webcast-open\.douyin\.com\/webcast\/openapi\/pangle\/setting\/ data-type=text data="{\"data\":{\"init_enable\":false,\"extra_settings\":{\"init_enable\":false,\"use_pangle_plugin\":false,\"enable_feed_no_ad\":true,\"ad_id\":{}}},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
-^https?:\/\/mon\.zijieapi\.com\/monitor\/collect\/c\/cloudcontrol\/get data-type=text data="{\"data\":\"\"}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ data-type=text data="{\"data\":{},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
 
 # Kuaishou/KSAd：返回无广告
@@ -199,11 +198,11 @@ http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'de
 # 04:42 Lite 失效补回：JSON 型 SDK 空响应
 ^https?:\/\/v2mi\.gdt\.qq\.com\/gdt_mview\.fcg data-type=text data="{\"ret\":0,\"msg\":\"\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/mobads\.baidu\.com\/cpro\/ui\/mads\.php data-type=text data="{\"ad\":[],\"n\":0,\"error_code\":0}" status-code=200 header="Content-Type:application/json"
-^https?:\/\/api-access\.pangolin-sdk-toutiao1?\.com\/api\/ad\/union\/sdk\/stats\/batch\/ data-type=text data="{\"code\":\"20000\",\"data\":\"\"}" status-code=200 header="Content-Type:application/json"
+# Pangle stats/batch 是播放期统计，放行；只拦截 get_ads/settings/material/check。
 ^https?:\/\/api\.qttunion\.com\/v5\/json data-type=text data="{\"code\":0,\"data\":{\"ads\":[]},\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/service\.qttunion\.com\/qmcd\/get data-type=text data="{\"code\":0,\"data\":[],\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/cpc-service-square\.aiclk\.com\/v1\/getConfig data-type=text data="{\"code\":0,\"data\":{}}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/usr-api\.1sapp\.com\/report\/v1 data-type=text data="{\"code\":\"000\",\"msg\":\"ok\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
 
 [MITM]
-hostname = %APPEND% api-cfg.wtzw.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, xiaoshuo.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, a6-remad.qm989.com, ad-drs.52qumao.com, ad-drs-ipv6.52qumao.com, api-adx.52qumao.com, api-cfg.52qumao.com, entry-su1.ubixioe.com, md-cfg-u1.ubixioe.com, adx-cfg-u1.ubixioe.com, e-u1.ubixioe.com, partner.uc.cn, hc-ssp.sm.cn, tencent-ssp.66mobi.com, static.66mobi.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, mon.zijieapi.com, tnc3-alisc1.zijieapi.com, mssdk.volces.com, vod-license-m.volccdn.com, open.e.kuaishou.com, open.e.kuaishou.cn, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, log-api.pangolin-sdk-toutiao-b.com, *.pglstatp-toutiao.com, *.douyinpic.com, lf-cdn-tos.bytescm.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, mobads-logs.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, cfgc.zztfly.com, cdn-api-auth.zztfly.com, api-auth.zztfly.com, qh-material.taobao.com, atoken.m.taobao.com, img1.360buyimg.com, usr-api.1sapp.com
+hostname = %APPEND% api-cfg.wtzw.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, xiaoshuo.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, a6-remad.qm989.com, ad-drs-ipv6.52qumao.com, api-adx.52qumao.com, api-cfg.52qumao.com, entry-su1.ubixioe.com, md-cfg-u1.ubixioe.com, adx-cfg-u1.ubixioe.com, e-u1.ubixioe.com, partner.uc.cn, hc-ssp.sm.cn, tencent-ssp.66mobi.com, static.66mobi.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, mssdk.volces.com, vod-license-m.volccdn.com, open.e.kuaishou.com, open.e.kuaishou.cn, log-api.pangolin-sdk-toutiao-b.com, *.pglstatp-toutiao.com, *.douyinpic.com, lf-cdn-tos.bytescm.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, cfgc.zztfly.com, cdn-api-auth.zztfly.com, api-auth.zztfly.com, qh-material.taobao.com, atoken.m.taobao.com, img1.360buyimg.com, usr-api.1sapp.com
