@@ -83,8 +83,7 @@ DOMAIN,cdn-api-auth.zztfly.com,REJECT,extended-matching,pre-matching
 DOMAIN,api-auth.zztfly.com,REJECT,extended-matching,pre-matching
 DOMAIN,qh-material.taobao.com,REJECT,extended-matching,pre-matching
 DOMAIN,atoken.m.taobao.com,REJECT,extended-matching,pre-matching
-DOMAIN,img1.360buyimg.com,REJECT,extended-matching,pre-matching
-DOMAIN-SUFFIX,360buyimg.com,REJECT,extended-matching,pre-matching
+# 京东 App 图片使用 m15.360buyimg.com 等 360buyimg CDN；不再整域拦截 360buyimg，避免影响京东图片显示。
 DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 
 [URL Rewrite]
@@ -148,7 +147,7 @@ DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/api-auth\.zztfly\.com\/api\/initSec - reject
 ^https?:\/\/qh-material\.taobao\.com\/ - reject
 ^https?:\/\/atoken\.m\.taobao\.com\/ - reject
-^https?:\/\/img1\.360buyimg\.com\/ - reject
+# 360buyimg 京东图片 CDN 放行；七猫开屏中出现过的 JD 素材不再通过整域规则处理，避免误伤京东 App。
 ^https?:\/\/usr-api\.1sapp\.com\/report\/v1 - reject
 
 [Body Rewrite]
@@ -200,4 +199,4 @@ http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'de
 ^https?:\/\/usr-api\.1sapp\.com\/report\/v1 data-type=text data="{\"code\":\"000\",\"msg\":\"ok\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
 
 [MITM]
-hostname = %APPEND% api-cfg.wtzw.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, xiaoshuo.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, a6-remad.qm989.com, api-adx.52qumao.com, api-cfg.52qumao.com, entry-su1.ubixioe.com, md-cfg-u1.ubixioe.com, adx-cfg-u1.ubixioe.com, e-u1.ubixioe.com, partner.uc.cn, hc-ssp.sm.cn, tencent-ssp.66mobi.com, static.66mobi.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, open.e.kuaishou.com, open.e.kuaishou.cn, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, log-api.pangolin-sdk-toutiao-b.com, *.pglstatp-toutiao.com, *.douyinpic.com, lf-cdn-tos.bytescm.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, cfgc.zztfly.com, cdn-api-auth.zztfly.com, api-auth.zztfly.com, qh-material.taobao.com, atoken.m.taobao.com, img1.360buyimg.com, usr-api.1sapp.com
+hostname = %APPEND% api-cfg.wtzw.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, xiaoshuo.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, a6-remad.qm989.com, api-adx.52qumao.com, api-cfg.52qumao.com, entry-su1.ubixioe.com, md-cfg-u1.ubixioe.com, adx-cfg-u1.ubixioe.com, e-u1.ubixioe.com, partner.uc.cn, hc-ssp.sm.cn, tencent-ssp.66mobi.com, static.66mobi.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, open.e.kuaishou.com, open.e.kuaishou.cn, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, log-api.pangolin-sdk-toutiao-b.com, *.pglstatp-toutiao.com, *.douyinpic.com, lf-cdn-tos.bytescm.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, cfgc.zztfly.com, cdn-api-auth.zztfly.com, api-auth.zztfly.com, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com
