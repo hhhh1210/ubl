@@ -120,8 +120,9 @@ DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/univ - reject
 ^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/logBatch - reject
 
-# 04:42 Lite 失效补回：通用广告 SDK 请求与素材
-^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/(get_ads|material\/check)\/ - reject
+# 04:42 Lite 失效补回：通用广告 SDK 请求与素材；20:13 HAR 证明 get_ads 硬拒绝会卡住短剧预广告/播放门控，因此只硬拒绝 material/check。
+^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/material\/check\/ - reject
+# Pangle get_ads 不再 URL Rewrite 硬拒绝，改在 Map Local 返回无广告 JSON，保留请求完成语义。
 # Pangle settings / stats / app_log 放行：19:58 HAR 里打开模块后 settings/app_log 被拦截会导致短剧页面只显示缓存、点击网络失败。
 ^https?:\/\/[^\/]+\.douyinpic\.com\/ - reject
 ^https?:\/\/[^\/]+\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ - reject
@@ -192,7 +193,8 @@ http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'de
 # 04:42 Lite 失效补回：JSON 型 SDK 空响应
 ^https?:\/\/v2mi\.gdt\.qq\.com\/gdt_mview\.fcg data-type=text data="{\"ret\":0,\"msg\":\"\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/mobads\.baidu\.com\/cpro\/ui\/mads\.php data-type=text data="{\"ad\":[],\"n\":0,\"error_code\":0}" status-code=200 header="Content-Type:application/json"
-# Pangle stats/batch 是播放期统计，放行；只拦截 get_ads/settings/material/check。
+# Pangle stats/batch 是播放期统计，放行；get_ads 返回无广告 JSON，material/check 仍在 URL Rewrite 拦截。
+^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/get_ads\/ data-type=text data="{\"request_id\":\"surge-no-ad\",\"status_code\":20001,\"reason\":141,\"desc\":\"no ad\"}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/api\.qttunion\.com\/v5\/json data-type=text data="{\"code\":0,\"data\":{\"ads\":[]},\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/service\.qttunion\.com\/qmcd\/get data-type=text data="{\"code\":0,\"data\":[],\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/cpc-service-square\.aiclk\.com\/v1\/getConfig data-type=text data="{\"code\":0,\"data\":{}}" status-code=200 header="Content-Type:application/json"
