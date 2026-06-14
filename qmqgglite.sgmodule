@@ -64,8 +64,8 @@ DOMAIN-SUFFIX,douyinpic.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,bytescm.com,REJECT,extended-matching,pre-matching
 DOMAIN,sdk.1rtb.net,REJECT,extended-matching,pre-matching
 DOMAIN,cdn.1rtb.com,REJECT,extended-matching,pre-matching
-DOMAIN,mobads.baidu.com,REJECT,extended-matching,pre-matching
-# mobads-logs.baidu.com/dz.zb 在短剧播放期出现，保留日志放行，只拦截 mobads.baidu.com 广告 HTML。
+# mobads.baidu.com/cpro/ui/mads.php 是 WebView/HTML 广告位，短剧界面会出现 XML/错误页显示；不做 Rule 层整域拒绝，改由 Map Local 返回空白 HTML。
+# mobads-logs.baidu.com/dz.zb 在短剧播放期出现，保留日志放行。
 DOMAIN,bgg.baidu.com,REJECT,extended-matching,pre-matching
 DOMAIN,feed-image.baidu.com,REJECT,extended-matching,pre-matching
 DOMAIN,sdkquic.e.qq.com,REJECT,extended-matching,pre-matching
@@ -129,7 +129,7 @@ DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/lf-cdn-tos\.bytescm\.com\/obj\/static\/ad\/ - reject
 ^https?:\/\/sdk\.1rtb\.net\/sdk\/(config|req_ad|notice) - reject
 ^https?:\/\/cdn\.1rtb\.com\/ - reject
-^https?:\/\/mobads\.baidu\.com\/cpro\/ui\/mads\.php - reject
+# mobads.baidu.com/cpro/ui/mads.php 不再硬拒绝，改在 Map Local 返回空白 HTML，避免短剧界面 WebView 露出 XML/错误页。
 # mobads-logs.baidu.com 放行：07:08 短剧播放期只有 dz.zb 日志，无广告素材。
 ^https?:\/\/bgg\.baidu\.com\/bgg\/produce - reject
 ^https?:\/\/feed-image\.baidu\.com\/ - reject
@@ -192,7 +192,7 @@ http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'de
 
 # 04:42 Lite 失效补回：JSON 型 SDK 空响应
 ^https?:\/\/v2mi\.gdt\.qq\.com\/gdt_mview\.fcg data-type=text data="{\"ret\":0,\"msg\":\"\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
-^https?:\/\/mobads\.baidu\.com\/cpro\/ui\/mads\.php data-type=text data="{\"ad\":[],\"n\":0,\"error_code\":0}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/mobads\.baidu\.com\/cpro\/ui\/mads\.php data-type=text data="<html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body></body></html>" status-code=200 header="Content-Type:text/html; charset=utf-8"
 # Pangle stats/batch 是播放期统计，放行；get_ads 返回无广告 JSON，material/check 仍在 URL Rewrite 拦截。
 ^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/get_ads\/ data-type=text data="{\"request_id\":\"surge-no-ad\",\"status_code\":20001,\"reason\":141,\"desc\":\"no ad\"}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/api\.qttunion\.com\/v5\/json data-type=text data="{\"code\":0,\"data\":{\"ads\":[]},\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
