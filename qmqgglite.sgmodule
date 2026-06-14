@@ -86,6 +86,10 @@ DOMAIN,atoken.m.taobao.com,REJECT,extended-matching,pre-matching
 # 京东 App 图片使用 m15.360buyimg.com 等 360buyimg CDN；不再整域拦截 360buyimg，避免影响京东图片显示。
 DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 
+# 20:33 HAR：短剧界面触发“网络异常/代理风险”弹窗时大量访问 checkip.amazonaws.com，并出现 119.29.29.98 HTTPDNS 探测。IPA 主程序静态字符串含 isShowProxyAlert/kProxyConfig/CFNetworkCopySystemProxySettings，说明这是代理风险检测链路；这些探测必须直连，不能走代理或 MITM。
+DOMAIN,checkip.amazonaws.com,DIRECT
+IP-CIDR,119.29.29.98/32,DIRECT,no-resolve
+
 [URL Rewrite]
 # 原模块规则
 ^https:\/\/sf3-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ - reject
