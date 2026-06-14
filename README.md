@@ -18,7 +18,6 @@ Files:
 - `didi-ad-clean.js`: companion cleanup script for uBO DiDi iOS popup toggles, homepage/banner, bottom-nav, user-center, safety shield promo, and Thanos module cleanup.
 - `wechat-pay-ad-clean.js`: companion cleanup script for uBO WeChat Pay Ad Data Empty, GoldPlan Page Clean, and ICBC Ad URL Clean.
 - `huya-ad-clean.js`: companion cleanup script for uBO Huya iOS GDT Splash Setting Clean and Exapp Fill Clean.
-- `gf-ytj-ad-clean.js`: companion cleanup script for uBO GF Yitaojin iOS startup, launch, credit-menu, and promo-notice cleanup.
 - `kuaishou-ad-clean.js`: companion cleanup script for uBO Kuaishou iOS Realtime Splash Clean.
 
 Recommended install order:
@@ -42,7 +41,6 @@ Example raw URLs after upload:
 - `https://raw.githubusercontent.com/hhhh1210/ubl/ios/didi-ad-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/ios/wechat-pay-ad-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/ios/huya-ad-clean.js`
-- `https://raw.githubusercontent.com/hhhh1210/ubl/ios/gf-ytj-ad-clean.js`
 - `https://raw.githubusercontent.com/hhhh1210/ubl/ios/kuaishou-ad-clean.js`
 
 Validation note:
@@ -107,16 +105,6 @@ WeChat Pay iOS summary:
 - The ICBC payment submit response keeps `pay_data` intact and only clears `ad_url`; the observed ICBC `weixin_payment.htm` promo landing page is mapped to an empty page.
 - The 2026-05-01 17:32 HAR pass adds exact `mmbiz.qpic.cn` material mappings for the remaining WeChat Pay promo entrance images that are visible outside mmtls.
 
-GF Yitaojin iOS summary:
-- The response script is intentionally narrowed to the confirmed startup ad endpoint `config.gf.com.cn/ad/info` and the gateway `launch_ad_config` field on `gw.gf.com.cn/gateway`.
-- The 2026-05-29 crash HAR showed that broad cleanup of `stock_index/publish/info`, `ytj_config/info`, `ytj_config/sys_popup`, and `my_page/open_account_marketing` can affect runtime/account-page initialization, so those paths must not be broadly rewritten.
-- The 2026-06-13 HAR shows the startup path is already handled: `config.gf.com.cn/ad/info` returns an empty ad payload and `gw.gf.com.cn/gateway` is modified with `station.launch_ad_config: []`.
-- The same HAR still exposes a narrow credit menu ad path on `config.gf.com.cn/credit/menu`: `data.footerAd` contains `credit_bottom_ad`, and `data.middle` contains the exact `credit_middle_ad` item. The cleaner now empties `footerAd` and removes only that exact middle item.
-- The same HAR also shows section promo notices on `config.gf.com.cn/ytj_config/info`, such as `diagnostic_report`, `zxg_top`, `credit_top_notice`, `plate_top_notice`, `hs_top_notice`, and other top/bottom notice slots. The cleaner preserves each config entry but replaces only those notice payloads with empty same-shape data.
-- The 13.3.2 App Store IPA main binary is FairPlay-encrypted (`cryptid 1`), so the native consumer class names cannot be fully recovered from the IPA alone. The rule stays HAR-field driven and avoids reopening broad `stock_index/publish/info` or trade-menu cleanup.
-- Other homepage marketing, find-page marketing, account-open marketing, holder-marketing, smart-assistant recommendation, trade-card, stock-index config, trade-menu, and fund-ad payloads are not modified by this conservative profile.
-- Core login, quote, trading, account, RN/global config, and general config domains are intentionally not blocked; only verified startup, launch, credit-menu ad, and promo-notice fields are rewritten.
-
 Kuaishou iOS summary:
 - The 2026-05-30 14.4.30 HARs showed a plain JSON startup response at `az4-api.ksapisrv.com/rest/n/system/realtime/startup`, and the follow-up capture with remaining splash ads showed the same response on `az1-api.ksapisrv.com/rest/n/system/realtime/startup`. The 2026-05-31 22:19 capture then showed the same `splash` response shape on `az4-api-js.gifshow.com/rest/n/system/realtime/startup`. These carry `splash.realtimeSplashInfo`, `splashLlsid`, callback metadata, and motion-sensitive splash controls; the response script removes only those splash fields and preserves the rest of startup navigation/config data.
 - Confirmed ad telemetry/impression endpoints are rejected narrowly: `adlog.e.kuaishou.com/rest/n/log/ad/photo/action|trackLog`, `adlog.e.kuaishou.cn/rest/n/log/ad/photo/action|trackLog`, `adlog-js.e.kuaishou.com/rest/n/log/ad/photo/action|trackLog`, `az1-api.ksapisrv.com/rest/n/log/ad/trackLog`, `az4-api.ksapisrv.com/rest/n/log/ad/trackLog`, `adtrack.e.kuaishou.com/rest/k/v1/track`, and `imp.voiceads.cn/a/impress|winnotice`. The rule/script regexes are written as `az[1-4]-api.ksapisrv.com` and `az[1-4]-api-js.gifshow.com` for the ad-track/realtime-startup families because the HARs show the same Kuaishou API family rotating between AZ hosts; only the exact ad-track path and exact realtime startup script path are covered, not broad `az*-api`, `gifshow.com`, or `ksapisrv.com` traffic.
@@ -126,6 +114,5 @@ Kuaishou iOS summary:
 
 Note:
 - `URL-REGEX`, `Map Local`, `Header Rewrite`, and scripted header mutations on HTTPS require MitM for target hosts.
-- The scripted module auto-appends these cleanup hosts into `[MITM]`: hjw01.com, *.hjw01.com, hjwang9.com, *.hjwang9.com, mytvsuper.com, *.mytvsuper.com, coolinet.net, *.coolinet.net, www.youtube.com, youtubei.googleapis.com, vg-new-ssplib-hb.mtgglobals.com, a.applovin.com, a.applvn.com, a4.applovin.com, d.applovin.com, ms.applovin.com, rt.applovin.com, gw1.mediation.unity3d.com, o-sdk.mediation.unity3d.com, gateway.unityads.unity3d.com, i-sdk.mediation.unity3d.com, i-adq.mediation.unity3d.com, toblog.tobsnssdk.com, odf.app-ads-services.com, googleads.g.doubleclick.net, logs.ads.vungle.com, firebaseremoteconfig.googleapis.com, halfbrickplus.com, *.halfbrickplus.com, api.bidmachine.io, install.monetization-sdk.chartboost.com, config.monetization-sdk.chartboost.com, mi.gdt.qq.com, pgdt.ugdtimg.com, adsmind.ugdtimg.com, page.hongyibo.com.cn, static.hongyibo.com.cn, gift-static.hongyibo.com.cn, s3-hnapuhdd-cdn.didistatic.com, img-ys011.didistatic.com, omgup.hongyibo.com.cn, sec-guard.hongyibo.com.cn, res-new.hongyibo.com.cn, as.hongyibo.com.cn, api.hongyibo.com.cn, as.xiaojukeji.com, conf.diditaxi.com.cn, yuantu.diditaxi.com.cn, res.xiaojukeji.com, api.udache.com, v.didi.cn, dtrip.xiaojukeji.com, payapp.weixin.qq.com, mp.weixin.qq.com, acq.icbc.com.cn, m.icbc.com.cn, mmbiz.qpic.cn, prod.huaxz.cn, api.didi.cn, us.l.qq.com, tangram.e.qq.com, xs.gdt.qq.com, business.msstatic.com, config.gf.com.cn, gw.gf.com.cn, az1-api.ksapisrv.com, az2-api.ksapisrv.com, az3-api.ksapisrv.com, az4-api.ksapisrv.com, az1-api-js.gifshow.com, az2-api-js.gifshow.com, az3-api-js.gifshow.com, az4-api-js.gifshow.com, adlog.e.kuaishou.com, adlog.e.kuaishou.cn, adlog-js.e.kuaishou.com, adtrack.e.kuaishou.com, imp.voiceads.cn, *.googlevideo.com.
-- This package intentionally excludes the broad uBO-derived rule dump. It keeps only verified hjw01, mytvsuper, coolinet, YouTube Web, YouTube iOS App, googlevideo, and app-scoped Jetpack Joyride/Huaxiaozhu/DiDi/WeChat Pay/Huya/GF Yitaojin/Kuaishou handling.
+- This package intentionally excludes the broad uBO-derived rule dump. It keeps only verified hjw01, mytvsuper, coolinet, YouTube Web, YouTube iOS App, googlevideo, and app-scoped Jetpack Joyride/Huaxiaozhu/DiDi/WeChat Pay/Huya/Kuaishou handling.
 - Cosmetic filters, scriptlets, HTML filtering, `removeparam=`, `urlskip=`, and source-domain constrained rules are not part of this lightweight export.
