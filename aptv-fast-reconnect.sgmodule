@@ -1,0 +1,19 @@
+#!name=APTV Live Fast Reconnect
+#!desc=Make the o11.163189.xyz HTTP live stream easier for Surge to observe, then kill stale active stream requests before the player waits around 25s.
+#!system=macOS
+#!arguments=STREAM_HOST=o11.163189.xyz&STREAM_PATH=/stream/tvb/fct4k/&STALE_SECONDS=5&MAX_AGE_SECONDS=18&ACTIVE_WINDOW_SECONDS=30&CHECK_CRON=*/5 * * * * *
+
+[General]
+force-http-engine-hosts = %APPEND% %STREAM_HOST%:80
+
+[Header Rewrite]
+http-request ^http://%STREAM_HOST%:80%STREAM_PATH% header-del Connection
+http-request ^http://%STREAM_HOST%:80%STREAM_PATH% header-add Connection close
+http-request ^http://%STREAM_HOST%:80%STREAM_PATH% header-del Cache-Control
+http-request ^http://%STREAM_HOST%:80%STREAM_PATH% header-add Cache-Control no-cache
+http-request ^http://%STREAM_HOST%:80%STREAM_PATH% header-del Pragma
+http-request ^http://%STREAM_HOST%:80%STREAM_PATH% header-add Pragma no-cache
+
+[Script]
+APTV stream activity marker = type=http-request,pattern=^http://%STREAM_HOST%:80%STREAM_PATH%,requires-body=0,script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/aptv-kill-stale.js,script-update-interval=86400,argument=mode=mark&activeWindow=%ACTIVE_WINDOW_SECONDS%,timeout=2
+APTV stale stream killer = type=cron,cronexp="%CHECK_CRON%",script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/aptv-kill-stale.js,script-update-interval=86400,argument=mode=cron&host=%STREAM_HOST%&path=%STREAM_PATH%&stale=%STALE_SECONDS%&maxAge=%MAX_AGE_SECONDS%&activeWindow=%ACTIVE_WINDOW_SECONDS%,timeout=4
