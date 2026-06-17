@@ -12,3 +12,7 @@ http-request ^http:\/\/o11\.163189\.xyz(?::80)?\/stream\/tvb\/fct4k\/ header-del
 http-request ^http:\/\/o11\.163189\.xyz(?::80)?\/stream\/tvb\/fct4k\/ header-add Cache-Control no-cache
 http-request ^http:\/\/o11\.163189\.xyz(?::80)?\/stream\/tvb\/fct4k\/ header-del Pragma
 http-request ^http:\/\/o11\.163189\.xyz(?::80)?\/stream\/tvb\/fct4k\/ header-add Pragma no-cache
+
+[Script]
+APTV stream activity marker = type=http-request, pattern=^http:\/\/o11\.163189\.xyz(?::80)?\/stream\/tvb\/fct4k\/, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/aptv-kill-stale.js, script-update-interval=86400, argument=mode=mark&activeWindow=30, timeout=2
+APTV stale stream killer = type=cron, cronexp="*/5 * * * * *", script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/aptv-kill-stale.js, script-update-interval=86400, argument=mode=cron&host=o11.163189.xyz&path=/stream/tvb/fct4k/&stale=5&maxAge=18&activeWindow=30, timeout=4
