@@ -210,16 +210,6 @@ function isQQMusicRequest(requestText) {
   return /com\.tencent\.QQMusic|QQ(?:%E9%9F%B3%E4%B9%90|音乐)|appkey"?\s*:\s*"?1107900362|hostappid(?:%22%3A%22|"?\s*[:=]\s*"?)1107900362|posid=4070643834392507|mediumId=5766736179307259435/i.test(text);
 }
 
-function isHuyaExappRequest(requestText) {
-  const text = String(requestText || '');
-  return /(?:^|&)posid=(?:3026774105282411|3096015588382074|4076515691155523|6076318568786637)(?:&|$)/.test(text)
-    && /(?:hostappid%22%3A%221112179873|hostappid"?\s*[:=]\s*"?1112179873|com\.yy\.kiwi)/i.test(text);
-}
-
-function isHuyaGdtSlot(slotId) {
-  return /^(?:3026774105282411|3096015588382074|4076515691155523|6076318568786637)$/.test(String(slotId || ''));
-}
-
 function cleanExappSlot(slot, noAdRet) {
   if (!slot || typeof slot !== 'object') {
     return;
@@ -255,41 +245,6 @@ function cleanQQMusicExapp(requestText, responseText) {
   payload.last_ads = {};
   payload.reqinterval = Math.max(Number(payload.reqinterval) || 0, 3600);
   return payload;
-}
-
-function cleanHuyaExapp(requestText, responseText) {
-  const hasRequestBody = String(requestText || '').length > 0;
-  const requestSlot = extractParam(requestText, 'posid');
-  if (hasRequestBody && (!isHuyaExappRequest(requestText) || !isHuyaGdtSlot(requestSlot))) {
-    return null;
-  }
-  const payload = JSON.parse(responseText || '{}');
-  const data = payload && payload.data;
-  if (!data || typeof data !== 'object') {
-    return null;
-  }
-  const slotIds = Object.keys(data).filter(isHuyaGdtSlot);
-  if (slotIds.length === 0) {
-    return null;
-  }
-  for (const slotId of slotIds) {
-    cleanExappSlot(data[slotId], 0);
-  }
-  payload.last_ads = {};
-  payload.ret = 0;
-  payload.rpt = 0;
-  payload.reqinterval = 1;
-  return payload;
-}
-
-function hasHuyaTangramMarker(requestText, sdk, app) {
-  if (/com\.yy\.kiwi|1112179873/i.test(requestText || '')) {
-    return true;
-  }
-  if (app && Object.prototype.hasOwnProperty.call(app, '5035917038257268')) {
-    return true;
-  }
-  return !!(sdk && /huya|ios_hy_splash|ioshuya/i.test(String(sdk.ex_exp_info || '')));
 }
 
 function cleanTangramSdkCommon(sdk, state) {
@@ -363,37 +318,6 @@ function cleanQQMusicTangram(requestText, responseText) {
   return state.changed ? payload : null;
 }
 
-function cleanHuyaTangram(requestText, responseText) {
-  const payload = JSON.parse(responseText || '{}');
-  if (!payload || !payload.setting || typeof payload.setting !== 'object') {
-    return null;
-  }
-  const sdk = payload.setting.sdk ? base64DecodeJson(payload.setting.sdk) : null;
-  const app = payload.setting.app ? base64DecodeJson(payload.setting.app) : null;
-  if (!hasHuyaTangramMarker(requestText, sdk, app)) {
-    return null;
-  }
-  const state = { changed: false };
-  if (sdk) {
-    cleanTangramSdkCommon(sdk, state);
-    setIfDifferent(sdk, 'pingLocalDnsList', '', state);
-    setIfDifferent(sdk, 'srcap', 0, state);
-    setIfDifferent(sdk, 'spl_exptime', 0, state);
-    setIfDifferent(sdk, 'spl_ltime', 0, state);
-    setIfDifferent(sdk, 'spl_maxrn', 0, state);
-    payload.setting.sdk = base64EncodeJson(sdk);
-  }
-  if (app && typeof app === 'object') {
-    for (const slotId of Object.keys(app)) {
-      if (app[slotId] && typeof app[slotId] === 'object') {
-        setIfDifferent(app[slotId], 'dynamic_use_lgt', 0, state);
-      }
-    }
-    payload.setting.app = base64EncodeJson(app);
-  }
-  return state.changed ? payload : null;
-}
-
 try {
   const requestText = bodyToText($request && $request.body);
   const responseText = bodyToText($response && $response.body);
@@ -411,12 +335,7 @@ try {
       if (qqmusic) {
         finishJson(qqmusic, 'X-uBO-QQMusic', 'gdt-exapp-nofill-2');
       } else {
-        const huya = cleanHuyaExapp(requestText, responseText);
-        if (huya) {
-          finishJson(huya, 'X-uBO-Huya', 'huya-gdt-page-nofill-1');
-        } else {
-          done({});
-        }
+        done({});
       }
     }
   } else if (urlInfo.host === 'tangram.e.qq.com' && urlInfo.path === '/updateSetting') {
@@ -424,12 +343,7 @@ try {
     if (qqmusic) {
       finishJson(qqmusic, 'X-uBO-QQMusic', 'tangram-setting-clean-2');
     } else {
-      const huya = cleanHuyaTangram(requestText, responseText);
-      if (huya) {
-        finishJson(huya, 'X-uBO-Huya', 'huya-gdt-page-nofill-1');
-      } else {
-        done({});
-      }
+      done({});
     }
   } else {
     done({});
