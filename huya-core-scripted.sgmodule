@@ -1,31 +1,24 @@
-#!name=Huya iOS Ad Clean for Surge
-#!desc=虎牙直播 iOS 13.3.40 独立去广告模块。基于 2026-06-17 HAR 与 IPA 静态线索，较激进拦截穿山甲/GDT/字节/火山/AMS/虎牙商业化与埋点接口；保留播放、登录、HTTPDNS、支付和隐私协议核心通路。
+#!name=Huya iOS Ad Clean Lite for Surge
+#!desc=虎牙直播 iOS 13.3.40 轻量去广告模块。基于 2026-06-17 17:01 HAR，仅处理最新捕获中明确出现的穿山甲/字节/火山/GDT/AMS/虎牙商业化素材与埋点接口；保留播放、HTTPDNS、登录、QQ SDK 配置和隐私协议页面。
 
 [General]
-force-http-engine-hosts = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, mssdk.volces.com, toblog.ctobsnssdk.com, sdkreport.e.qq.com, tangram.e.qq.com, us.l.qq.com, xs.gdt.qq.com, mi.gdt.qq.com, sdk.e.qq.com, sdkquic.e.qq.com, business.msstatic.com, fileserver.cdn.huya.com, diy-front.cdn.huya.com, statwup.huya.com, wsapi.huya.com, udbdf.huya.com, cloud.tgpa.qq.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, pgdt.gtimg.cn, pgdt.ugdtimg.com, adsmind.gdtimg.com, adsmind.ugdtimg.com
+force-http-engine-hosts = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, mssdk.volces.com, toblog.ctobsnssdk.com, sdkreport.e.qq.com, tangram.e.qq.com, business.msstatic.com, fileserver.cdn.huya.com, statwup.huya.com, wsapi.huya.com, udbdf.huya.com, cloud.tgpa.qq.com
 
 [Rule]
-# Huya 13.3.40 observed third-party ad SDK requests: Pangle/CSJ, GDT, ByteDance AppLog, Volcengine MSSDK, AMS material config.
-URL-REGEX,^https?:\/\/(?:api-access\.pangolin-sdk-toutiao1?\.com\/api\/ad\/union\/sdk\/(?:settings|stats\/batch)|mssdk\.volces\.com\/ri\/report_otob|toblog\.ctobsnssdk\.com\/service\/2\/(?:log_settings|device_register_only|app_alert_check)\/|sdkreport\.e\.qq\.com\/link_event)(?:[?#/]|$),REJECT
-# Aggressive Huya/TGPA telemetry and fingerprint reports seen in 13.3.40 HAR. Keep udbdf.huya.com/dckey/check allowed.
-URL-REGEX,^https?:\/\/(?:statwup\.huya\.com\/(?:[?#]|$)|wsapi\.huya\.com\/(?:[?#]|$)|udbdf\.huya\.com\/device\/fingerprint\/log|cloud\.tgpa\.qq\.com\/(?:api\/device\/get_token|cloudctrl\/cloud_ctrl))(?:[?#/]|$),REJECT
-# GDT and ad material telemetry/resources.
-URL-REGEX,^https?:\/\/(?:(?:pgdt\.gtimg\.cn|pgdt\.ugdtimg\.com)\/\d+\/\d+\/snscosdownload\/SZ\/reserved\/|(?:adsmind\.gdtimg\.com|adsmind\.ugdtimg\.com)\/ads_svp_video__|xs\.gdt\.qq\.com\/style_factory\/(?:template_list|module_list))(?:[?#/]|$),REJECT
+# Latest HAR observed third-party ad SDK / report endpoints: Pangle/CSJ, ByteDance AppLog, Volcengine MSSDK and GDT report.
+URL-REGEX,^https?:\/\/(?:api-access\.pangolin-sdk-toutiao1?\.com\/api\/ad\/union\/sdk\/(?:settings|stats\/batch)|mssdk\.volces\.com\/ri\/report_otob|toblog\.ctobsnssdk\.com\/service\/2\/device_register_only\/|sdkreport\.e\.qq\.com\/link_event)(?:[?#/]|$),REJECT
+# Latest HAR observed Huya/TGPA telemetry and fingerprint reports. Keep cdn.wup.huya.com, cgi.connect.qq.com and Huya privacy pages allowed.
+URL-REGEX,^https?:\/\/(?:statwup\.huya\.com\/(?:[?#]|$)|wsapi\.huya\.com\/(?:[?#]|$)|udbdf\.huya\.com\/device\/fingerprint\/log|cloud\.tgpa\.qq\.com\/cloudctrl\/cloud_ctrl)(?:[?#/]|$),REJECT
 
 [Script]
-# Standalone helper script published alongside this module on the ios branch.
-uBO Huya iOS GDT Setting Clean = type=http-response, pattern=^https?:\/\/tangram\.e\.qq\.com\/updateSetting(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/huya-core-scripted.js?v=huya-core-scripted-20260617-1, script-update-interval=86400, argument=phase=gdt-setting, requires-body=true, max-size=131072, timeout=5, engine=jsc
-uBO Huya iOS GDT Exapp Clean = type=http-response, pattern=^https?:\/\/us\.l\.qq\.com\/exapp(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/huya-core-scripted.js?v=huya-core-scripted-20260617-1, script-update-interval=86400, argument=phase=gdt-exapp, requires-body=true, max-size=262144, timeout=5, engine=jsc
-uBO Huya iOS Pangle Renderer Empty = type=http-response, pattern=^https?:\/\/sf[36]-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/renderer\/package\.json\?(?:[^#]*&)?aid=5000546(?:&|$), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/huya-core-scripted.js?v=huya-core-scripted-20260617-1, script-update-interval=86400, argument=phase=pangle-renderer, requires-body=true, max-size=65536, timeout=5, engine=jsc
-uBO Huya iOS Pangle SDK Settings Empty = type=http-response, pattern=^https?:\/\/api-access\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/settings\?(?:[^#]*&)?aid=5000546(?:&|$), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/huya-core-scripted.js?v=huya-core-scripted-20260617-1, script-update-interval=86400, argument=phase=pangle-settings, requires-body=true, binary-body-mode=1, max-size=262144, timeout=5, engine=jsc
-uBO Huya iOS ByteDance AppLog Empty = type=http-response, pattern=^https?:\/\/toblog\.ctobsnssdk\.com\/service\/2\/(?:log_settings|device_register_only|app_alert_check)\/(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/huya-core-scripted.js?v=huya-core-scripted-20260617-1, script-update-interval=86400, argument=phase=bytedance-log, requires-body=true, max-size=65536, timeout=5, engine=jsc
+# Keep only the response rewrite still observed as useful in the latest HAR: GDT updateSetting returns a no-ad SDK config.
+uBO Huya iOS GDT Setting Clean = type=http-response, pattern=^https?:\/\/tangram\.e\.qq\.com\/updateSetting(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/huya-core-scripted.js?v=huya-core-scripted-20260617-2, script-update-interval=86400, argument=phase=gdt-setting, requires-body=true, max-size=131072, timeout=5, engine=jsc
 
 [MITM]
-hostname = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, mssdk.volces.com, toblog.ctobsnssdk.com, sdkreport.e.qq.com, tangram.e.qq.com, us.l.qq.com, xs.gdt.qq.com, mi.gdt.qq.com, sdk.e.qq.com, sdkquic.e.qq.com, business.msstatic.com, fileserver.cdn.huya.com, diy-front.cdn.huya.com, statwup.huya.com, wsapi.huya.com, udbdf.huya.com, cloud.tgpa.qq.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, pgdt.gtimg.cn, pgdt.ugdtimg.com, adsmind.gdtimg.com, adsmind.ugdtimg.com
+hostname = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, mssdk.volces.com, toblog.ctobsnssdk.com, sdkreport.e.qq.com, tangram.e.qq.com, business.msstatic.com, fileserver.cdn.huya.com, statwup.huya.com, wsapi.huya.com, udbdf.huya.com, cloud.tgpa.qq.com
 
 [Map Local]
-# AMS / Huya business material fallbacks.
+# AMS config and latest HAR observed Huya commercial image fallbacks.
 ^https?:\/\/business\.msstatic\.com\/dsp\/public\/sdkconfig\.xml(?:\?.*)?$ data-type=text data="<?xml version=\"1.0\" encoding=\"UTF-8\"?><config><offlineCache><length>0</length></offlineCache><companies></companies></config>" status-code=200 header="Content-Type:text/xml; charset=utf-8"
-^https?:\/\/business\.msstatic\.com\/ssp\/material\/[^?#]+\.(?:png|jpe?g|webp|gif|mp4)(?:\?.*)?$ data-type=tiny-gif status-code=200
 ^https?:\/\/fileserver\.cdn\.huya\.com\/ladder_app_navigate\/[a-f0-9]{32}\.png(?:\?.*)?$ data-type=tiny-gif status-code=200
-^https?:\/\/fileserver\.cdn\.huya\.com\/ladder_normalUpload\/(?:160076e8203549a88c95cd670da1a876|7c86fdb01ffd41c19651e19338c67de0|985b76e646a74f5686225c4de3bf1e6a|67d77b530925468cb6ca67c7f3f122ce|c7a8734dd38a482288606eed0824d65f|995ba281e6e2470c9448182cc715dbf9)\.png(?:\?.*)?$ data-type=tiny-gif status-code=200
+^https?:\/\/fileserver\.cdn\.huya\.com\/ladder_normalUpload\/(?:160076e8203549a88c95cd670da1a876|7c86fdb01ffd41c19651e19338c67de0|995ba281e6e2470c9448182cc715dbf9|985b76e646a74f5686225c4de3bf1e6a|67d77b530925468cb6ca67c7f3f122ce|c7a8734dd38a482288606eed0824d65f)\.png(?:\?.*)?$ data-type=tiny-gif status-code=200
