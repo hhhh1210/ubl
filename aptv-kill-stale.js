@@ -98,6 +98,13 @@ function finish(message) {
   $done();
 }
 
+function saveIdleState() {
+  saveState({
+    activeUntil: 0,
+    requests: {},
+  });
+}
+
 const args = parseArgument($argument);
 const prefix = `http://${args.host}:80${args.path}`;
 const now = Date.now();
@@ -137,8 +144,14 @@ if (args.mode === 'mark' || (typeof $request !== 'undefined' && $request.url)) {
       }
     });
 
+    if (matched === 0) {
+      saveIdleState();
+      $done();
+      return;
+    }
+
     saveState({
-      activeUntil: matched > 0 ? now + args.activeWindow * 1000 : state.activeUntil,
+      activeUntil: now + args.activeWindow * 1000,
       requests: nextState,
     });
 
