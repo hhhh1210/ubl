@@ -1,6 +1,9 @@
 const DEFAULTS = {
   host: 'o11.163189.xyz',
   path: '/stream/tvb/fct4k/',
+  domain: '163189.xyz',
+  pathPrefixes: '/stream/,/api/,/163189/',
+  extensions: 'm3u8,ts,m4s,mp4,jpg,jpeg,aac,mp3,key',
   stale: 5,
   maxAge: 18,
   activeWindow: 30,
@@ -21,7 +24,16 @@ function parseArgument(input) {
   args.stale = Math.max(1, Number(args.stale) || DEFAULTS.stale);
   args.maxAge = Math.max(args.stale + 1, Number(args.maxAge) || DEFAULTS.maxAge);
   args.activeWindow = Math.max(args.stale + 1, Number(args.activeWindow) || DEFAULTS.activeWindow);
+  args.pathPrefixes = splitList(args.pathPrefixes || DEFAULTS.pathPrefixes);
+  args.extensions = splitList(args.extensions || DEFAULTS.extensions);
   return args;
+}
+
+function splitList(input) {
+  return String(input || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function requestList(payload) {
@@ -36,6 +48,37 @@ function requestList(payload) {
 
 function requestUrl(item) {
   return String(item.url || item.URL || item.requestURL || item.requestUrl || item.resource || '');
+}
+
+function parseRequestUrl(raw) {
+  try {
+    return new URL(raw);
+  } catch (_) {
+    return null;
+  }
+}
+
+function hostMatches(hostname, domain) {
+  const host = String(hostname || '').toLowerCase();
+  const suffix = String(domain || '').toLowerCase();
+  return host === suffix || host.endsWith(`.${suffix}`);
+}
+
+function pathHasMediaExtension(pathname, extensions) {
+  const cleanPath = String(pathname || '').toLowerCase();
+  const lastPart = cleanPath.slice(cleanPath.lastIndexOf('/') + 1);
+  return extensions.some((ext) => lastPart.endsWith(`.${ext.toLowerCase()}`));
+}
+
+function isStreamUrl(raw, args) {
+  if (raw.startsWith(`http://${args.host}:80${args.path}`) || raw.startsWith(`https://${args.host}${args.path}`)) {
+    return true;
+  }
+
+  const parsed = parseRequestUrl(raw);
+  if (!parsed || !hostMatches(parsed.hostname, args.domain)) return false;
+  if (args.pathPrefixes.some((prefix) => parsed.pathname.startsWith(prefix))) return true;
+  return pathHasMediaExtension(parsed.pathname, args.extensions);
 }
 
 function requestId(item) {
@@ -106,7 +149,6 @@ function saveIdleState() {
 }
 
 const args = parseArgument($argument);
-const prefix = `http://${args.host}:80${args.path}`;
 const now = Date.now();
 const state = loadState();
 const requestState = state.requests || {};
@@ -127,7 +169,7 @@ if (args.mode === 'mark' || (typeof $request !== 'undefined' && $request.url)) {
     active.forEach((item) => {
       const url = requestUrl(item);
       const id = requestId(item);
-      if (!id || !url.startsWith(prefix)) return;
+      if (!id || !isStreamUrl(url, args)) return;
       matched += 1;
 
       const score = byteScore(item);
