@@ -19,6 +19,233 @@
 # 9. 05:14/05:17 短剧栏目修复：无拦截 HAR 中短剧可见时 drs-ipv6/cgcr/abtest 正常返回大体积配置；广告模块开启后这些配置被拦截，短剧入口可能被远程配置隐藏。Lite 版改为放行七猫远程配置，只拦截实际广告 SDK/广告载荷接口。
 # 10. 07:08 短剧连续播放 HAR：播放核心是 cdn-vod-playlet.wtzw.com 的 m3u8/m4s 分片，同时伴随 drs/i4、mon.zijieapi、Pangle stats、mobads-logs、ad-drs i4 等状态/统计请求；为避免“网络异常”，放行这些播放期状态链路，只保留广告请求型接口。
 # 11. 07:25 广告模块下大量点击 HAR：点击后没有任何 cdn-vod-playlet/m3u8/m4s 请求，失败发生在进入播放器/获取播放地址之前。IPA 静态字符串显示短剧链路含 Playlet/ShortVideo、play_multi_video、ad_preload_episode_config/show_preload_episode_config、PlayletBottomFreeAd；因此继续放行播放期统计/预加载状态回调，避免因广告预加载回调缺失导致短剧不进入播放。
+# 12. 09:47 Lite 漏点 HAR：Pangle get_ads 与 Baidu WebView 空白化已生效；新增只处理 Douyin webcast 设置、KS/Gifshow 指纹初始化、1sapp 实际 show-api 上报与 Ubix md2 统计，不扩大拦截短剧播放/配置链路。
+
+[Rule]
+# 原模块保留：静态广告素材与旧广告域名
+DOMAIN,cdn-ad.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,cdn-new-ad.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,gdt.qq.com,REJECT,extended-matching,pre-matching
+
+# 七猫 8.0 开屏主链：a6-remad / QuMeng
+DOMAIN,a6-remad.qm989.com,REJECT,extended-matching,pre-matching
+# ad-drs.52qumao.com / ad-drs-ipv6.52qumao.com 是播放期 i4/config/log 状态链路，07:08 HAR 证明短剧连续播放会使用；不在 Rule 层整域拦截。
+DOMAIN,api-adx.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-cfg.52qumao.com,REJECT,extended-matching,pre-matching
+
+# Ubix/66mobi 回退聚合链
+DOMAIN,entry-su1.ubixioe.com,REJECT,extended-matching,pre-matching
+DOMAIN,md-cfg-u1.ubixioe.com,REJECT,extended-matching,pre-matching
+DOMAIN,adx-cfg-u1.ubixioe.com,REJECT,extended-matching,pre-matching
+DOMAIN,e-u1.ubixioe.com,REJECT,extended-matching,pre-matching
+DOMAIN,md-data-u1.ubixioe.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,66mobi.com,REJECT,extended-matching,pre-matching
+DOMAIN,partner.uc.cn,REJECT,extended-matching,pre-matching
+DOMAIN,hc-ssp.sm.cn,REJECT,extended-matching,pre-matching
+
+# Pangle/Volc 配置链：只保留开屏初始化相关域名，移除更宽泛的 douyin.com/douyinstatic.com 后缀拦截
+DOMAIN,webcast-open.douyin.com,REJECT,extended-matching,pre-matching
+DOMAIN,webcast5-open-lf.douyin.com,REJECT,extended-matching,pre-matching
+DOMAIN,klink.volceapplog.com,REJECT,extended-matching,pre-matching
+DOMAIN,log-klink.zijieapi.com,REJECT,extended-matching,pre-matching
+# mon.zijieapi.com/cloudcontrol 在 07:08 短剧播放期出现，放行避免播放网络异常。
+DOMAIN,tnc3-alisc1.zijieapi.com,REJECT,extended-matching,pre-matching
+# mssdk.volces.com / vod-license-m.volccdn.com 不再整域拦截：IPA 短剧逻辑含 VOD/Video，避免误伤播放许可或状态链路。
+
+# 七猫 drs/cgcr/abtest 远程配置已放行：05:14 HAR 证明短剧栏目依赖这些配置；不要在 Rule 层拦截。
+
+# 成功关键：Kuaishou/KSAd 回退开屏，04:27 HAR 证明需要同时覆盖 .com 与 .cn
+DOMAIN,open.e.kuaishou.com,REJECT,extended-matching,pre-matching
+DOMAIN,open.e.kuaishou.cn,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,kuaishou.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,kuaishou.cn,REJECT,extended-matching,pre-matching
+DOMAIN,gdfp.gifshow.com,REJECT,extended-matching,pre-matching
+
+# 04:42 Lite 失效补回：Pangle/穿山甲、1RTB、Baidu、QTT、Aiclk、Zhangyu 等通用 SDK 回退链路
+# api-access/pangolin 主域不做 Rule 层整域拦截：短剧页面/播放期会调用 settings、stats/batch、app_log 等状态回调；仅在 URL Rewrite 中拦截 get_ads/material/check。
+DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,douyinpic.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,bytescm.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdk.1rtb.net,REJECT,extended-matching,pre-matching
+DOMAIN,cdn.1rtb.com,REJECT,extended-matching,pre-matching
+# mobads.baidu.com/cpro/ui/mads.php 是 WebView/HTML 广告位，短剧界面会出现 XML/错误页显示；不做 Rule 层整域拒绝，改由 Map Local 返回空白 HTML。
+# mobads-logs.baidu.com/dz.zb 在短剧播放期出现，保留日志放行。
+DOMAIN,bgg.baidu.com,REJECT,extended-matching,pre-matching
+DOMAIN,feed-image.baidu.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdkquic.e.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdk.e.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,v2mi.gdt.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,api.qttunion.com,REJECT,extended-matching,pre-matching
+DOMAIN,service.qttunion.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdk.zhangyuyidong.cn,REJECT,extended-matching,pre-matching
+DOMAIN,sdk-log.partner.sm.cn,REJECT,extended-matching,pre-matching
+DOMAIN,cpc-service-square.aiclk.com,REJECT,extended-matching,pre-matching
+DOMAIN,logrcv.aiclk.com,REJECT,extended-matching,pre-matching
+DOMAIN,tracelog-debug.aiclk.com,REJECT,extended-matching,pre-matching
+DOMAIN,cfgc.zztfly.com,REJECT,extended-matching,pre-matching
+DOMAIN,cdn-api-auth.zztfly.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-auth.zztfly.com,REJECT,extended-matching,pre-matching
+DOMAIN,qh-material.taobao.com,REJECT,extended-matching,pre-matching
+DOMAIN,atoken.m.taobao.com,REJECT,extended-matching,pre-matching
+# 京东 App 图片使用 m15.360buyimg.com 等 360buyimg CDN；不再整域拦截 360buyimg，避免影响京东图片显示。
+DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
+DOMAIN,show-api.1sapp.com,REJECT,extended-matching,pre-matching
+
+# 20:33 HAR：短剧界面触发“网络异常/代理风险”弹窗时大量访问 checkip.amazonaws.com，并出现 119.29.29.98 HTTPDNS 探测。IPA 主程序静态字符串含 isShowProxyAlert/kProxyConfig/CFNetworkCopySystemProxySettings，说明这是代理风险检测链路；这些探测必须直连，不能走代理或 MITM。
+DOMAIN,checkip.amazonaws.com,DIRECT
+IP-CIDR,119.29.29.98/32,DIRECT,no-resolve
+# 09:33 HAR：Pangle stats 与 toblog 注册回调出现 status=None，按功能链路直连，避免短剧/界面状态回调被代理证书或 MITM 干扰。
+DOMAIN,api-access.pangolin-sdk-toutiao1.com,DIRECT
+DOMAIN,toblog.ctobsnssdk.com,DIRECT
+
+# 09:33 HAR 是关闭去广告模块的功能基线：其中出现的广告 SDK 请求不能直接当作漏点新增整域兜底；这里只保留功能/检测链路直连判断。
+# api-access.pangolin-sdk-toutiao-b.com 不做整域拒绝，避免误伤 Pangle 状态回调；get_ads/material/check 用 URL/Map Local 单独处理。
+
+[URL Rewrite]
+# 原模块规则
+^https:\/\/sf3-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ - reject
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/reward\/ - reject
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/adv\/ - reject
+
+# a6-remad / QuMeng 开屏
+^https:\/\/a6-remad\.qm989\.com\/v3\/(get-splash|get-contract)\/index - reject
+^https?:\/\/api-adx\.52qumao\.com\/v2\/get-bz-ads\/index - reject
+^https?:\/\/api-cfg\.52qumao\.com\/v1\/init - reject
+# ad-drs-ipv6.52qumao.com/v1/config/attribute/log 放行，短剧播放期依赖 52qumao 状态链路。
+
+# Ubix/66mobi 聚合开屏
+^https?:\/\/entry-su1\.ubixioe\.com\/mob\/sdk\/v2\/endpoint - reject
+^https?:\/\/md-cfg-u1\.ubixioe\.com\/mob\/mediation\/v3\/conf - reject
+^https?:\/\/adx-cfg-u1\.ubixioe\.com\/mob\/sdk\/v3\/init - reject
+^https?:\/\/md-data-u1\.ubixioe\.com\/md2 - reject
+^https?:\/\/e-u1\.ubixioe\.com\/ - reject
+^https?:\/\/partner\.uc\.cn\/mediations - reject
+^https?:\/\/hc-ssp\.sm\.cn\/ - reject
+^https?:\/\/tencent-ssp\.66mobi\.com\/ - reject
+^https?:\/\/static\.66mobi\.com\/ - reject
+
+# Pangle/Volc 广告配置。七猫 drs/cgcr/abtest 已放行以保留短剧栏目。
+^https?:\/\/webcast-open\.douyin\.com\/webcast\/openapi\/pangle\/setting\/ - reject
+^https?:\/\/webcast5-open-lf\.douyin\.com\/webcast\/openapi\/setting\/ - reject
+^https?:\/\/klink\.volceapplog\.com\/service\/2\/device_register\/ - reject
+^https?:\/\/log-klink\.zijieapi\.com\/service\/2\/device_register\/ - reject
+# mon.zijieapi.com/cloudcontrol 放行，避免短剧连续播放网络异常。
+^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ - reject
+# mssdk.volces.com 与 vod-license-m.volccdn.com 放行，避免影响短剧 VOD 播放许可/状态。
+
+# Kuaishou/KSAd 回退开屏
+^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/univ - reject
+^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/logBatch - reject
+^https?:\/\/gdfp\.gifshow\.com\/rest\/infra\/gdfp\/a\/q - reject
+
+# 04:42 Lite 失效补回：通用广告 SDK 请求与素材；20:13 HAR 证明 get_ads 硬拒绝会卡住短剧预广告/播放门控，因此只硬拒绝 material/check。
+^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/material\/check\/ - reject
+# Pangle get_ads 不再 URL Rewrite 硬拒绝，改在 Map Local 返回无广告 JSON，保留请求完成语义。
+# Pangle settings / stats / app_log 放行：19:58 HAR 里打开模块后 settings/app_log 被拦截会导致短剧页面只显示缓存、点击网络失败。
+^https?:\/\/[^\/]+\.douyinpic\.com\/ - reject
+^https?:\/\/[^\/]+\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ - reject
+^https?:\/\/lf-cdn-tos\.bytescm\.com\/obj\/static\/ad\/ - reject
+^https?:\/\/sdk\.1rtb\.net\/sdk\/(config|req_ad|notice) - reject
+^https?:\/\/cdn\.1rtb\.com\/ - reject
+# mobads.baidu.com/cpro/ui/mads.php 不再硬拒绝，改在 Map Local 返回空白 HTML，避免短剧界面 WebView 露出 XML/错误页。
+# mobads-logs.baidu.com 放行：07:08 短剧播放期只有 dz.zb 日志，无广告素材。
+^https?:\/\/bgg\.baidu\.com\/bgg\/produce - reject
+^https?:\/\/feed-image\.baidu\.com\/ - reject
+^https?:\/\/sdkquic\.e\.qq\.com\/launch - reject
+^https?:\/\/sdk\.e\.qq\.com\/ola\/v2 - reject
+^https?:\/\/v2mi\.gdt\.qq\.com\/gdt_mview\.fcg - reject
+^https?:\/\/api\.qttunion\.com\/v5\/json - reject
+^https?:\/\/service\.qttunion\.com\/qmcd\/get - reject
+^https?:\/\/sdk\.zhangyuyidong\.cn\/(api\/zysdk|sdk\/config) - reject
+^https?:\/\/sdk-log\.partner\.sm\.cn\/sdk_log - reject
+^https?:\/\/cpc-service-square\.aiclk\.com\/v1\/getConfig - reject
+^https?:\/\/logrcv\.aiclk\.com\/ - reject
+^https?:\/\/tracelog-debug\.aiclk\.com\/ - reject
+^https?:\/\/cfgc\.zztfly\.com\/v5\/gcf - reject
+^https?:\/\/cdn-api-auth\.zztfly\.com\/api\/initSecCdn\/ - reject
+^https?:\/\/api-auth\.zztfly\.com\/api\/initSec - reject
+^https?:\/\/qh-material\.taobao\.com\/ - reject
+^https?:\/\/atoken\.m\.taobao\.com\/ - reject
+# 360buyimg 京东图片 CDN 放行；七猫开屏中出现过的 JD 素材不再通过整域规则处理，避免误伤京东 App。
+^https?:\/\/usr-api\.1sapp\.com\/report\/v1 - reject
+^https?:\/\/show-api\.1sapp\.com\/report\/v1 - reject
+
+[Body Rewrite]
+# 原模块规则：个人中心功能区广告位
+http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'delpaths([["data","func_area",1]])'
+http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'delpaths([["data","func_area",2]])'
+
+[Map Local]
+# 原模块 Map Local
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/splash\/ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-bc\.wtzw\.com\/api\/v4\/search\/dispose data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-bc\.wtzw\.com\/api\/v\d\/book-store\/config data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-bc\.wtzw\.com\/api\/v\d\/book-store\/push-book data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-bc\.wtzw\.com\/api\/v\d\/operation data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-gw\.wtzw\.com\/welf\/app\/v\d\/task\/red-packet data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/cdn\.wtzw\.com\/bookimg\/free\/api\/v\d\/reader\/reader-copy-paragraph-all\.json data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/offline-adv\/index data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/operation\/index\?ad_personal_switch data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/withdraw\/init data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+# a6-remad 开屏空广告
+^https:\/\/a6-remad\.qm989\.com\/v3\/get-splash\/index data-type=text data="{\"data\":{\"ads_list\":[]}}" status-code=200 header="Content-Type:application/json"
+^https:\/\/a6-remad\.qm989\.com\/v3\/get-contract\/index data-type=text data="{\"data\":{\"ads_list\":[]}}" status-code=200 header="Content-Type:application/json"
+
+# Ubix/66mobi 与 52qumao 空响应
+^https?:\/\/entry-su1\.ubixioe\.com\/mob\/sdk\/v2\/endpoint data-type=text data="" status-code=204 header="Content-Type:application/octet-stream"
+^https?:\/\/md-cfg-u1\.ubixioe\.com\/mob\/mediation\/v3\/conf data-type=text data="" status-code=204 header="Content-Type:application/octet-stream"
+^https?:\/\/adx-cfg-u1\.ubixioe\.com\/mob\/sdk\/v3\/init data-type=text data="" status-code=204 header="Content-Type:application/octet-stream"
+^https?:\/\/md-data-u1\.ubixioe\.com\/md2 data-type=text data="" status-code=204 header="Content-Type:application/octet-stream"
+^https?:\/\/partner\.uc\.cn\/mediations data-type=text data="{\"code\":0,\"msg\":\"OK\",\"data\":{\"api_ver\":\"2.0\",\"ad_units\":[],\"placements\":[],\"extended_resources\":[]}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-adx\.52qumao\.com\/v2\/get-bz-ads\/index data-type=text data="{\"errors\":{\"code\":\"44010102\",\"status\":\"200\",\"title\":\"无竞胜方\",\"details\":\"无竞胜方\"}}" status-code=200 header="Content-Type:application/json"
+# ad-drs-ipv6.52qumao.com/v1/config/attribute/log 不再 Map Local，避免影响短剧播放。
+^https?:\/\/hc-ssp\.sm\.cn\/ data-type=text data="{\"code\":\"137\",\"reason\":\"Filtered\",\"server_time\":\"0\",\"slot_ad\":[]}" status-code=200 header="Content-Type:application/json"
+
+# Pangle/Volc 空响应。七猫 drs/cgcr/abtest 配置不再 Map Local，避免短剧栏目被隐藏。
+^https?:\/\/webcast-open\.douyin\.com\/webcast\/openapi\/pangle\/setting\/ data-type=text data="{\"data\":{\"init_enable\":false,\"extra_settings\":{\"init_enable\":false,\"use_pangle_plugin\":false,\"enable_feed_no_ad\":true,\"ad_id\":{}}},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/webcast5-open-lf\.douyin\.com\/webcast\/openapi\/setting\/ data-type=text data="{\"data\":{},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ data-type=text data="{\"data\":{},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
+
+# Kuaishou/KSAd：返回无广告
+^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/univ data-type=text data="{\"llsid\":0,\"result\":1,\"errorMsg\":\"OK\",\"hasMore\":false,\"impAdInfo\":\"\",\"extra\":\"\",\"adGlobalConfigInfo\":\"\",\"hasAd\":false}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/logBatch data-type=text data="{\"llsid\":0,\"result\":1,\"errorMsg\":\"OK\",\"hasMore\":false,\"interval\":3600}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/gdfp\.gifshow\.com\/rest\/infra\/gdfp\/a\/q data-type=text data="{\"result\":1,\"error_msg\":\"\"}" status-code=200 header="Content-Type:application/json"
+
+# 04:42 Lite 失效补回：JSON 型 SDK 空响应
+^https?:\/\/v2mi\.gdt\.qq\.com\/gdt_mview\.fcg data-type=text data="{\"ret\":0,\"msg\":\"\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/mobads\.baidu\.com\/cpro\/ui\/mads\.php data-type=text data="<html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body></body></html>" status-code=200 header="Content-Type:text/html; charset=utf-8"
+# Pangle stats/batch 是播放期统计，放行；get_ads 返回无广告 JSON，material/check 仍在 URL Rewrite 拦截。
+^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/get_ads\/ data-type=text data="{\"request_id\":\"surge-no-ad\",\"status_code\":20001,\"reason\":141,\"desc\":\"no ad\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api\.qttunion\.com\/v5\/json data-type=text data="{\"code\":0,\"data\":{\"ads\":[]},\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/service\.qttunion\.com\/qmcd\/get data-type=text data="{\"code\":0,\"data\":[],\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/cpc-service-square\.aiclk\.com\/v1\/getConfig data-type=text data="{\"code\":0,\"data\":{}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/usr-api\.1sapp\.com\/report\/v1 data-type=text data="{\"code\":\"000\",\"msg\":\"ok\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/show-api\.1sapp\.com\/report\/v1 data-type=text data="{\"code\":\"000\",\"msg\":\"ok\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
+
+[MITM]
+hostname = %APPEND% api-cfg.wtzw.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, xiaoshuo.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, a6-remad.qm989.com, api-adx.52qumao.com, api-cfg.52qumao.com, entry-su1.ubixioe.com, md-cfg-u1.ubixioe.com, adx-cfg-u1.ubixioe.com, md-data-u1.ubixioe.com, e-u1.ubixioe.com, partner.uc.cn, hc-ssp.sm.cn, tencent-ssp.66mobi.com, static.66mobi.com, webcast-open.douyin.com, webcast5-open-lf.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, open.e.kuaishou.com, open.e.kuaishou.cn, gdfp.gifshow.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, *.pglstatp-toutiao.com, *.douyinpic.com, lf-cdn-tos.bytescm.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, cfgc.zztfly.com, cdn-api-auth.zztfly.com, api-auth.zztfly.com, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com, show-api.1sapp.com
+#!name=七猫小说去广告_修复开屏_Lite
+#!desc=基于 2026-06-14 多份 HAR 精简修复。保留真实命中的 a6-remad、Ubix/66mobi、Pangle/Volc、Kuaishou/KSAd，并补回 Lite 版漏掉的 Pangle/1RTB/Baidu/QTT/Zhangyu 等 SDK 回退链路。
+#!author=QingRex 原规则 + Cowork 3P 本地 HAR/IPA 分析精简
+#!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/SevenCat.png
+#!category=iKeLee
+#!openUrl=https://apps.apple.com/app/id1387717110
+#!tag=去广告,开屏广告,Lite
+#!date=2026-06-14
+
+# 精简依据：
+# 1. 旧模块只处理 api-cfg.wtzw.com/v*/splash，不覆盖七猫小说 8.0 的实际开屏链路。
+# 2. 03:40 HAR 命中 a6-remad.qm989.com/v3/get-splash/index 与 /v3/get-contract/index，响应 ads_list 含开屏广告。
+# 3. 04:02 HAR 回退到 Ubix/66mobi 聚合，entry-su1.ubixioe.com/mob/sdk/v2/endpoint 响应含素材、追踪与 adsource_show=true。
+# 4. 04:12 HAR 出现 Pangle/Volc 初始化与远程配置，其中 pangle setting 返回 init_enable=true 和广告位配置。
+# 5. 04:21/04:27 HAR 回退到 Kuaishou/KSAd，open.e.kuaishou.com/.cn 的 open/univ 曾返回 hasAd=true；补齐 .cn 后广告去除成功。
+# 6. 04:34 成功后 HAR 不再出现 a6-remad、Ubix/66mobi、open.e.kuaishou.com/.cn 的有效广告载荷，仅剩 Umeng/Bugly/网易易盾/风控/基础配置等非广告链路。
+# 7. 04:42 Lite 失效 HAR 证明不能删掉通用广告 SDK 回退链路：Pangle get_ads 返回 10KB~23KB 载荷，并加载 douyinpic、1RTB、Baidu、QTT、Zhangyu、Aiclk、Taobao/JD 素材。
+# 8. 04:54 修复恢复 HAR 未再出现 Pangle get_ads、1RTB req_ad、Baidu/QTT 素材、Kuaishou open/univ 等广告载荷；剩余 md-data-u1.ubixioe.com/md2、gdfp.gifshow.com、Umeng/Bugly/易盾/基础配置等按非广告/状态上报处理。
+# 9. 05:14/05:17 短剧栏目修复：无拦截 HAR 中短剧可见时 drs-ipv6/cgcr/abtest 正常返回大体积配置；广告模块开启后这些配置被拦截，短剧入口可能被远程配置隐藏。Lite 版改为放行七猫远程配置，只拦截实际广告 SDK/广告载荷接口。
+# 10. 07:08 短剧连续播放 HAR：播放核心是 cdn-vod-playlet.wtzw.com 的 m3u8/m4s 分片，同时伴随 drs/i4、mon.zijieapi、Pangle stats、mobads-logs、ad-drs i4 等状态/统计请求；为避免“网络异常”，放行这些播放期状态链路，只保留广告请求型接口。
+# 11. 07:25 广告模块下大量点击 HAR：点击后没有任何 cdn-vod-playlet/m3u8/m4s 请求，失败发生在进入播放器/获取播放地址之前。IPA 静态字符串显示短剧链路含 Playlet/ShortVideo、play_multi_video、ad_preload_episode_config/show_preload_episode_config、PlayletBottomFreeAd；因此继续放行播放期统计/预加载状态回调，避免因广告预加载回调缺失导致短剧不进入播放。
 
 [Rule]
 # 原模块保留：静态广告素材与旧广告域名
