@@ -19,7 +19,7 @@
 # 9. 05:14/05:17 短剧栏目修复：无拦截 HAR 中短剧可见时 drs-ipv6/cgcr/abtest 正常返回大体积配置；广告模块开启后这些配置被拦截，短剧入口可能被远程配置隐藏。Lite 版改为放行七猫远程配置，只拦截实际广告 SDK/广告载荷接口。
 # 10. 07:08 短剧连续播放 HAR：播放核心是 cdn-vod-playlet.wtzw.com 的 m3u8/m4s 分片，同时伴随 drs/i4、mon.zijieapi、Pangle stats、mobads-logs、ad-drs i4 等状态/统计请求；为避免“网络异常”，放行这些播放期状态链路，只保留广告请求型接口。
 # 11. 07:25 广告模块下大量点击 HAR：点击后没有任何 cdn-vod-playlet/m3u8/m4s 请求，失败发生在进入播放器/获取播放地址之前。IPA 静态字符串显示短剧链路含 Playlet/ShortVideo、play_multi_video、ad_preload_episode_config/show_preload_episode_config、PlayletBottomFreeAd；因此继续放行播放期统计/预加载状态回调，避免因广告预加载回调缺失导致短剧不进入播放。
-# 12. 09:47 Lite 漏点 HAR：Pangle get_ads 与 Baidu WebView 空白化已生效；新增只处理 Douyin webcast 设置、KS/Gifshow 指纹初始化、1sapp 实际 show-api 上报与 Ubix md2 统计，不扩大拦截短剧播放/配置链路。
+# 12. 10:34 功能异常 HAR 对比 09:33 正常 HAR：09:47 后新增的 Douyin webcast 设置、KS/Gifshow 指纹初始化、1sapp show-api 与 Ubix md2 更像 SDK 初始化/风控/状态链路，已回退放行；广告继续依赖 get_ads/mobads/a6/Ubix 配置等实际载荷规则处理。
 
 [Rule]
 # 原模块保留：静态广告素材与旧广告域名
@@ -38,14 +38,14 @@ DOMAIN,entry-su1.ubixioe.com,REJECT,extended-matching,pre-matching
 DOMAIN,md-cfg-u1.ubixioe.com,REJECT,extended-matching,pre-matching
 DOMAIN,adx-cfg-u1.ubixioe.com,REJECT,extended-matching,pre-matching
 DOMAIN,e-u1.ubixioe.com,REJECT,extended-matching,pre-matching
-DOMAIN,md-data-u1.ubixioe.com,REJECT,extended-matching,pre-matching
+# md-data-u1.ubixioe.com/md2 是 SDK 状态上报，10:34 功能异常 HAR 证明不应拦截。
 DOMAIN-SUFFIX,66mobi.com,REJECT,extended-matching,pre-matching
 DOMAIN,partner.uc.cn,REJECT,extended-matching,pre-matching
 DOMAIN,hc-ssp.sm.cn,REJECT,extended-matching,pre-matching
 
 # Pangle/Volc 配置链：只保留开屏初始化相关域名，移除更宽泛的 douyin.com/douyinstatic.com 后缀拦截
 DOMAIN,webcast-open.douyin.com,REJECT,extended-matching,pre-matching
-DOMAIN,webcast5-open-lf.douyin.com,REJECT,extended-matching,pre-matching
+# webcast5-open-lf.douyin.com/webcast/openapi/setting 是 Douyin/Webcast SDK 大配置，10:34 功能异常 HAR 证明不应拦截。
 DOMAIN,klink.volceapplog.com,REJECT,extended-matching,pre-matching
 DOMAIN,log-klink.zijieapi.com,REJECT,extended-matching,pre-matching
 # mon.zijieapi.com/cloudcontrol 在 07:08 短剧播放期出现，放行避免播放网络异常。
@@ -59,7 +59,7 @@ DOMAIN,open.e.kuaishou.com,REJECT,extended-matching,pre-matching
 DOMAIN,open.e.kuaishou.cn,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,kuaishou.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,kuaishou.cn,REJECT,extended-matching,pre-matching
-DOMAIN,gdfp.gifshow.com,REJECT,extended-matching,pre-matching
+# gdfp.gifshow.com/rest/infra/gdfp/a/q 是 KS/Gifshow antispam 初始化，10:34 功能异常 HAR 证明不应拦截。
 
 # 04:42 Lite 失效补回：Pangle/穿山甲、1RTB、Baidu、QTT、Aiclk、Zhangyu 等通用 SDK 回退链路
 # api-access/pangolin 主域不做 Rule 层整域拦截：短剧页面/播放期会调用 settings、stats/batch、app_log 等状态回调；仅在 URL Rewrite 中拦截 get_ads/material/check。
@@ -89,7 +89,7 @@ DOMAIN,qh-material.taobao.com,REJECT,extended-matching,pre-matching
 DOMAIN,atoken.m.taobao.com,REJECT,extended-matching,pre-matching
 # 京东 App 图片使用 m15.360buyimg.com 等 360buyimg CDN；不再整域拦截 360buyimg，避免影响京东图片显示。
 DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
-DOMAIN,show-api.1sapp.com,REJECT,extended-matching,pre-matching
+# show-api.1sapp.com/report/v1 在 10:34 中返回 crawler/风控配置，放行以保留功能判断。
 
 # 20:33 HAR：短剧界面触发“网络异常/代理风险”弹窗时大量访问 checkip.amazonaws.com，并出现 119.29.29.98 HTTPDNS 探测。IPA 主程序静态字符串含 isShowProxyAlert/kProxyConfig/CFNetworkCopySystemProxySettings，说明这是代理风险检测链路；这些探测必须直连，不能走代理或 MITM。
 DOMAIN,checkip.amazonaws.com,DIRECT
@@ -97,6 +97,8 @@ IP-CIDR,119.29.29.98/32,DIRECT,no-resolve
 # 09:33 HAR：Pangle stats 与 toblog 注册回调出现 status=None，按功能链路直连，避免短剧/界面状态回调被代理证书或 MITM 干扰。
 DOMAIN,api-access.pangolin-sdk-toutiao1.com,DIRECT
 DOMAIN,toblog.ctobsnssdk.com,DIRECT
+# 10:34 HAR：mssdk.volces.com/ri/report_otob 在广告模块下 status=None，属于字节/穿山甲风控状态链路，直连避免功能异常。
+DOMAIN,mssdk.volces.com,DIRECT
 
 # 09:33 HAR 是关闭去广告模块的功能基线：其中出现的广告 SDK 请求不能直接当作漏点新增整域兜底；这里只保留功能/检测链路直连判断。
 # api-access.pangolin-sdk-toutiao-b.com 不做整域拒绝，避免误伤 Pangle 状态回调；get_ads/material/check 用 URL/Map Local 单独处理。
@@ -117,7 +119,7 @@ DOMAIN,toblog.ctobsnssdk.com,DIRECT
 ^https?:\/\/entry-su1\.ubixioe\.com\/mob\/sdk\/v2\/endpoint - reject
 ^https?:\/\/md-cfg-u1\.ubixioe\.com\/mob\/mediation\/v3\/conf - reject
 ^https?:\/\/adx-cfg-u1\.ubixioe\.com\/mob\/sdk\/v3\/init - reject
-^https?:\/\/md-data-u1\.ubixioe\.com\/md2 - reject
+# md-data-u1.ubixioe.com/md2 放行，避免 Ubix 状态上报缺失影响功能。
 ^https?:\/\/e-u1\.ubixioe\.com\/ - reject
 ^https?:\/\/partner\.uc\.cn\/mediations - reject
 ^https?:\/\/hc-ssp\.sm\.cn\/ - reject
@@ -126,7 +128,7 @@ DOMAIN,toblog.ctobsnssdk.com,DIRECT
 
 # Pangle/Volc 广告配置。七猫 drs/cgcr/abtest 已放行以保留短剧栏目。
 ^https?:\/\/webcast-open\.douyin\.com\/webcast\/openapi\/pangle\/setting\/ - reject
-^https?:\/\/webcast5-open-lf\.douyin\.com\/webcast\/openapi\/setting\/ - reject
+# webcast5-open-lf.douyin.com/webcast/openapi/setting 放行，避免 Webcast/短剧 SDK 配置异常。
 ^https?:\/\/klink\.volceapplog\.com\/service\/2\/device_register\/ - reject
 ^https?:\/\/log-klink\.zijieapi\.com\/service\/2\/device_register\/ - reject
 # mon.zijieapi.com/cloudcontrol 放行，避免短剧连续播放网络异常。
@@ -136,7 +138,7 @@ DOMAIN,toblog.ctobsnssdk.com,DIRECT
 # Kuaishou/KSAd 回退开屏
 ^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/univ - reject
 ^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/logBatch - reject
-^https?:\/\/gdfp\.gifshow\.com\/rest\/infra\/gdfp\/a\/q - reject
+# gdfp.gifshow.com/rest/infra/gdfp/a/q 放行，避免 KS/Gifshow antispam 初始化异常。
 
 # 04:42 Lite 失效补回：通用广告 SDK 请求与素材；20:13 HAR 证明 get_ads 硬拒绝会卡住短剧预广告/播放门控，因此只硬拒绝 material/check。
 ^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/material\/check\/ - reject
@@ -168,7 +170,7 @@ DOMAIN,toblog.ctobsnssdk.com,DIRECT
 ^https?:\/\/atoken\.m\.taobao\.com\/ - reject
 # 360buyimg 京东图片 CDN 放行；七猫开屏中出现过的 JD 素材不再通过整域规则处理，避免误伤京东 App。
 ^https?:\/\/usr-api\.1sapp\.com\/report\/v1 - reject
-^https?:\/\/show-api\.1sapp\.com\/report\/v1 - reject
+# show-api.1sapp.com/report/v1 放行，避免 crawler/风控配置缺失。
 
 [Body Rewrite]
 # 原模块规则：个人中心功能区广告位
@@ -196,7 +198,7 @@ http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'de
 ^https?:\/\/entry-su1\.ubixioe\.com\/mob\/sdk\/v2\/endpoint data-type=text data="" status-code=204 header="Content-Type:application/octet-stream"
 ^https?:\/\/md-cfg-u1\.ubixioe\.com\/mob\/mediation\/v3\/conf data-type=text data="" status-code=204 header="Content-Type:application/octet-stream"
 ^https?:\/\/adx-cfg-u1\.ubixioe\.com\/mob\/sdk\/v3\/init data-type=text data="" status-code=204 header="Content-Type:application/octet-stream"
-^https?:\/\/md-data-u1\.ubixioe\.com\/md2 data-type=text data="" status-code=204 header="Content-Type:application/octet-stream"
+# md-data-u1.ubixioe.com/md2 放行，避免 Ubix 状态上报缺失影响功能。
 ^https?:\/\/partner\.uc\.cn\/mediations data-type=text data="{\"code\":0,\"msg\":\"OK\",\"data\":{\"api_ver\":\"2.0\",\"ad_units\":[],\"placements\":[],\"extended_resources\":[]}}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/api-adx\.52qumao\.com\/v2\/get-bz-ads\/index data-type=text data="{\"errors\":{\"code\":\"44010102\",\"status\":\"200\",\"title\":\"无竞胜方\",\"details\":\"无竞胜方\"}}" status-code=200 header="Content-Type:application/json"
 # ad-drs-ipv6.52qumao.com/v1/config/attribute/log 不再 Map Local，避免影响短剧播放。
@@ -204,13 +206,13 @@ http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'de
 
 # Pangle/Volc 空响应。七猫 drs/cgcr/abtest 配置不再 Map Local，避免短剧栏目被隐藏。
 ^https?:\/\/webcast-open\.douyin\.com\/webcast\/openapi\/pangle\/setting\/ data-type=text data="{\"data\":{\"init_enable\":false,\"extra_settings\":{\"init_enable\":false,\"use_pangle_plugin\":false,\"enable_feed_no_ad\":true,\"ad_id\":{}}},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
-^https?:\/\/webcast5-open-lf\.douyin\.com\/webcast\/openapi\/setting\/ data-type=text data="{\"data\":{},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
+# webcast5-open-lf.douyin.com/webcast/openapi/setting 放行，避免 Webcast/短剧 SDK 配置异常。
 ^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ data-type=text data="{\"data\":{},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
 
 # Kuaishou/KSAd：返回无广告
 ^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/univ data-type=text data="{\"llsid\":0,\"result\":1,\"errorMsg\":\"OK\",\"hasMore\":false,\"impAdInfo\":\"\",\"extra\":\"\",\"adGlobalConfigInfo\":\"\",\"hasAd\":false}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/logBatch data-type=text data="{\"llsid\":0,\"result\":1,\"errorMsg\":\"OK\",\"hasMore\":false,\"interval\":3600}" status-code=200 header="Content-Type:application/json"
-^https?:\/\/gdfp\.gifshow\.com\/rest\/infra\/gdfp\/a\/q data-type=text data="{\"result\":1,\"error_msg\":\"\"}" status-code=200 header="Content-Type:application/json"
+# gdfp.gifshow.com/rest/infra/gdfp/a/q 放行，避免 KS/Gifshow antispam 初始化异常。
 
 # 04:42 Lite 失效补回：JSON 型 SDK 空响应
 ^https?:\/\/v2mi\.gdt\.qq\.com\/gdt_mview\.fcg data-type=text data="{\"ret\":0,\"msg\":\"\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
@@ -221,7 +223,7 @@ http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'de
 ^https?:\/\/service\.qttunion\.com\/qmcd\/get data-type=text data="{\"code\":0,\"data\":[],\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/cpc-service-square\.aiclk\.com\/v1\/getConfig data-type=text data="{\"code\":0,\"data\":{}}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/usr-api\.1sapp\.com\/report\/v1 data-type=text data="{\"code\":\"000\",\"msg\":\"ok\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
-^https?:\/\/show-api\.1sapp\.com\/report\/v1 data-type=text data="{\"code\":\"000\",\"msg\":\"ok\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
+# show-api.1sapp.com/report/v1 放行，避免 crawler/风控配置缺失。
 
 [MITM]
-hostname = %APPEND% api-cfg.wtzw.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, xiaoshuo.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, a6-remad.qm989.com, api-adx.52qumao.com, api-cfg.52qumao.com, entry-su1.ubixioe.com, md-cfg-u1.ubixioe.com, adx-cfg-u1.ubixioe.com, md-data-u1.ubixioe.com, e-u1.ubixioe.com, partner.uc.cn, hc-ssp.sm.cn, tencent-ssp.66mobi.com, static.66mobi.com, webcast-open.douyin.com, webcast5-open-lf.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, open.e.kuaishou.com, open.e.kuaishou.cn, gdfp.gifshow.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, *.pglstatp-toutiao.com, *.douyinpic.com, lf-cdn-tos.bytescm.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, cfgc.zztfly.com, cdn-api-auth.zztfly.com, api-auth.zztfly.com, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com, show-api.1sapp.com
+hostname = %APPEND% api-cfg.wtzw.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, xiaoshuo.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, a6-remad.qm989.com, api-adx.52qumao.com, api-cfg.52qumao.com, entry-su1.ubixioe.com, md-cfg-u1.ubixioe.com, adx-cfg-u1.ubixioe.com, e-u1.ubixioe.com, partner.uc.cn, hc-ssp.sm.cn, tencent-ssp.66mobi.com, static.66mobi.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, open.e.kuaishou.com, open.e.kuaishou.cn, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, *.pglstatp-toutiao.com, *.douyinpic.com, lf-cdn-tos.bytescm.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, cfgc.zztfly.com, cdn-api-auth.zztfly.com, api-auth.zztfly.com, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com
