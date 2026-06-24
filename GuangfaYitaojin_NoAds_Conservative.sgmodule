@@ -1,5 +1,5 @@
 #!name=广发易淘金 去广告（保守版）
-#!desc=基于 2026-06-14 HAR 与广发易淘金 13.3.2 IPA 静态分析生成。规则优先，仅处理广告、弹窗、营销推荐、AB/埋点/崩溃上报接口；不处理登录、交易、行情、风控或权限相关请求。若出现功能异常，请先关闭本模块或删除 MITM hostname 中对应域名。
+#!desc=基于 2026-06-14 与 2026-06-24 HAR、广发易淘金 13.3.2 IPA 静态分析生成。规则优先，仅处理广告、弹窗、营销推荐、AB/埋点/崩溃上报接口；不处理登录、交易、行情、支付、风控或权限相关请求。若出现功能异常，请先关闭本模块或删除 MITM hostname 中对应域名。
 #!author=Claude
 #!homepage=https://www.gf.com.cn/
 #!category=去广告
@@ -19,25 +19,31 @@ DOMAIN,pro.bugly.qq.com,REJECT
 
 [URL Rewrite]
 # 启动/首页广告配置：HAR 中出现 config.gf.com.cn/ad/info，返回 data=null/list=[]
-^https:\/\/config\.gf\.com\.cn\/ad\/info(?:\?|$) - reject-dict
+^https:\/\/config\.gf\.com\.cn\/ad\/info(?:\?.*)?$ reject-dict
 
 # 首页 Banner、宫格、发现页 Tab 等运营位：HAR 中 categories=banner2020,ten_grid_hp,ten_grid_all,find_tab
-^https:\/\/midend\.gf\.com\.cn\/gfmiddle\/activity\/homepage_elements\/v2(?:\?|$) - reject-dict
+^https:\/\/midend\.gf\.com\.cn\/gfmiddle\/activity\/homepage_elements\/v2(?:\?.*)?$ reject-dict
 
-# 发现页推荐/营销列表：HAR 中 type=find_recommend
-^https:\/\/midend\.gf\.com\.cn\/gfmiddle\/activity\/find_marketing\/list(?:\?|$) - reject-array
+# 发现页推荐/营销列表：2026-06-24 HAR 中返回 popvideos/热门视频
+^https:\/\/midend\.gf\.com\.cn\/gfmiddle\/activity\/find_marketing\/list(?:\?.*)?$ reject-dict
+
+# 2026-06-24 HAR 中出现的 App 营销配置，包含 diagnostic_report 等运营入口
+^https:\/\/config\.gf\.com\.cn\/ytj_config\/info(?:\?.*)?$ reject-dict
+
+# 2026-06-24 HAR 中 commonconfig.cdr_ads enable=1；仅命中请求 commonconfig/gbarconfig/rnconfig 的配置发布接口
+^https:\/\/config\.gf\.com\.cn\/stock_index\/publish\/info\?.*modules=.*(?:commonconfig|gbarconfig|rnconfig).* reject-dict
 
 # 我的页面开户营销/弹窗位：HAR 中 open_account_marketing
-^https:\/\/midend\.gf\.com\.cn\/gfmiddle\/activity\/my_page\/open_account_marketing(?:\?|$) - reject-dict
+^https:\/\/midend\.gf\.com\.cn\/gfmiddle\/activity\/my_page\/open_account_marketing(?:\?.*)?$ reject-dict
 
 # 智能助手推荐接口：HAR 中返回 list=null，作为推荐位处理
-^https:\/\/midend\.gf\.com\.cn\/gfmiddle\/smartassistant\/recommend(?:\?|$) - reject-dict
+^https:\/\/midend\.gf\.com\.cn\/gfmiddle\/smartassistant\/recommend(?:\?.*)?$ reject-dict
 
 # 基金广告接口：位于 qd.gf.com.cn 的 quote/fund_ad，仅精确拦截该路径，避免影响普通行情
-^https:\/\/qd\.gf\.com\.cn\/api\/v1\/quote\/fund_ad(?:\?|$) - reject-dict
+^https:\/\/qd\.gf\.com\.cn\/api\/v1\/quote\/fund_ad(?:\?.*)?$ reject-dict
 
 # 兜底：只拦截广发域名下明确包含 ad/info、marketing、banner 的活动/广告路径
-^https:\/\/(?:config|midend|qd)\.gf\.com\.cn\/.+(?:ad\/info|fund_ad|find_marketing|open_account_marketing|banner2020)(?:[?\/]|$) - reject-dict
+^https:\/\/(?:config|midend|qd)\.gf\.com\.cn\/.+(?:ad\/info|fund_ad|find_marketing|open_account_marketing|banner2020)(?:[?\/]|$) reject-dict
 
 [MITM]
 # URL Rewrite 精确匹配 HTTPS 路径需要 MITM。这里仅追加本模块涉及的域名；如证券 App 因证书校验异常，请删除相应域名或关闭模块。
