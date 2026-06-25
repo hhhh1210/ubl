@@ -1,9 +1,9 @@
 #!name=中国移动 zgyd 严格去广告
-#!desc=基于中国移动 12.1.2 IPA、2026-06-25 11:26/13:48/14:02 HAR 生成。v4 收窄通配规则，避免影响七猫等其它 App 模块；保留中国移动开屏/弹窗/运营位去除。
+#!desc=基于中国移动 12.1.2 IPA、2026-06-25 11:26/13:48/14:02/14:48 HAR 生成。v5 恢复中国移动开屏策略引擎精准拦截，并用 URL-REGEX 预匹配补强；不使用影响七猫的全局通配/Umeng/Bugly/tracking 规则。
 #!author=Claude
 #!homepage=https://www.10086.cn/
 #!date=2026-06-25
-#!version=4
+#!version=5
 
 [URL Rewrite]
 # ===== HAR 证据：明确日志/埋点/统计/上报 =====
@@ -45,14 +45,14 @@
 ^https?:\/\/v\.miguvideo\.com\/mrule\/v1\/gray-info.* reject
 ^https?:\/\/aikanvod\.miguvideo\.com\/video\/p\/(recoVideoShare|AC_limitFreePage|AC_AiQiYiBag|filterContentList|openAppMiddlePage).* reject
 
-# ===== 新 HAR 2026-06-25 13:48/14:02 证据：开屏/弹窗策略引擎 =====
-# v3 调整：14:02 截图显示首页卡在骨架屏。psieappaijssdk/engine 与 homePage/init 是首页核心资源，不能直接 reject。
-# 因此只保留更偏开屏/弹窗/营销的开关、toast、detainment、liveSuspension、homeSkin、searchWord、hotupdate 等接口。
-# 如需临时测试极限去广告，可手动取消下面两行注释；但它们很可能再次导致首页资源刷新卡住。
-# ^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/(candidateStrategyRule|diyProductInfoStrategys|ruleEngine|strategyWeightEngine|diyEngine)\/.*-index\.js reject
-# ^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html reject
+# ===== 新 HAR 2026-06-25 13:48/14:02/14:48 证据：开屏/弹窗策略引擎 =====
+# v5 调整：14:48 HAR 证明 v4 放行 psieappaijssdk/engine 后开屏广告回流。
+# 重新拦截中国移动自己的策略引擎 JS，但继续放行 homePage/getTopAreaList、DN/init/getNavigation、DN/init/startInit 等首页核心初始化接口，避免骨架屏卡住。
+^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/(candidateStrategyRule|diyProductInfoStrategys|ruleEngine|strategyWeightEngine|diyEngine)\/.*-index\.js reject
+^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html reject
+^https?:\/\/h\.app\.coc\.10086\.cn(?::443)?\/ngpsie\/psieipuudp\/gather\/newSendLogForAES reject
 
-# ===== 新 HAR 2026-06-25 13:48/14:02 证据：保留开屏去除但放行首页核心初始化 =====
+# ===== 新 HAR 2026-06-25 13:48/14:02/14:48 证据：保留开屏去除但放行首页核心初始化 =====
 # 已放行：homePage/getTopAreaList、DN/init/getNavigation、DN/init/startInit、BN/sscrz/getProvSwitchConf、DH/sdkPlug/getSdkList、MPCA/account/getAppletPreloadInfo、ServiceControl/SC/*。
 # 这些接口被拦截时会出现“页面资源刷新/骨架屏”卡住，需要下拉刷新才能继续。
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/dataReport\/getSwitchSetupInformation reject
@@ -82,6 +82,14 @@ DOMAIN,sspcloud.huawei.com,REJECT
 DOMAIN,apm.app.coc.10086.cn,REJECT
 DOMAIN,push.it.10086.cn,REJECT
 DOMAIN-SUFFIX,mmarket.com,REJECT
+
+# v5 补强：只在中国移动域名范围内做 URL-REGEX 预匹配，避免恢复会影响七猫模块的全网通配规则。
+URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/(candidateStrategyRule|diyProductInfoStrategys|ruleEngine|strategyWeightEngine|diyEngine)\/.*-index\.js,REJECT,extended-matching,pre-matching
+URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html,REJECT,extended-matching,pre-matching
+URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn(?::443)?\/ngpsie\/psieipuudp\/(appInfo\/checkAppInfo|gather\/newSendLogForAES),REJECT,extended-matching,pre-matching
+URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaiddsdkserver\/(merger\/getFeatureAndInferRule|feature\/getOfflineFeature|switch\/productInfoV2LogicEnable|merger\/getSwitchAndInitList|model\/getConfigInfoUrl\.json).*,REJECT,extended-matching,pre-matching
+URL-REGEX,^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/(DN\/(searchWord\/getSearchWordInfo|toast\/getToastRule|detainment\/august\/getPages|dataReport\/getSwitchSetupInformation|third\/getThirdUrlList)|DH\/(homeSkin\/getHomeSkin|hotupdate\/getHotupdateList|toast\/august\/getPages|msg\/ph\/(config\/select|config\/selectConfig|unReadTotal))|DA\/liveSuspension\/getPageCode|SHS\/unifiedSearch\/secondMonitorControl|UN\/message\/pushMessage),REJECT,extended-matching,pre-matching
+URL-REGEX,^https?:\/\/res\.app\.coc\.10086\.cn\/qwhdcdn_cmcc-cs_cn\/prd-mgcenter\/.*,REJECT,extended-matching,pre-matching
 
 [MITM]
 hostname = %APPEND% da.mmarket.com, dualstack-logs.amap.com, logs.amap.com, api.share.mob.com, client.app.coc.10086.cn, clientaccess.10086.cn, h.app.coc.10086.cn, apm.app.coc.10086.cn, push.it.10086.cn, res.app.coc.10086.cn, qwhdcdn.cmcc-cs.cn, mgsv.miguvideo.com, api.miguvideo.com, v.miguvideo.com, aikanvod.miguvideo.com, dsp.aikan.miguvideo.com, logs.aikan.miguvideo.com, kdds-ad.zj.chinamobile.com, sspcloud.huawei.com, api.mixpanel.com, webhooks.mongodb-realm.com
