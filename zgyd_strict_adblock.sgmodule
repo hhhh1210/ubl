@@ -1,9 +1,9 @@
 #!name=中国移动 zgyd 严格去广告
-#!desc=基于中国移动 12.1.2 IPA、2026-06-25 11:26 HAR 与 13:48 开屏/弹窗复测 HAR 生成。策略：宁可误杀，优先拦截开屏弹窗、启动策略引擎、运营位、营销推荐、推送与埋点日志。若首页/活动页异常，可先注释“启动初始化/首页运营/开屏策略入口”小节。
+#!desc=基于中国移动 12.1.2 IPA、2026-06-25 11:26/13:48/14:02 HAR 生成。v4 收窄通配规则，避免影响七猫等其它 App 模块；保留中国移动开屏/弹窗/运营位去除。
 #!author=Claude
 #!homepage=https://www.10086.cn/
 #!date=2026-06-25
-#!version=2
+#!version=4
 
 [URL Rewrite]
 # ===== HAR 证据：明确日志/埋点/统计/上报 =====
@@ -45,26 +45,24 @@
 ^https?:\/\/v\.miguvideo\.com\/mrule\/v1\/gray-info.* reject
 ^https?:\/\/aikanvod\.miguvideo\.com\/video\/p\/(recoVideoShare|AC_limitFreePage|AC_AiQiYiBag|filterContentList|openAppMiddlePage).* reject
 
-# ===== 新 HAR 2026-06-25 13:48 证据：开屏/弹窗仍出现时的启动策略引擎 =====
-# 这些 psieappaijssdk/engine 脚本在开屏弹窗场景中返回 304，说明本地缓存参与决策；更新模块后建议清理中国移动 App 缓存或重启 App。
-^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/(candidateStrategyRule|diyProductInfoStrategys|ruleEngine|strategyWeightEngine|diyEngine)\/.*-index\.js reject
-^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html reject
+# ===== 新 HAR 2026-06-25 13:48/14:02 证据：开屏/弹窗策略引擎 =====
+# v3 调整：14:02 截图显示首页卡在骨架屏。psieappaijssdk/engine 与 homePage/init 是首页核心资源，不能直接 reject。
+# 因此只保留更偏开屏/弹窗/营销的开关、toast、detainment、liveSuspension、homeSkin、searchWord、hotupdate 等接口。
+# 如需临时测试极限去广告，可手动取消下面两行注释；但它们很可能再次导致首页资源刷新卡住。
+# ^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/(candidateStrategyRule|diyProductInfoStrategys|ruleEngine|strategyWeightEngine|diyEngine)\/.*-index\.js reject
+# ^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html reject
 
-# ===== 新 HAR 2026-06-25 13:48 证据：启动初始化/首页运营/开屏策略入口，严格拦截 =====
-^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/homePage\/getTopAreaList reject
-^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/init\/(getNavigation|startInit) reject
-^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/BN\/sscrz\/getProvSwitchConf reject
-^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/sdkPlug\/getSdkList reject
-^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/MPCA\/account\/getAppletPreloadInfo reject
+# ===== 新 HAR 2026-06-25 13:48/14:02 证据：保留开屏去除但放行首页核心初始化 =====
+# 已放行：homePage/getTopAreaList、DN/init/getNavigation、DN/init/startInit、BN/sscrz/getProvSwitchConf、DH/sdkPlug/getSdkList、MPCA/account/getAppletPreloadInfo、ServiceControl/SC/*。
+# 这些接口被拦截时会出现“页面资源刷新/骨架屏”卡住，需要下拉刷新才能继续。
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/dataReport\/getSwitchSetupInformation reject
-^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/(third\/getThirdUrlList|scanIt\/getScanItWhiteList|urlWhite\/getUrlWhiteList) reject
-^https?:\/\/client\.app\.coc\.10086\.cn\/ServiceControl\/SC\/(versionWhites|secret\/getSecretSecurityConfig) reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/third\/getThirdUrlList reject
 
 # ===== 第三方统计/广告 SDK 兜底 =====
+# v4 兼容性调整：移除全网通配 /ad|splash|banner|log/ 拦截，避免覆盖七猫等其它 App 模块的 Map Local / DIRECT 逻辑。
+# 仅保留在中国移动 HAR/IPA 中明确出现的第三方统计域名。
 ^https?:\/\/api\.mixpanel\.com\/track\/.* reject
 ^https?:\/\/webhooks\.mongodb-realm\.com\/api\/client\/v2\.0\/app\/realmsdkmetrics-.* reject
-^https?:\/\/.*-tracking\..* reject
-^https?:\/\/.*\/(ad|ads|advert|advertise|splash|popup|banner|promotion|marketing|activity|coupon|lottery|gift|exposure|buried|collect|analytics|track|tracking|stat|stats|log|logs|apm|monitor)(\/|\?|$).* reject
 
 [Rule]
 # 明确广告/统计域名，域名级拒绝
@@ -77,11 +75,8 @@ DOMAIN,dsp.aikan.miguvideo.com,REJECT
 DOMAIN,logs.aikan.miguvideo.com,REJECT
 DOMAIN,kdds-ad.zj.chinamobile.com,REJECT
 DOMAIN,sspcloud.huawei.com,REJECT
-DOMAIN-SUFFIX,umeng.com,REJECT
-DOMAIN-SUFFIX,bugly.qq.com,REJECT
-DOMAIN-KEYWORD,tracking,REJECT
-DOMAIN-KEYWORD,adservice,REJECT
-DOMAIN-KEYWORD,advert,REJECT
+# v4 兼容性调整：不再整域拦截 Umeng/Bugly，也不使用 DOMAIN-KEYWORD tracking/adservice/advert。
+# 七猫模块明确把 Umeng/Bugly/部分 SDK 状态链路作为非广告/功能链路处理；全局拒绝会让七猫模块失效。
 
 # 中国移动 App 内部广告/埋点主机：严格模式下拦截；如功能异常可注释相关行
 DOMAIN,apm.app.coc.10086.cn,REJECT
