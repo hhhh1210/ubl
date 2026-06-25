@@ -1,9 +1,9 @@
 #!name=中国移动 zgyd 严格去广告
-#!desc=基于中国移动 12.1.2 IPA、2026-06-25 11:26/13:48/14:02/14:48 HAR 生成。v5 恢复中国移动开屏策略引擎精准拦截，并用 URL-REGEX 预匹配补强；不使用影响七猫的全局通配/Umeng/Bugly/tracking 规则。
+#!desc=基于中国移动 12.1.2 IPA、2026-06-25 多份 HAR 生成。v6 补拦 15:17 HAR 新出现的 DN/toast/getDelayTime 与 jiguang.coc.10086.cn 启动营销/推送链路；仍避免影响七猫的全局通配/Umeng/Bugly/tracking 规则。
 #!author=Claude
 #!homepage=https://www.10086.cn/
 #!date=2026-06-25
-#!version=5
+#!version=6
 
 [URL Rewrite]
 # ===== HAR 证据：明确日志/埋点/统计/上报 =====
@@ -21,7 +21,7 @@
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/msg\/ph\/(config\/select|config\/selectConfig|unReadTotal) reject
 
 # ===== HAR 证据：弹窗、toast、挽留、浮窗、运营页 =====
-^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/toast\/getToastRule reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/toast\/(getToastRule|getDelayTime) reject
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/toast\/august\/getPages reject
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/detainment\/august\/getPages reject
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DA\/liveSuspension\/getPageCode reject
@@ -57,6 +57,7 @@
 # 这些接口被拦截时会出现“页面资源刷新/骨架屏”卡住，需要下拉刷新才能继续。
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/dataReport\/getSwitchSetupInformation reject
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/third\/getThirdUrlList reject
+^https?:\/\/jiguang\.coc\.10086\.cn\/v3\/projects\/9e4e5fa7244c6b6e\/(collect|query).* reject
 
 # ===== 第三方统计/广告 SDK 兜底 =====
 # v4 兼容性调整：移除全网通配 /ad|splash|banner|log/ 拦截，避免覆盖七猫等其它 App 模块的 Map Local / DIRECT 逻辑。
@@ -75,6 +76,7 @@ DOMAIN,dsp.aikan.miguvideo.com,REJECT
 DOMAIN,logs.aikan.miguvideo.com,REJECT
 DOMAIN,kdds-ad.zj.chinamobile.com,REJECT
 DOMAIN,sspcloud.huawei.com,REJECT
+DOMAIN,jiguang.coc.10086.cn,REJECT
 # v4 兼容性调整：不再整域拦截 Umeng/Bugly，也不使用 DOMAIN-KEYWORD tracking/adservice/advert。
 # 七猫模块明确把 Umeng/Bugly/部分 SDK 状态链路作为非广告/功能链路处理；全局拒绝会让七猫模块失效。
 
@@ -88,8 +90,9 @@ URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/(c
 URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html,REJECT,extended-matching,pre-matching
 URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn(?::443)?\/ngpsie\/psieipuudp\/(appInfo\/checkAppInfo|gather\/newSendLogForAES),REJECT,extended-matching,pre-matching
 URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaiddsdkserver\/(merger\/getFeatureAndInferRule|feature\/getOfflineFeature|switch\/productInfoV2LogicEnable|merger\/getSwitchAndInitList|model\/getConfigInfoUrl\.json).*,REJECT,extended-matching,pre-matching
-URL-REGEX,^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/(DN\/(searchWord\/getSearchWordInfo|toast\/getToastRule|detainment\/august\/getPages|dataReport\/getSwitchSetupInformation|third\/getThirdUrlList)|DH\/(homeSkin\/getHomeSkin|hotupdate\/getHotupdateList|toast\/august\/getPages|msg\/ph\/(config\/select|config\/selectConfig|unReadTotal))|DA\/liveSuspension\/getPageCode|SHS\/unifiedSearch\/secondMonitorControl|UN\/message\/pushMessage),REJECT,extended-matching,pre-matching
+URL-REGEX,^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/(DN\/(searchWord\/getSearchWordInfo|toast\/(getToastRule|getDelayTime)|detainment\/august\/getPages|dataReport\/getSwitchSetupInformation|third\/getThirdUrlList)|DH\/(homeSkin\/getHomeSkin|hotupdate\/getHotupdateList|toast\/august\/getPages|msg\/ph\/(config\/select|config\/selectConfig|unReadTotal))|DA\/liveSuspension\/getPageCode|SHS\/unifiedSearch\/secondMonitorControl|UN\/message\/pushMessage),REJECT,extended-matching,pre-matching
+URL-REGEX,^https?:\/\/jiguang\.coc\.10086\.cn\/v3\/projects\/9e4e5fa7244c6b6e\/(collect|query).*,REJECT,extended-matching,pre-matching
 URL-REGEX,^https?:\/\/res\.app\.coc\.10086\.cn\/qwhdcdn_cmcc-cs_cn\/prd-mgcenter\/.*,REJECT,extended-matching,pre-matching
 
 [MITM]
-hostname = %APPEND% da.mmarket.com, dualstack-logs.amap.com, logs.amap.com, api.share.mob.com, client.app.coc.10086.cn, clientaccess.10086.cn, h.app.coc.10086.cn, apm.app.coc.10086.cn, push.it.10086.cn, res.app.coc.10086.cn, qwhdcdn.cmcc-cs.cn, mgsv.miguvideo.com, api.miguvideo.com, v.miguvideo.com, aikanvod.miguvideo.com, dsp.aikan.miguvideo.com, logs.aikan.miguvideo.com, kdds-ad.zj.chinamobile.com, sspcloud.huawei.com, api.mixpanel.com, webhooks.mongodb-realm.com
+hostname = %APPEND% da.mmarket.com, dualstack-logs.amap.com, logs.amap.com, api.share.mob.com, client.app.coc.10086.cn, clientaccess.10086.cn, h.app.coc.10086.cn, apm.app.coc.10086.cn, push.it.10086.cn, jiguang.coc.10086.cn, res.app.coc.10086.cn, qwhdcdn.cmcc-cs.cn, mgsv.miguvideo.com, api.miguvideo.com, v.miguvideo.com, aikanvod.miguvideo.com, dsp.aikan.miguvideo.com, logs.aikan.miguvideo.com, kdds-ad.zj.chinamobile.com, sspcloud.huawei.com, api.mixpanel.com, webhooks.mongodb-realm.com
