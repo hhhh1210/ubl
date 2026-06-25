@@ -1,0 +1,76 @@
+#!name=中国移动 zgyd 严格去广告
+#!desc=基于用户提供的中国移动 12.1.2 IPA 与 2026-06-25 HAR 静态分析生成。策略：宁可误杀，优先拦截广告、开屏、弹窗、运营位、营销推荐、推送与埋点日志。若首页/活动页异常，可先注释“严格运营位”小节。
+#!author=Claude
+#!homepage=https://www.10086.cn/
+#!date=2026-06-25
+
+[URL Rewrite]
+# ===== HAR 证据：明确日志/埋点/统计/上报 =====
+^https?:\/\/da\.mmarket\.com\/udata_v5\/appsdk\/postsyslog reject
+^https?:\/\/dualstack-logs\.amap\.com\/ws\/log\/upload reject
+^https?:\/\/logs\.amap\.com\/ws\/log\/upload reject
+^https?:\/\/api\.share\.mob\.com\/(snsconf|conf5) reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/cache_server\/api\/cache\/encrypt\/reportV2 reject
+^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaidcsdkserver\/dataReported\/resultReportedMaster reject
+^https?:\/\/apm\.app\.coc\.10086\.cn\/biz-orange\/DH\/(switch\/getServiceSwitch|footmark\/openPro) reject
+
+# ===== HAR 证据：推送、消息、已读回执、营销消息 =====
+^https?:\/\/push\.it\.10086\.cn\/(mc|contact)\/(pull|receipt|device)\/.* reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/UN\/message\/pushMessage reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/msg\/ph\/(config\/select|config\/selectConfig|unReadTotal) reject
+
+# ===== HAR 证据：弹窗、toast、挽留、浮窗、运营页 =====
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/toast\/getToastRule reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/toast\/august\/getPages reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/detainment\/august\/getPages reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DA\/liveSuspension\/getPageCode reject
+
+# ===== HAR 证据：搜索热词、首页皮肤、推荐/运营素材 =====
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/searchWord\/getSearchWordInfo reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/homeSkin\/getHomeSkin reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/hotupdate\/getHotupdateList reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/SHS\/unifiedSearch\/secondMonitorControl reject
+^https?:\/\/res\.app\.coc\.10086\.cn\/qwhdcdn_cmcc-cs_cn\/prd-mgcenter\/.* reject-img
+^https?:\/\/qwhdcdn\.cmcc-cs\.cn\/.*\/(prd-mgcenter|mgcenter|banner|popup|ad|ads|advert|activity|marketing|promotion|recommend).* reject-img
+
+# ===== IPA 证据：智能推荐/灰度/规则/模型/运营开关，严格拦截 =====
+^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaiddsdkserver\/(merger\/getFeatureAndInferRule|feature\/getOfflineFeature|switch\/productInfoV2LogicEnable|merger\/getSwitchAndInitList|model\/getConfigInfoUrl\.json).* reject
+^https?:\/\/h\.app\.coc\.10086\.cn(?::443)?\/ngpsie\/psieipuudp\/appInfo\/checkAppInfo reject
+
+# ===== IPA/HAR 证据：咪咕视频广告/推荐/灰度/日志 =====
+^https?:\/\/(dsp\.aikan|logs\.aikan|vodother\.aikan|liveother\.aikan)\.miguvideo\.com.* reject
+^https?:\/\/kdds-ad\.zj\.chinamobile\.com.* reject
+^https?:\/\/sspcloud\.huawei\.com.* reject
+^https?:\/\/v\.miguvideo\.com\/mrule\/v1\/gray-info.* reject
+^https?:\/\/aikanvod\.miguvideo\.com\/video\/p\/(recoVideoShare|AC_limitFreePage|AC_AiQiYiBag|filterContentList|openAppMiddlePage).* reject
+
+# ===== 第三方统计/广告 SDK 兜底 =====
+^https?:\/\/api\.mixpanel\.com\/track\/.* reject
+^https?:\/\/webhooks\.mongodb-realm\.com\/api\/client\/v2\.0\/app\/realmsdkmetrics-.* reject
+^https?:\/\/.*-tracking\..* reject
+^https?:\/\/.*\/(ad|ads|advert|advertise|splash|popup|banner|promotion|marketing|activity|coupon|lottery|gift|exposure|buried|collect|analytics|track|tracking|stat|stats|log|logs|apm|monitor)(\/|\?|$).* reject
+
+[Rule]
+# 明确广告/统计域名，域名级拒绝
+DOMAIN,da.mmarket.com,REJECT
+DOMAIN,dualstack-logs.amap.com,REJECT
+DOMAIN,logs.amap.com,REJECT
+DOMAIN,api.share.mob.com,REJECT
+DOMAIN,api.mixpanel.com,REJECT
+DOMAIN,dsp.aikan.miguvideo.com,REJECT
+DOMAIN,logs.aikan.miguvideo.com,REJECT
+DOMAIN,kdds-ad.zj.chinamobile.com,REJECT
+DOMAIN,sspcloud.huawei.com,REJECT
+DOMAIN-SUFFIX,umeng.com,REJECT
+DOMAIN-SUFFIX,bugly.qq.com,REJECT
+DOMAIN-KEYWORD,tracking,REJECT
+DOMAIN-KEYWORD,adservice,REJECT
+DOMAIN-KEYWORD,advert,REJECT
+
+# 中国移动 App 内部广告/埋点主机：严格模式下拦截；如功能异常可注释相关行
+DOMAIN,apm.app.coc.10086.cn,REJECT
+DOMAIN,push.it.10086.cn,REJECT
+DOMAIN-SUFFIX,mmarket.com,REJECT
+
+[MITM]
+hostname = %APPEND% da.mmarket.com, dualstack-logs.amap.com, logs.amap.com, api.share.mob.com, client.app.coc.10086.cn, h.app.coc.10086.cn, apm.app.coc.10086.cn, push.it.10086.cn, res.app.coc.10086.cn, qwhdcdn.cmcc-cs.cn, v.miguvideo.com, aikanvod.miguvideo.com, dsp.aikan.miguvideo.com, logs.aikan.miguvideo.com, kdds-ad.zj.chinamobile.com, sspcloud.huawei.com, api.mixpanel.com, webhooks.mongodb-realm.com
