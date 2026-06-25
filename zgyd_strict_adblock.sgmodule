@@ -1,8 +1,9 @@
 #!name=中国移动 zgyd 严格去广告
-#!desc=基于用户提供的中国移动 12.1.2 IPA 与 2026-06-25 HAR 静态分析生成。策略：宁可误杀，优先拦截广告、开屏、弹窗、运营位、营销推荐、推送与埋点日志。若首页/活动页异常，可先注释“严格运营位”小节。
+#!desc=基于中国移动 12.1.2 IPA、2026-06-25 11:26 HAR 与 13:48 开屏/弹窗复测 HAR 生成。策略：宁可误杀，优先拦截开屏弹窗、启动策略引擎、运营位、营销推荐、推送与埋点日志。若首页/活动页异常，可先注释“启动初始化/首页运营/开屏策略入口”小节。
 #!author=Claude
 #!homepage=https://www.10086.cn/
 #!date=2026-06-25
+#!version=2
 
 [URL Rewrite]
 # ===== HAR 证据：明确日志/埋点/统计/上报 =====
@@ -44,6 +45,21 @@
 ^https?:\/\/v\.miguvideo\.com\/mrule\/v1\/gray-info.* reject
 ^https?:\/\/aikanvod\.miguvideo\.com\/video\/p\/(recoVideoShare|AC_limitFreePage|AC_AiQiYiBag|filterContentList|openAppMiddlePage).* reject
 
+# ===== 新 HAR 2026-06-25 13:48 证据：开屏/弹窗仍出现时的启动策略引擎 =====
+# 这些 psieappaijssdk/engine 脚本在开屏弹窗场景中返回 304，说明本地缓存参与决策；更新模块后建议清理中国移动 App 缓存或重启 App。
+^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/(candidateStrategyRule|diyProductInfoStrategys|ruleEngine|strategyWeightEngine|diyEngine)\/.*-index\.js reject
+^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html reject
+
+# ===== 新 HAR 2026-06-25 13:48 证据：启动初始化/首页运营/开屏策略入口，严格拦截 =====
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/homePage\/getTopAreaList reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/init\/(getNavigation|startInit) reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/BN\/sscrz\/getProvSwitchConf reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/sdkPlug\/getSdkList reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/MPCA\/account\/getAppletPreloadInfo reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/dataReport\/getSwitchSetupInformation reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/(third\/getThirdUrlList|scanIt\/getScanItWhiteList|urlWhite\/getUrlWhiteList) reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/ServiceControl\/SC\/(versionWhites|secret\/getSecretSecurityConfig) reject
+
 # ===== 第三方统计/广告 SDK 兜底 =====
 ^https?:\/\/api\.mixpanel\.com\/track\/.* reject
 ^https?:\/\/webhooks\.mongodb-realm\.com\/api\/client\/v2\.0\/app\/realmsdkmetrics-.* reject
@@ -73,4 +89,4 @@ DOMAIN,push.it.10086.cn,REJECT
 DOMAIN-SUFFIX,mmarket.com,REJECT
 
 [MITM]
-hostname = %APPEND% da.mmarket.com, dualstack-logs.amap.com, logs.amap.com, api.share.mob.com, client.app.coc.10086.cn, h.app.coc.10086.cn, apm.app.coc.10086.cn, push.it.10086.cn, res.app.coc.10086.cn, qwhdcdn.cmcc-cs.cn, v.miguvideo.com, aikanvod.miguvideo.com, dsp.aikan.miguvideo.com, logs.aikan.miguvideo.com, kdds-ad.zj.chinamobile.com, sspcloud.huawei.com, api.mixpanel.com, webhooks.mongodb-realm.com
+hostname = %APPEND% da.mmarket.com, dualstack-logs.amap.com, logs.amap.com, api.share.mob.com, client.app.coc.10086.cn, clientaccess.10086.cn, h.app.coc.10086.cn, apm.app.coc.10086.cn, push.it.10086.cn, res.app.coc.10086.cn, qwhdcdn.cmcc-cs.cn, mgsv.miguvideo.com, api.miguvideo.com, v.miguvideo.com, aikanvod.miguvideo.com, dsp.aikan.miguvideo.com, logs.aikan.miguvideo.com, kdds-ad.zj.chinamobile.com, sspcloud.huawei.com, api.mixpanel.com, webhooks.mongodb-realm.com
