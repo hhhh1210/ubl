@@ -1,9 +1,9 @@
 #!name=中国移动 zgyd 严格去广告
-#!desc=基于中国移动 12.1.2 IPA、2026-06-25 多份 HAR 生成。v6 补拦 15:17 HAR 新出现的 DN/toast/getDelayTime 与 jiguang.coc.10086.cn 启动营销/推送链路；仍避免影响七猫的全局通配/Umeng/Bugly/tracking 规则。
+#!desc=基于中国移动 12.1.2 IPA、2026-06-25 多份 HAR 生成。v7 恢复 v2 式中国移动域名内强拦截以处理开屏广告；仍不使用影响七猫的全局通配/Umeng/Bugly/tracking 规则。
 #!author=Claude
 #!homepage=https://www.10086.cn/
 #!date=2026-06-25
-#!version=6
+#!version=7
 
 [URL Rewrite]
 # ===== HAR 证据：明确日志/埋点/统计/上报 =====
@@ -52,11 +52,17 @@
 ^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html reject
 ^https?:\/\/h\.app\.coc\.10086\.cn(?::443)?\/ngpsie\/psieipuudp\/gather\/newSendLogForAES reject
 
-# ===== 新 HAR 2026-06-25 13:48/14:02/14:48 证据：保留开屏去除但放行首页核心初始化 =====
-# 已放行：homePage/getTopAreaList、DN/init/getNavigation、DN/init/startInit、BN/sscrz/getProvSwitchConf、DH/sdkPlug/getSdkList、MPCA/account/getAppletPreloadInfo、ServiceControl/SC/*。
-# 这些接口被拦截时会出现“页面资源刷新/骨架屏”卡住，需要下拉刷新才能继续。
-^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/dataReport\/getSwitchSetupInformation reject
-^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/third\/getThirdUrlList reject
+# ===== v7：恢复 v2 式中国移动域名内强拦截，用于彻底压开屏广告 =====
+# 15:27 HAR 证明只拦策略引擎/toast/jiguang 仍不够，广告仍可从聚合首页/初始化/省份开关/SDK 插件等大配置中下发。
+# 这些规则只限定 client.app.coc.10086.cn，不会影响七猫模块；但可能让中国移动首页首次进入出现骨架屏，需要下拉刷新或二次进入。
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/multipleInterfaces\/aggregationData reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/homePage\/getTopAreaList reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/init\/(getNavigation|startInit) reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/BN\/sscrz\/getProvSwitchConf reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/sdkPlug\/getSdkList reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/MPCA\/account\/getAppletPreloadInfo reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/ServiceControl\/SC\/(versionWhites|secret\/getSecretSecurityConfig) reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/(scanIt\/getScanItWhiteList|urlWhite\/getUrlWhiteList|dataReport\/getSwitchSetupInformation|third\/getThirdUrlList) reject
 ^https?:\/\/jiguang\.coc\.10086\.cn\/v3\/projects\/9e4e5fa7244c6b6e\/(collect|query).* reject
 
 # ===== 第三方统计/广告 SDK 兜底 =====
@@ -90,7 +96,8 @@ URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/(c
 URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html,REJECT,extended-matching,pre-matching
 URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn(?::443)?\/ngpsie\/psieipuudp\/(appInfo\/checkAppInfo|gather\/newSendLogForAES),REJECT,extended-matching,pre-matching
 URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaiddsdkserver\/(merger\/getFeatureAndInferRule|feature\/getOfflineFeature|switch\/productInfoV2LogicEnable|merger\/getSwitchAndInitList|model\/getConfigInfoUrl\.json).*,REJECT,extended-matching,pre-matching
-URL-REGEX,^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/(DN\/(searchWord\/getSearchWordInfo|toast\/(getToastRule|getDelayTime)|detainment\/august\/getPages|dataReport\/getSwitchSetupInformation|third\/getThirdUrlList)|DH\/(homeSkin\/getHomeSkin|hotupdate\/getHotupdateList|toast\/august\/getPages|msg\/ph\/(config\/select|config\/selectConfig|unReadTotal))|DA\/liveSuspension\/getPageCode|SHS\/unifiedSearch\/secondMonitorControl|UN\/message\/pushMessage),REJECT,extended-matching,pre-matching
+URL-REGEX,^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/(DN\/(multipleInterfaces\/aggregationData|homePage\/getTopAreaList|init\/(getNavigation|startInit)|searchWord\/getSearchWordInfo|toast\/(getToastRule|getDelayTime)|detainment\/august\/getPages|dataReport\/getSwitchSetupInformation|third\/getThirdUrlList|scanIt\/getScanItWhiteList|urlWhite\/getUrlWhiteList)|BN\/sscrz\/getProvSwitchConf|DH\/(sdkPlug\/getSdkList|homeSkin\/getHomeSkin|hotupdate\/getHotupdateList|toast\/august\/getPages|msg\/ph\/(config\/select|config\/selectConfig|unReadTotal))|MPCA\/account\/getAppletPreloadInfo|DA\/liveSuspension\/getPageCode|SHS\/unifiedSearch\/secondMonitorControl|UN\/message\/pushMessage),REJECT,extended-matching,pre-matching
+URL-REGEX,^https?:\/\/client\.app\.coc\.10086\.cn\/ServiceControl\/SC\/(versionWhites|secret\/getSecretSecurityConfig),REJECT,extended-matching,pre-matching
 URL-REGEX,^https?:\/\/jiguang\.coc\.10086\.cn\/v3\/projects\/9e4e5fa7244c6b6e\/(collect|query).*,REJECT,extended-matching,pre-matching
 URL-REGEX,^https?:\/\/res\.app\.coc\.10086\.cn\/qwhdcdn_cmcc-cs_cn\/prd-mgcenter\/.*,REJECT,extended-matching,pre-matching
 
