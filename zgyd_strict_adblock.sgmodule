@@ -1,51 +1,52 @@
 #!name=中国移动 zgyd 严格去广告
-#!desc=基于中国移动 12.1.2 IPA、2026-06-25/26 多份 HAR 生成。v11 修复 v10 页面内刷新等待：放行 06:37 页面内刷新复用的首页/皮肤/省份配置，仅对明确开屏弹窗 homepagePopup/getSortInfo 和埋点/推送类接口做 Map Local 空 JSON 快速完成。
+#!desc=基于中国移动 12.1.2 IPA、2026-06-25/26 多份 HAR 生成。v12 修复 v11 开屏回流：07:16 HAR 证明 bare reject 会被当作 URL 改写后继续上游，改为 Surge 拦截动作 - reject；保留 06:37 页面内刷新依赖 DIRECT。
 #!author=Claude
 #!homepage=https://www.10086.cn/
 #!date=2026-06-26
-#!version=11
+#!version=12
 
 [URL Rewrite]
 # ===== HAR 证据：明确日志/埋点/统计/上报 =====
-^https?:\/\/da\.mmarket\.com\/udata_v5\/appsdk\/postsyslog reject
-^https?:\/\/dualstack-logs\.amap\.com\/ws\/log\/upload reject
-^https?:\/\/logs\.amap\.com\/ws\/log\/upload reject
-^https?:\/\/api\.share\.mob\.com\/(snsconf|conf5) reject
-^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaidcsdkserver\/dataReported\/resultReportedMaster reject
-^https?:\/\/apm\.app\.coc\.10086\.cn\/biz-orange\/DH\/(switch\/getServiceSwitch|footmark\/openPro) reject
+^https?:\/\/da\.mmarket\.com\/udata_v5\/appsdk\/postsyslog - reject
+^https?:\/\/dualstack-logs\.amap\.com\/ws\/log\/upload - reject
+^https?:\/\/logs\.amap\.com\/ws\/log\/upload - reject
+^https?:\/\/api\.share\.mob\.com\/(snsconf|conf5) - reject
+^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaidcsdkserver\/dataReported\/resultReportedMaster - reject
+^https?:\/\/apm\.app\.coc\.10086\.cn\/biz-orange\/DH\/(switch\/getServiceSwitch|footmark\/openPro) - reject
 
 # ===== HAR 证据：推送、消息、已读回执、营销消息 =====
-^https?:\/\/push\.it\.10086\.cn\/(mc|contact)\/(pull|receipt|device)\/.* reject
+^https?:\/\/push\.it\.10086\.cn\/(mc|contact)\/(pull|receipt|device)\/.* - reject
 
 # ===== HAR 证据：弹窗、toast、挽留、浮窗、运营页 =====
-^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/toast\/(getToastRule|getDelayTime) reject
-^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/toast\/august\/getPages reject
-^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/detainment\/august\/getPages reject
-^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DA\/liveSuspension\/getPageCode reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/toast\/(getToastRule|getDelayTime) - reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/toast\/august\/getPages - reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/detainment\/august\/getPages - reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DA\/liveSuspension\/getPageCode - reject
 
-# ===== v11：回收 v9 开屏回流入口 =====
+# ===== v12：回收 v9/v11 开屏回流入口 =====
 # 06:21 HAR 中 homepagePopup/getSortInfo、searchWord、homeSkin、hotupdate 均在开屏回流时 200 返回；v8 对这些运营入口拦截时可压住开屏。
 # v11 只保留明确开屏弹窗入口 homepagePopup/getSortInfo；searchWord/homeSkin/hotupdate 在 06:37 页面内刷新阶段会复用，放行。
+# 07:16 HAR 证明 bare reject 对 h.app.coc.10086.cn 策略接口只是 URL 改写，仍会取回 200/304；v12 统一改成 "- reject" 动作。
 # qwhdcdn 仅保留带明确广告/弹窗语义的路径拦截，不再按 prd-mgcenter 整目录拦截。
-^https?:\/\/qwhdcdn\.cmcc-cs\.cn\/.*\/(banner|popup|ad|ads|advert|activity|marketing|promotion|recommend).* reject-img
+^https?:\/\/qwhdcdn\.cmcc-cs\.cn\/.*\/(banner|popup|ad|ads|advert|activity|marketing|promotion|recommend).* - reject-img
 
 # ===== IPA 证据：智能推荐/灰度/规则/模型/运营开关，严格拦截 =====
-^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaiddsdkserver\/(merger\/getFeatureAndInferRule|feature\/getOfflineFeature|switch\/productInfoV2LogicEnable|merger\/getSwitchAndInitList|model\/getConfigInfoUrl\.json).* reject
-^https?:\/\/h\.app\.coc\.10086\.cn(?::443)?\/ngpsie\/psieipuudp\/appInfo\/checkAppInfo reject
+^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaiddsdkserver\/(merger\/getFeatureAndInferRule|feature\/getOfflineFeature|switch\/productInfoV2LogicEnable|merger\/getSwitchAndInitList|model\/getConfigInfoUrl\.json).* - reject
+^https?:\/\/h\.app\.coc\.10086\.cn(?::443)?\/ngpsie\/psieipuudp\/appInfo\/checkAppInfo - reject
 
 # ===== IPA/HAR 证据：咪咕视频广告/推荐/灰度/日志 =====
-^https?:\/\/(dsp\.aikan|logs\.aikan|vodother\.aikan|liveother\.aikan)\.miguvideo\.com.* reject
-^https?:\/\/kdds-ad\.zj\.chinamobile\.com.* reject
-^https?:\/\/sspcloud\.huawei\.com.* reject
-^https?:\/\/v\.miguvideo\.com\/mrule\/v1\/gray-info.* reject
-^https?:\/\/aikanvod\.miguvideo\.com\/video\/p\/(recoVideoShare|AC_limitFreePage|AC_AiQiYiBag|filterContentList|openAppMiddlePage).* reject
+^https?:\/\/(dsp\.aikan|logs\.aikan|vodother\.aikan|liveother\.aikan)\.miguvideo\.com.* - reject
+^https?:\/\/kdds-ad\.zj\.chinamobile\.com.* - reject
+^https?:\/\/sspcloud\.huawei\.com.* - reject
+^https?:\/\/v\.miguvideo\.com\/mrule\/v1\/gray-info.* - reject
+^https?:\/\/aikanvod\.miguvideo\.com\/video\/p\/(recoVideoShare|AC_limitFreePage|AC_AiQiYiBag|filterContentList|openAppMiddlePage).* - reject
 
 # ===== 新 HAR 2026-06-25 13:48/14:02/14:48 证据：开屏/弹窗策略引擎 =====
 # v5 调整：14:48 HAR 证明 v4 放行 psieappaijssdk/engine 后开屏广告回流。
 # 重新拦截中国移动自己的策略引擎 JS，但继续放行 homePage/getTopAreaList、DN/init/getNavigation、DN/init/startInit 等首页核心初始化接口，避免骨架屏卡住。
-^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/(candidateStrategyRule|diyProductInfoStrategys|ruleEngine|strategyWeightEngine|diyEngine)\/.*-index\.js reject
-^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html reject
-^https?:\/\/h\.app\.coc\.10086\.cn(?::443)?\/ngpsie\/psieipuudp\/gather\/newSendLogForAES reject
+^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/(candidateStrategyRule|diyProductInfoStrategys|ruleEngine|strategyWeightEngine|diyEngine)\/.*-index\.js - reject
+^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html - reject
+^https?:\/\/h\.app\.coc\.10086\.cn(?::443)?\/ngpsie\/psieipuudp\/gather\/newSendLogForAES - reject
 
 # ===== v11：放开页面内刷新复用的大配置 =====
 # 06:37 HAR 已经过了开屏阶段，homePage/getTopAreaList、aggregationData、searchWord、homeSkin、sscrz 在页面内刷新时被复用。
@@ -54,11 +55,11 @@
 # ===== 第三方统计/广告 SDK 兜底 =====
 # v4 兼容性调整：移除全网通配 /ad|splash|banner|log/ 拦截，避免覆盖七猫等其它 App 模块的 Map Local / DIRECT 逻辑。
 # 仅保留在中国移动 HAR/IPA 中明确出现的第三方统计域名。
-^https?:\/\/api\.mixpanel\.com\/track\/.* reject
-^https?:\/\/webhooks\.mongodb-realm\.com\/api\/client\/v2\.0\/app\/realmsdkmetrics-.* reject
+^https?:\/\/api\.mixpanel\.com\/track\/.* - reject
+^https?:\/\/webhooks\.mongodb-realm\.com\/api\/client\/v2\.0\/app\/realmsdkmetrics-.* - reject
 
 [Map Local]
-# v11：页面内刷新中这些埋点/推送接口会被 App 等待；用空 JSON 快速完成，避免 URL Rewrite reject 在 06:37 HAR 中等待 10 秒后 503。
+# v12：页面内刷新中这些埋点/推送接口会被 App 等待；用空 JSON 快速完成，避免 URL Rewrite reject 在 06:37 HAR 中等待 10 秒后 503。
 ^https?:\/\/client\.app\.coc\.10086\.cn\/cache_server\/api\/cache\/encrypt\/reportV2 data-type=text data="{}" status-code=200
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/UN\/message\/pushMessage data-type=text data="{}" status-code=200
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/msg\/ph\/(config\/select|config\/selectConfig|unReadTotal) data-type=text data="{}" status-code=200
@@ -83,9 +84,9 @@ DOMAIN,sspcloud.huawei.com,REJECT
 
 DOMAIN-SUFFIX,mmarket.com,REJECT
 
-# v11 补强：只在中国移动域名范围内做 URL-REGEX 预匹配，避免恢复会影响七猫模块的全网通配规则。
+# v12 补强：只在中国移动域名范围内做 URL-REGEX 预匹配，避免恢复会影响七猫模块的全网通配规则。
 # 注意：首页核心大配置不放在 Rule 层 REJECT，否则会重新造成 06:37 这类页面内刷新等待。
-# 先放行更偏功能/账户/白名单/页面刷新查询的接口，避免把正面信息一起挡掉；不要把 v11 已 Map Local 的 homepagePopup 放进 DIRECT。
+# 先放行更偏功能/账户/白名单/页面刷新查询的接口，避免把正面信息一起挡掉；不要把 v12 已 Map Local 的 homepagePopup 放进 DIRECT。
 URL-REGEX,^https?:\/\/client\.app\.coc\.10086\.cn\/(biz-orange\/(DN\/(openplatform\/clientPermissionInfo|webCache\/cacheCleanUp|call\/cson\/meet\/sdk\/getSignature|careVersion\/filialPietyCard|protocol\/getProtocolHeaders|homePage\/getTopAreaList|multipleInterfaces\/aggregationData|myPageNew\/getMyPageNew|mypage\/getMyPageWaterFall|headPhoto\/photoConfig|refreshSession|scanIt\/getScanItWhiteList|urlWhite\/getUrlWhiteList|searchWord\/getSearchWordInfo|init\/(getNavigation|startInit))|LN\/(checkUIDAction\/checkUID|uamrandcodelogin\/autoLogin)|SHG\/(querytid\/getTid|meterAssets\/query|myPage\/getMembershipInfo|codeTable\/(getHomeCodeTableList|getPointConfiqUration))|SHS\/unifiedSearch\/secondMonitorControl|v1\/SHE\/unused\/query|WN\/mailService\/getUnreadCount|DH\/(deployEnvironment\/getSignList|homeSkin\/getHomeSkin|hotupdate\/getHotupdateList)|BN\/sscrz\/getProvSwitchConf|MPCA\/account\/getAppletPreloadInfo)|ServiceControl\/SC\/(versionWhites|secret\/getSecretSecurityConfig)|leadeon-abilityopen-biz\/BN\/(obtainToken\/getBigNetToken|ByToken\/multi)),DIRECT,extended-matching,pre-matching
 URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/(candidateStrategyRule|diyProductInfoStrategys|ruleEngine|strategyWeightEngine|diyEngine)\/.*-index\.js,REJECT,extended-matching,pre-matching
 URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html,REJECT,extended-matching,pre-matching
