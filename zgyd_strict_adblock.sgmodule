@@ -1,9 +1,9 @@
 #!name=中国移动 zgyd 严格去广告
-#!desc=基于中国移动 12.1.2 IPA、2026-06-25/26 多份 HAR 生成。v13 修复 v12 仍有口令红包开屏：07:23 证明策略接口已拦，但首页/聚合/皮肤/省份大配置仍 200；改为 Map Local 空 JSON 快速完成，避免 v10 的 10 秒 503。
+#!desc=基于中国移动 12.1.2 IPA、2026-06-25/26 多份 HAR 生成。v14 以 v10 可压制开屏为对照，恢复启动真入口 DN/init/startInit 与 DH/sdkPlug/getSdkList 的快速空响应；避免 v10 reject-dict 的 10 秒等待。
 #!author=Claude
 #!homepage=https://www.10086.cn/
 #!date=2026-06-26
-#!version=13
+#!version=14
 
 [URL Rewrite]
 # ===== HAR 证据：明确日志/埋点/统计/上报 =====
@@ -43,14 +43,14 @@
 
 # ===== 新 HAR 2026-06-25 13:48/14:02/14:48 证据：开屏/弹窗策略引擎 =====
 # v5 调整：14:48 HAR 证明 v4 放行 psieappaijssdk/engine 后开屏广告回流。
-# 重新拦截中国移动自己的策略引擎 JS，但继续放行 homePage/getTopAreaList、DN/init/getNavigation、DN/init/startInit 等首页核心初始化接口，避免骨架屏卡住。
+# 重新拦截中国移动自己的策略引擎 JS；DN/init/startInit 后续由 Map Local 快速空响应处理，避免放回开屏广告配置。
 ^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/(candidateStrategyRule|diyProductInfoStrategys|ruleEngine|strategyWeightEngine|diyEngine)\/.*-index\.js - reject
 ^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html - reject
 ^https?:\/\/h\.app\.coc\.10086\.cn(?::443)?\/ngpsie\/psieipuudp\/gather\/newSendLogForAES - reject
 
-# ===== v13：开屏大配置改用 Map Local 快速空响应 =====
-# 06:37 HAR 已经过了开屏阶段，证明硬 reject/reject-dict 会带来 10 秒 503；07:23 HAR 和截图证明 v12 放行这些大配置后仍会出现口令红包开屏。
-# 因此不再把它们 DIRECT 放行，也不回到 reject-dict；改在 Map Local 里返回 {} 200，兼顾开屏拦截和页面内刷新速度。
+# ===== v14：v10 有效入口改用 Map Local 快速空响应 =====
+# v10 能压制开屏，但 reject-dict 在页面内刷新阶段会等待约 10 秒；v14 保留 v10 命中的启动入口，改为 {} 200。
+# IPA 中 10000 对应 DN/init/startInit，二进制存在 parseResponseIfContainLingXiLaunchADInfo/requestStartADInfo/CMCCStartAD*；最新 16:46 HAR 也显示 startInit 与 sdkPlug 仍返回加密配置。
 
 # ===== 第三方统计/广告 SDK 兜底 =====
 # v4 兼容性调整：移除全网通配 /ad|splash|banner|log/ 拦截，避免覆盖七猫等其它 App 模块的 Map Local / DIRECT 逻辑。
@@ -59,13 +59,15 @@
 ^https?:\/\/webhooks\.mongodb-realm\.com\/api\/client\/v2\.0\/app\/realmsdkmetrics-.* - reject
 
 [Map Local]
-# v13：这些接口会被 App 等待；用空 JSON 快速完成，避免 URL Rewrite reject/reject-dict 在 06:37 HAR 中等待 10 秒后 503。
+# v14：这些接口会被 App 等待；用空 JSON 快速完成，避免 URL Rewrite reject/reject-dict 在 06:37 HAR 中等待 10 秒后 503。
 ^https?:\/\/client\.app\.coc\.10086\.cn\/cache_server\/api\/cache\/encrypt\/reportV2 data-type=text data="{}" status-code=200
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/UN\/message\/pushMessage data-type=text data="{}" status-code=200
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/msg\/ph\/(config\/select|config\/selectConfig|unReadTotal) data-type=text data="{}" status-code=200
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/(dataReport\/getSwitchSetupInformation|third\/getThirdUrlList) data-type=text data="{}" status-code=200
 ^https?:\/\/jiguang\.coc\.10086\.cn\/v3\/projects\/9e4e5fa7244c6b6e\/(collect|query).* data-type=text data="{}" status-code=200
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/homepagePopup\/getSortInfo data-type=text data="{}" status-code=200
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/init\/startInit data-type=text data="{}" status-code=200
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/sdkPlug\/getSdkList data-type=text data="{}" status-code=200
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/homePage\/getTopAreaList data-type=text data="{}" status-code=200
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/multipleInterfaces\/aggregationData data-type=text data="{}" status-code=200
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/searchWord\/getSearchWordInfo data-type=text data="{}" status-code=200
@@ -90,10 +92,10 @@ DOMAIN,sspcloud.huawei.com,REJECT
 
 DOMAIN-SUFFIX,mmarket.com,REJECT
 
-# v13 补强：只在中国移动域名范围内做 URL-REGEX 预匹配，避免恢复会影响七猫模块的全网通配规则。
+# v14 补强：只在中国移动域名范围内做 URL-REGEX 预匹配，避免恢复会影响七猫模块的全网通配规则。
 # 注意：首页核心大配置不放在 Rule 层 REJECT，否则会重新造成 06:37 这类页面内刷新等待。
-# 先放行更偏功能/账户/白名单/页面刷新查询的接口，避免把正面信息一起挡掉；不要把 v13 已 Map Local 的开屏大配置放进 DIRECT。
-URL-REGEX,^https?:\/\/client\.app\.coc\.10086\.cn\/(biz-orange\/(DN\/(openplatform\/clientPermissionInfo|webCache\/cacheCleanUp|call\/cson\/meet\/sdk\/getSignature|careVersion\/filialPietyCard|protocol\/getProtocolHeaders|myPageNew\/getMyPageNew|mypage\/getMyPageWaterFall|headPhoto\/photoConfig|refreshSession|scanIt\/getScanItWhiteList|urlWhite\/getUrlWhiteList|init\/(getNavigation|startInit))|LN\/(checkUIDAction\/checkUID|uamrandcodelogin\/autoLogin)|SHG\/(querytid\/getTid|meterAssets\/query|myPage\/getMembershipInfo|codeTable\/(getHomeCodeTableList|getPointConfiqUration))|SHS\/unifiedSearch\/secondMonitorControl|v1\/SHE\/unused\/query|WN\/mailService\/getUnreadCount|DH\/deployEnvironment\/getSignList|MPCA\/account\/getAppletPreloadInfo)|ServiceControl\/SC\/(versionWhites|secret\/getSecretSecurityConfig)|leadeon-abilityopen-biz\/BN\/(obtainToken\/getBigNetToken|ByToken\/multi)),DIRECT,extended-matching,pre-matching
+# 先放行更偏功能/账户/白名单/页面刷新查询的接口，避免把正面信息一起挡掉；不要把 v14 已 Map Local 的开屏大配置放进 DIRECT。
+URL-REGEX,^https?:\/\/client\.app\.coc\.10086\.cn\/(biz-orange\/(DN\/(openplatform\/clientPermissionInfo|webCache\/cacheCleanUp|call\/cson\/meet\/sdk\/getSignature|careVersion\/filialPietyCard|protocol\/getProtocolHeaders|myPageNew\/getMyPageNew|mypage\/getMyPageWaterFall|headPhoto\/photoConfig|refreshSession|scanIt\/getScanItWhiteList|urlWhite\/getUrlWhiteList|init\/getNavigation)|LN\/(checkUIDAction\/checkUID|uamrandcodelogin\/autoLogin)|SHG\/(querytid\/getTid|meterAssets\/query|myPage\/getMembershipInfo|codeTable\/(getHomeCodeTableList|getPointConfiqUration))|SHS\/unifiedSearch\/secondMonitorControl|v1\/SHE\/unused\/query|WN\/mailService\/getUnreadCount|DH\/deployEnvironment\/getSignList|MPCA\/account\/getAppletPreloadInfo)|ServiceControl\/SC\/(versionWhites|secret\/getSecretSecurityConfig)|leadeon-abilityopen-biz\/BN\/(obtainToken\/getBigNetToken|ByToken\/multi)),DIRECT,extended-matching,pre-matching
 URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/(candidateStrategyRule|diyProductInfoStrategys|ruleEngine|strategyWeightEngine|diyEngine)\/.*-index\.js,REJECT,extended-matching,pre-matching
 URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html,REJECT,extended-matching,pre-matching
 URL-REGEX,^https?:\/\/h\.app\.coc\.10086\.cn(?::443)?\/ngpsie\/psieipuudp\/(appInfo\/checkAppInfo|gather\/newSendLogForAES),REJECT,extended-matching,pre-matching
