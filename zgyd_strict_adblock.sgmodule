@@ -1,9 +1,9 @@
 #!name=中国移动 zgyd 严格去广告
-#!desc=基于中国移动 12.1.2 IPA、2026-06-25/26 多份 HAR 生成。v19 将 v18 可压制开屏的 reject-dict 改为请求阶段脚本快速 503，保留失败语义同时避免 17:32 HAR 的 10 秒加载等待。
+#!desc=基于中国移动 12.1.2 IPA、2026-06-25/26 多份 HAR 生成。v20 将 v19 明确 HTTP 503 改为请求阶段重写到本机关闭端口，保留 v18 网络层失败语义并尝试避免 10 秒等待。
 #!author=Claude
 #!homepage=https://www.10086.cn/
 #!date=2026-06-26
-#!version=19
+#!version=20
 
 [General]
 force-http-engine-hosts = %APPEND% client.app.coc.10086.cn
@@ -26,10 +26,11 @@ force-http-engine-hosts = %APPEND% client.app.coc.10086.cn
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/detainment\/august\/getPages - reject
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DA\/liveSuspension\/getPageCode - reject
 
-# ===== v19：开屏大配置改由脚本快速 503 =====
+# ===== v20：开屏大配置改由脚本快速本机拒绝 =====
 # 06:21 HAR 中 homepagePopup/getSortInfo、searchWord、homeSkin、hotupdate 均在开屏回流时 200 返回；v8 对这些运营入口拦截时可压住开屏。
 # 17:23 HAR 证明 v17 硬断开这些请求后仍有广告；v10 有效差异是 reject-dict，让 App 收到失败字典而非走网络失败兜底。
-# 17:32 HAR 证明 reject-dict 会被 Surge 当成 URL 改写目标并等待 10 秒；v19 用脚本直接返回 503。
+# 17:32 HAR 证明 reject-dict 会被 Surge 当成 URL 改写目标并等待 10 秒；17:37 HAR 证明脚本直接 HTTP 503 不压制开屏。
+# v20 改为脚本将请求重写到 127.0.0.1:9，让 App 看到网络层快速失败，而不是正常 HTTP 响应。
 # qwhdcdn 仅保留带明确广告/弹窗语义的路径拦截，不再按 prd-mgcenter 整目录拦截。
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/(dataReport\/getSwitchSetupInformation|third\/getThirdUrlList) - reject
 ^https?:\/\/qwhdcdn\.cmcc-cs\.cn\/.*\/(banner|popup|ad|ads|advert|activity|marketing|promotion|recommend).* - reject-img
@@ -52,9 +53,9 @@ force-http-engine-hosts = %APPEND% client.app.coc.10086.cn
 ^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html - reject
 ^https?:\/\/h\.app\.coc\.10086\.cn(?::443)?\/ngpsie\/psieipuudp\/gather\/newSendLogForAES - reject
 
-# ===== v19：启动广告入口由脚本快速 503 =====
+# ===== v20：启动广告入口由脚本快速本机拒绝 =====
 # IPA 中 10000 对应 DN/init/startInit，二进制存在 parseResponseIfContainLingXiLaunchADInfo/requestStartADInfo/CMCCStartAD*。
-# v15-v17 的硬断开仍有开屏，v18 可压制但等待 10 秒；脚本直接 503 保持失败语义并消除等待。
+# v15-v17 的硬断开仍有开屏，v18 可压制但等待 10 秒；v19 明确 HTTP 503 不够，需模拟网络层失败。
 
 # ===== 第三方统计/广告 SDK 兜底 =====
 # v4 兼容性调整：移除全网通配 /ad|splash|banner|log/ 拦截，避免覆盖七猫等其它 App 模块的 Map Local / DIRECT 逻辑。
@@ -71,7 +72,7 @@ force-http-engine-hosts = %APPEND% client.app.coc.10086.cn
 ^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/sdkPlug\/getSdkList data-type=text data="{}" status-code=200
 
 [Script]
-uBO ZGYD Startup Config Fast 503 = type=http-request, pattern=^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/(?:DN\/(?:homepagePopup\/getSortInfo|searchWord\/getSearchWordInfo|multipleInterfaces\/aggregationData|homePage\/getTopAreaList|init\/(?:getNavigation|startInit))|DH\/(?:homeSkin\/getHomeSkin|hotupdate\/getHotupdateList)|BN\/sscrz\/getProvSwitchConf)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/zgyd-startup-ad-clean.js?v=zgyd-v19-1, script-update-interval=86400, timeout=2, engine=jsc
+uBO ZGYD Startup Config Fast Refused = type=http-request, pattern=^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/(?:DN\/(?:homepagePopup\/getSortInfo|searchWord\/getSearchWordInfo|multipleInterfaces\/aggregationData|homePage\/getTopAreaList|init\/(?:getNavigation|startInit))|DH\/(?:homeSkin\/getHomeSkin|hotupdate\/getHotupdateList)|BN\/sscrz\/getProvSwitchConf)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/zgyd-startup-ad-clean.js?v=zgyd-v20-1, script-update-interval=86400, timeout=2, engine=jsc
 
 [Rule]
 # 明确广告/统计域名，域名级拒绝
@@ -90,7 +91,7 @@ DOMAIN,sspcloud.huawei.com,REJECT
 
 DOMAIN-SUFFIX,mmarket.com,REJECT
 
-# v19 补强：只在中国移动域名范围内做 URL-REGEX 预匹配，避免恢复会影响七猫模块的全网通配规则。
+# v20 补强：只在中国移动域名范围内做 URL-REGEX 预匹配，避免恢复会影响七猫模块的全网通配规则。
 # 注意：首页核心大配置不放在 Rule 层 REJECT，否则会重新造成 06:37 这类页面内刷新等待。
 # 先放行更偏功能/账户/白名单/页面刷新查询的接口，避免把正面信息一起挡掉；不要把 v16 已处理的开屏大配置放进 DIRECT。
 URL-REGEX,^https?:\/\/client\.app\.coc\.10086\.cn\/(biz-orange\/(DN\/(openplatform\/clientPermissionInfo|webCache\/cacheCleanUp|call\/cson\/meet\/sdk\/getSignature|careVersion\/filialPietyCard|protocol\/getProtocolHeaders|myPageNew\/getMyPageNew|mypage\/getMyPageWaterFall|headPhoto\/photoConfig|refreshSession|scanIt\/getScanItWhiteList|urlWhite\/getUrlWhiteList)|LN\/(checkUIDAction\/checkUID|uamrandcodelogin\/autoLogin)|SHG\/(querytid\/getTid|meterAssets\/query|myPage\/getMembershipInfo|codeTable\/(getHomeCodeTableList|getPointConfiqUration))|SHS\/unifiedSearch\/secondMonitorControl|v1\/SHE\/unused\/query|WN\/mailService\/getUnreadCount|DH\/deployEnvironment\/getSignList|MPCA\/account\/getAppletPreloadInfo)|ServiceControl\/SC\/(versionWhites|secret\/getSecretSecurityConfig)|leadeon-abilityopen-biz\/BN\/(obtainToken\/getBigNetToken|ByToken\/multi)),DIRECT,extended-matching,pre-matching
