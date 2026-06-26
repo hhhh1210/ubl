@@ -1,0 +1,63 @@
+#!name=中国移动 zgyd 轻量去广告
+#!desc=基于中国移动 12.1.2、v22 可用结果与 2026-06-26 18:32 HAR 精简。核心只保留 DN/init/startInit 的 reject-dict 慢时序，其它启动配置快速本机拒绝。
+#!author=Codex
+#!homepage=https://www.10086.cn/
+#!date=2026-06-26
+#!version=1
+
+[General]
+force-http-engine-hosts = %APPEND% client.app.coc.10086.cn
+skip-proxy = %APPEND% 127.0.0.1, localhost, ::1
+
+[URL Rewrite]
+# Core startup ad gate. v22 confirmed this single reject-dict timing suppresses splash ads.
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/init\/startInit reject-dict
+
+# In-app popup, toast, retention, floating window, and startup side-channel switches.
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/toast\/(getToastRule|getDelayTime) - reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/toast\/august\/getPages - reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/detainment\/august\/getPages - reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DA\/liveSuspension\/getPageCode - reject
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/(dataReport\/getSwitchSetupInformation|third\/getThirdUrlList) - reject
+
+# China Mobile strategy engine and telemetry paths observed around startup.
+^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/(candidateStrategyRule|diyProductInfoStrategys|ruleEngine|strategyWeightEngine|diyEngine)\/.*-index\.js - reject
+^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaijssdk\/engine\/index\.html - reject
+^https?:\/\/h\.app\.coc\.10086\.cn(?::443)?\/ngpsie\/psieipuudp\/(appInfo\/checkAppInfo|gather\/newSendLogForAES) - reject
+^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaiddsdkserver\/(merger\/getFeatureAndInferRule|feature\/getOfflineFeature|switch\/productInfoV2LogicEnable|merger\/getSwitchAndInitList|model\/getConfigInfoUrl\.json).* - reject
+^https?:\/\/h\.app\.coc\.10086\.cn\/ngpsie\/psieappaidcsdkserver\/dataReported\/resultReportedMaster - reject
+
+# Push, SDK telemetry, and known ad/analytics endpoints.
+^https?:\/\/push\.it\.10086\.cn\/(mc|contact)\/(pull|receipt|device)\/.* - reject
+^https?:\/\/da\.mmarket\.com\/udata_v5\/appsdk\/postsyslog - reject
+^https?:\/\/dualstack-logs\.amap\.com\/ws\/log\/upload - reject
+^https?:\/\/logs\.amap\.com\/ws\/log\/upload - reject
+^https?:\/\/api\.share\.mob\.com\/(snsconf|conf5|conn) - reject
+^https?:\/\/api\.mixpanel\.com\/track\/.* - reject
+^https?:\/\/webhooks\.mongodb-realm\.com\/api\/client\/v2\.0\/app\/realmsdkmetrics-.* - reject
+^https?:\/\/qwhdcdn\.cmcc-cs\.cn\/.*\/(banner|popup|ad|ads|advert|activity|marketing|promotion|recommend).* - reject-img
+
+[Map Local]
+^https?:\/\/client\.app\.coc\.10086\.cn\/cache_server\/api\/cache\/encrypt\/reportV2 data-type=text data="{}" status-code=200
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/UN\/message\/pushMessage data-type=text data="{}" status-code=200
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/msg\/ph\/(config\/select|config\/selectConfig|unReadTotal) data-type=text data="{}" status-code=200
+^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DH\/sdkPlug\/getSdkList data-type=text data="{}" status-code=200
+^https?:\/\/jiguang\.coc\.10086\.cn\/v3\/projects\/9e4e5fa7244c6b6e\/(collect|query).* data-type=text data="{}" status-code=200
+
+[Script]
+uBO ZGYD Startup Config Fast Refused = type=http-request, pattern=^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/(?:DN\/(?:homepagePopup\/getSortInfo|searchWord\/getSearchWordInfo|multipleInterfaces\/aggregationData|homePage\/getTopAreaList|init\/getNavigation)|DH\/(?:homeSkin\/getHomeSkin|hotupdate\/getHotupdateList)|BN\/sscrz\/getProvSwitchConf)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/zgyd-startup-ad-clean.js?v=zgyd-lite-v1, script-update-interval=86400, timeout=2, engine=jsc
+
+[Rule]
+DOMAIN,localhost,DIRECT
+IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
+IP-CIDR6,::1/128,DIRECT,no-resolve
+
+DOMAIN,da.mmarket.com,REJECT
+DOMAIN,dualstack-logs.amap.com,REJECT
+DOMAIN,logs.amap.com,REJECT
+DOMAIN,api.share.mob.com,REJECT
+DOMAIN,api.mixpanel.com,REJECT
+DOMAIN-SUFFIX,mmarket.com,REJECT
+
+[MITM]
+hostname = %APPEND% client.app.coc.10086.cn, h.app.coc.10086.cn, da.mmarket.com, dualstack-logs.amap.com, logs.amap.com, api.share.mob.com, api.mixpanel.com, webhooks.mongodb-realm.com, push.it.10086.cn, jiguang.coc.10086.cn, qwhdcdn.cmcc-cs.cn
