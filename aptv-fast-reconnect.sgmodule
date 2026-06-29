@@ -1,17 +1,9 @@
 #!name=APTV Live Fast Reconnect
-#!desc=Make APTV 163189.xyz HTTP live streams easier for Surge to observe, then kill stale active stream requests before the player waits around 25s.
+#!desc=Observe APTV 163189.xyz HTTP live streams, then kill stale active stream requests before the player waits around 25s.
 #!system=mac
 
 [General]
 force-http-engine-hosts = %APPEND% *.163189.xyz
-
-[Header Rewrite]
-http-request ^http:\/\/[^\/]+\.163189\.xyz(?::80)?\/(?:stream\/|api\/|163189\/) header-del Connection
-http-request ^http:\/\/[^\/]+\.163189\.xyz(?::80)?\/(?:stream\/|api\/|163189\/) header-add Connection close
-http-request ^http:\/\/[^\/]+\.163189\.xyz(?::80)?\/(?:stream\/|api\/|163189\/) header-del Cache-Control
-http-request ^http:\/\/[^\/]+\.163189\.xyz(?::80)?\/(?:stream\/|api\/|163189\/) header-add Cache-Control no-cache
-http-request ^http:\/\/[^\/]+\.163189\.xyz(?::80)?\/(?:stream\/|api\/|163189\/) header-del Pragma
-http-request ^http:\/\/[^\/]+\.163189\.xyz(?::80)?\/(?:stream\/|api\/|163189\/) header-add Pragma no-cache
 
 [Script]
 APTV stream activity marker = type=http-request, pattern=^http:\/\/[^\/]+\.163189\.xyz(?::80)?\/(?:stream\/|api\/|163189\/), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/aptv-kill-stale.js, script-update-interval=86400, argument=mode=mark&activeWindow=30, timeout=2
