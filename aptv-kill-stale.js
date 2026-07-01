@@ -24,6 +24,7 @@ function parseArgument(input) {
   args.stale = Math.max(1, Number(args.stale) || DEFAULTS.stale);
   args.maxAge = Math.max(args.stale + 1, Number(args.maxAge) || DEFAULTS.maxAge);
   args.activeWindow = Math.max(args.stale + 1, Number(args.activeWindow) || DEFAULTS.activeWindow);
+  args.always = String(args.always || '') === '1';
   args.pathPrefixes = splitList(args.pathPrefixes || DEFAULTS.pathPrefixes);
   args.extensions = splitList(args.extensions || DEFAULTS.extensions);
   return args;
@@ -156,8 +157,8 @@ const requestState = state.requests || {};
 if (args.mode === 'mark' || (typeof $request !== 'undefined' && $request.url)) {
   state.activeUntil = now + args.activeWindow * 1000;
   saveState(state);
-  $done({});
-} else if (Number(state.activeUntil || 0) < now) {
+  $done();
+} else if (!args.always && Number(state.activeUntil || 0) < now) {
   $done();
 } else {
   $httpAPI('GET', '/v1/requests/active', null, (result) => {
