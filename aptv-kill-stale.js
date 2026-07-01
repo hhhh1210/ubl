@@ -5,7 +5,7 @@ const DEFAULTS = {
   pathPrefixes: '/stream/,/api/,/163189/',
   extensions: 'm3u8,ts,m4s,mp4,jpg,jpeg,aac,mp3,key',
   stale: 5,
-  maxAge: 18,
+  maxAge: 10,
   activeWindow: 30,
 };
 
@@ -87,6 +87,21 @@ function requestId(item) {
 }
 
 function requestAgeSeconds(item, now) {
+  const durationFields = [
+    'duration',
+    'durationSeconds',
+    'elapsed',
+    'elapsedSeconds',
+    'activeDuration',
+    'timeElapsed',
+    'requestDuration',
+  ];
+
+  for (let i = 0; i < durationFields.length; i += 1) {
+    const value = Number(item[durationFields[i]]);
+    if (Number.isFinite(value) && value >= 0) return value > 1000 ? value / 1000 : value;
+  }
+
   const raw = item.startTime || item.startDate || item.createdAt || item.timestamp || item.time;
   if (typeof raw === 'number') {
     const ms = raw > 1000000000000 ? raw : raw * 1000;
@@ -177,10 +192,13 @@ if (args.mode === 'mark' || (typeof $request !== 'undefined' && $request.url)) {
       const previous = requestState[id] || {};
       const changed = score !== null && previous.score !== score;
       const lastChangedAt = changed ? now : Number(previous.lastChangedAt || now);
+      const firstSeenAt = Number(previous.firstSeenAt || now);
       const idleSeconds = Math.max(0, (now - lastChangedAt) / 1000);
-      const ageSeconds = requestAgeSeconds(item, now);
+      const reportedAgeSeconds = requestAgeSeconds(item, now);
+      const observedAgeSeconds = Math.max(0, (now - firstSeenAt) / 1000);
+      const ageSeconds = reportedAgeSeconds === null ? observedAgeSeconds : Math.max(reportedAgeSeconds, observedAgeSeconds);
 
-      nextState[id] = { score, lastChangedAt };
+      nextState[id] = { score, lastChangedAt, firstSeenAt };
 
       if ((score !== null && idleSeconds >= args.stale) || (ageSeconds !== null && ageSeconds >= args.maxAge)) {
         kills.push({ id, idleSeconds, ageSeconds });

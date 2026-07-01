@@ -6,4 +6,4 @@
 force-http-engine-hosts = %APPEND% *.163189.xyz
 
 [Script]
-APTV stale stream killer = type=cron, cronexp="*/5 * * * * *", script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/aptv-kill-stale.js, script-update-interval=86400, argument=mode=cron&always=1&domain=163189.xyz&pathPrefixes=/stream/%2C/api/%2C/163189/&stale=5&maxAge=18&activeWindow=30, timeout=4
+APTV stale stream killer = type=cron, cronexp="*/5 * * * * *", script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/aptv-kill-stale.js, script-update-interval=86400, argument=mode=cron&always=1&domain=163189.xyz&pathPrefixes=/stream/%2C/api/%2C/163189/&stale=5&maxAge=10&activeWindow=30, timeout=4
