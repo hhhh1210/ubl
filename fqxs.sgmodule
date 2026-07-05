@@ -22,8 +22,16 @@
 #    广告素材为天猫鱼跃官方旗舰店商品卡；这类入口通常由 luckycat 增长任务 + Pangle/GroMore SDK 承接。
 # 7. tnc.json 显示番茄主接口会落到 api.fqnovel.com / api5-normal.fqnovel.com 等域名；
 #    因此只处理 luckycat 广告子路径，不整域拦截 fqnovel 主业务。
-# 8. 参考本地七猫小说模块：Pangle/穿山甲、Kuaishou/KSAd、GDT、Baidu、1RTB、Aiclk、QTT、Zhangyu 等
+# 8. HAR: /Users/aa/Downloads/2026-07-06-071648.har 只有 1 条 is.snssdk.com/service/settings/v2，
+#    且 response=None，说明上一版已命中启动 PCDN；残留激励广告更可能来自 SDK 缓存、未进 HTTP 引擎的广告链路或离线 Lynx 模板。
+# 9. growth_incentive-monorepo_novel.zst 同时包含 ad-reward-modal 与 watch-ad-reward-modal，
+#    并定义 GET_AD_INFO_WITH_ECPM、POST_WATCH_DONE、REPORT_AD_COMMENT。
+# 10. ecom_mall_cards_noveldr.zst 包含 ad.zijieapi.com、ecombdapi.com、jinritemai.com 等电商卡资源；
+#    截图中的天猫商品卡属于该类广告落地卡。
+# 11. 参考本地七猫小说模块：Pangle/穿山甲、Kuaishou/KSAd、GDT、Baidu、1RTB、Aiclk、QTT、Zhangyu 等
 #    在小说类 App 中常作为广告回退链；这里仅拦请求型广告接口，不整域拦截番茄主业务域。
+
+force-http-engine-hosts = %APPEND% is.snssdk.com, api.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, lf-sourcecdn-tos.bytegecko.com, tosv.byted.org, lf-cdn-tos.bytescm.com, webcast-open.douyin.com, open.e.kuaishou.com, open.e.kuaishou.cn, ad.zijieapi.com, ecom.snssdk.com, growth.ecombdapi.com, isaas.ecombdapi.com, doulite-mall.ecombdapi.com, mix.jinritemai.com, ffh.jinritemai.com
 
 [Rule]
 # HAR 当前命中的启动侧 PCDN 配置不做 Rule 层整域拒绝，只在 URL Rewrite / Map Local 精确处理。
@@ -32,10 +40,13 @@
 DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,bytescm.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,douyinpic.com,REJECT,extended-matching,pre-matching
+DOMAIN,pangolin.snssdk.com,REJECT,extended-matching,pre-matching
+DOMAIN,pangolin16.snssdk.com,REJECT,extended-matching,pre-matching
 DOMAIN,webcast-open.douyin.com,REJECT,extended-matching,pre-matching
 DOMAIN,klink.volceapplog.com,REJECT,extended-matching,pre-matching
 DOMAIN,log-klink.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,tnc3-alisc1.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,toblog.ctobsnssdk.com,REJECT,extended-matching,pre-matching
 
 # Kuaishou/KSAd 回退广告链路。
 DOMAIN,open.e.kuaishou.com,REJECT,extended-matching,pre-matching
@@ -65,6 +76,17 @@ DOMAIN,qh-material.taobao.com,REJECT,extended-matching,pre-matching
 DOMAIN,atoken.m.taobao.com,REJECT,extended-matching,pre-matching
 DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 
+# 07:16 后续分析：截图里的商品卡属于电商广告落地链，只拦电商广告/商城聚合资源，避免动 fqnovel 主业务。
+DOMAIN,ad.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ecom.snssdk.com,REJECT,extended-matching,pre-matching
+DOMAIN,growth.ecombdapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,isaas.ecombdapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,doulite-mall.ecombdapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,mix.jinritemai.com,REJECT,extended-matching,pre-matching
+DOMAIN,ffh.jinritemai.com,REJECT,extended-matching,pre-matching
+DOMAIN,lf-ecom-gr-sourcecdn.bytegecko.com,REJECT,extended-matching,pre-matching
+DOMAIN,lf3-fe.ecombdstatic.com,REJECT,extended-matching,pre-matching
+
 # 归因/埋点广告噪声。Mixpanel 在本 HAR 中 status=None，可拒绝减少启动噪声。
 DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
 
@@ -77,10 +99,12 @@ DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/[^\/]+\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ - reject
 ^https?:\/\/lf-cdn-tos\.bytescm\.com\/obj\/static\/ad\/ - reject
 ^https?:\/\/[^\/]+\.douyinpic\.com\/ - reject
+^https?:\/\/pangolin(?:16)?\.snssdk\.com\/ - reject
 ^https?:\/\/webcast-open\.douyin\.com\/webcast\/openapi\/pangle\/setting\/ - reject
 ^https?:\/\/klink\.volceapplog\.com\/service\/2\/device_register\/ - reject
 ^https?:\/\/log-klink\.zijieapi\.com\/service\/2\/device_register\/ - reject
 ^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ - reject
+^https?:\/\/toblog\.ctobsnssdk\.com\/ - reject
 
 # Kuaishou/KSAd 开屏/激励回退。
 ^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/univ - reject
@@ -107,7 +131,15 @@ DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/api\.mixpanel\.com\/track\/ - reject
 
 # 番茄/字节增长侧激励广告弹窗资源。只拦 ad-reward-modal，不拦 luckycat 任务/钱包主接口。
-^https?:\/\/lf-sourcecdn-tos\.bytegecko\.com\/obj\/byte-gurd-source\/growth\/luckycat\/lynx\/[^\/]+\/ad-reward-modal\/template\.js - reject
+^https?:\/\/(?:lf-sourcecdn-tos\.bytegecko\.com\/obj\/byte-gurd-source|tosv\.byted\.org\/obj\/gecko-internal)\/growth\/luckycat\/lynx\/[^\/]+\/(?:ad-reward-modal|watch-ad-reward-modal)\/template\.js - reject
+
+# 电商广告卡/落地页链路，来自 ecom_mall_cards_noveldr 离线包与截图商品卡。
+^https?:\/\/ad\.zijieapi\.com\/ - reject
+^https?:\/\/ecom\.snssdk\.com\/ - reject
+^https?:\/\/(?:growth|isaas|doulite-mall)\.ecombdapi\.com\/ - reject
+^https?:\/\/(?:mix|ffh)\.jinritemai\.com\/ - reject
+^https?:\/\/lf-ecom-gr-sourcecdn\.bytegecko\.com\/ - reject
+^https?:\/\/lf3-fe\.ecombdstatic\.com\/ - reject
 
 # 阅读器“看视频免广告”激励入口。只覆盖广告获取、评论广告上报与视频完成回调，不拦 luckycat 钱包/任务主域。
 ^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/novel\/v1\/task\/get_ad_info - reject
@@ -135,7 +167,7 @@ DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/usr-api\.1sapp\.com\/report\/v1 data-type=text data="{\"code\":\"000\",\"msg\":\"ok\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
 
 # 激励广告弹窗资源置空。避免阻断 luckycat 任务接口本身，只去掉广告弹窗模板。
-^https?:\/\/lf-sourcecdn-tos\.bytegecko\.com\/obj\/byte-gurd-source\/growth\/luckycat\/lynx\/[^\/]+\/ad-reward-modal\/template\.js data-type=text data="" status-code=204 header="Content-Type:application/javascript"
+^https?:\/\/(?:lf-sourcecdn-tos\.bytegecko\.com\/obj\/byte-gurd-source|tosv\.byted\.org\/obj\/gecko-internal)\/growth\/luckycat\/lynx\/[^\/]+\/(?:ad-reward-modal|watch-ad-reward-modal)\/template\.js data-type=text data="" status-code=204 header="Content-Type:application/javascript"
 
 # 阅读器内激励视频入口空响应/成功响应，减少“看视频免广告”广告位继续预加载。
 ^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/novel\/v1\/task\/get_ad_info data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"is_ad_preload\":false,\"ad_info\":null,\"ad_list\":[],\"ads\":[],\"has_ad\":false}}" status-code=200 header="Content-Type:application/json"
@@ -143,4 +175,4 @@ DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/novel\/v[12]\/report\/ad_comment data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
 
 [MITM]
-hostname = %APPEND% is.snssdk.com, api.mixpanel.com, api.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, *.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, *.douyinpic.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, open.e.kuaishou.com, open.e.kuaishou.cn, *.ksapisrv.com, *.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, *.gdtimg.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com, lf-sourcecdn-tos.bytegecko.com
+hostname = %APPEND% is.snssdk.com, api.mixpanel.com, api.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, pangolin.snssdk.com, pangolin16.snssdk.com, *.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, *.douyinpic.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, toblog.ctobsnssdk.com, open.e.kuaishou.com, open.e.kuaishou.cn, *.ksapisrv.com, *.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, *.gdtimg.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com, lf-sourcecdn-tos.bytegecko.com, tosv.byted.org, ad.zijieapi.com, ecom.snssdk.com, growth.ecombdapi.com, isaas.ecombdapi.com, doulite-mall.ecombdapi.com, mix.jinritemai.com, ffh.jinritemai.com, lf-ecom-gr-sourcecdn.bytegecko.com, lf3-fe.ecombdstatic.com
