@@ -1,0 +1,146 @@
+#!name=fqxs
+#!desc=番茄小说 7.2.7 去广告模块。基于本地 IPA/HAR 静态证据 + 七猫小说同类广告链路参考，保守处理开屏、激励广告、信息流/评论广告与常见 SDK 回退链。
+#!author=Cowork local analysis
+#!category=iKeLee
+#!openUrl=https://apps.apple.com/app/id1468454200
+#!tag=番茄小说,去广告,开屏广告,激励广告
+#!date=2026-07-06
+
+# 分析依据：
+# 1. IPA: /Users/aa/Downloads/i4ToolsDownloads/App/番茄小说_7.2.7（正版）.ipa
+#    Info.plist 显示 CFBundleIdentifier=com.dragon.read，版本 7.2.7 / 7.2.7.32，AppName=novelapp，aid=1967。
+# 2. IPA 主二进制 Reading 仍为 App Store 加密状态：LC_ENCRYPTION_INFO_64 cryptid=1，
+#    因此主程序字符串不完整；规则只使用未加密资源包、HAR 当前命中点和同类 SDK 入口推断。
+# 3. IPA 资源包确认存在 BDARewardedVideo.bundle、BDARewardedVideo_applet.bundle、
+#    splashResourceCore.bundle、BDADNovelShortVideoAd.bundle、BDADNovelShortVideoCommentAd.bundle、
+#    BDADLiveSaaSResource.bundle、BDADetailSDKResource.bundle、FQMonetizationSaaS.bundle。
+# 4. drlynx_monetize.zst 包含免广告/VIP/变现资源：bg-adsvip、advip、ad-free-bg、ad-free-diamond。
+#    growth_incentive-monorepo_novel.zst 包含 ad-reward-modal 与 is_ad_preload，说明激励广告弹窗/预加载存在。
+# 5. HAR: /Users/aa/Downloads/2026-07-06-061217.har 与 /Users/aa/Downloads/2026-07-06-061516.har 均只有 2 条请求；
+#    当前截片只命中 is.snssdk.com/service/settings/v2/?caller_name=pcdn_client_novelapp&aid=1967 和 Mixpanel。
+# 6. 截图 /Users/aa/Downloads/IMG_7390.PNG 确认阅读器内出现“看视频免广告”激励视频广告，
+#    广告素材为天猫鱼跃官方旗舰店商品卡；这类入口通常由 luckycat 增长任务 + Pangle/GroMore SDK 承接。
+# 7. tnc.json 显示番茄主接口会落到 api.fqnovel.com / api5-normal.fqnovel.com 等域名；
+#    因此只处理 luckycat 广告子路径，不整域拦截 fqnovel 主业务。
+# 8. 参考本地七猫小说模块：Pangle/穿山甲、Kuaishou/KSAd、GDT、Baidu、1RTB、Aiclk、QTT、Zhangyu 等
+#    在小说类 App 中常作为广告回退链；这里仅拦请求型广告接口，不整域拦截番茄主业务域。
+
+[Rule]
+# HAR 当前命中的启动侧 PCDN 配置不做 Rule 层整域拒绝，只在 URL Rewrite / Map Local 精确处理。
+
+# 字节/Pangle/GroMore 广告 SDK 入口。api-access 主域不整域拦截，用 URL/Map Local 处理 get_ads/material/check。
+DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,bytescm.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,douyinpic.com,REJECT,extended-matching,pre-matching
+DOMAIN,webcast-open.douyin.com,REJECT,extended-matching,pre-matching
+DOMAIN,klink.volceapplog.com,REJECT,extended-matching,pre-matching
+DOMAIN,log-klink.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,tnc3-alisc1.zijieapi.com,REJECT,extended-matching,pre-matching
+
+# Kuaishou/KSAd 回退广告链路。
+DOMAIN,open.e.kuaishou.com,REJECT,extended-matching,pre-matching
+DOMAIN,open.e.kuaishou.cn,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,ksapisrv.com,REJECT,extended-matching,pre-matching
+
+# 腾讯广点通/GDT 广告链。
+DOMAIN-SUFFIX,gdt.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdkquic.e.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdk.e.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,v2mi.gdt.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,gdtimg.com,REJECT,extended-matching,pre-matching
+
+# Baidu/1RTB/QTT/Aiclk/Zhangyu/Taobao 等常见回退 SDK。
+DOMAIN,sdk.1rtb.net,REJECT,extended-matching,pre-matching
+DOMAIN,cdn.1rtb.com,REJECT,extended-matching,pre-matching
+DOMAIN,bgg.baidu.com,REJECT,extended-matching,pre-matching
+DOMAIN,feed-image.baidu.com,REJECT,extended-matching,pre-matching
+DOMAIN,api.qttunion.com,REJECT,extended-matching,pre-matching
+DOMAIN,service.qttunion.com,REJECT,extended-matching,pre-matching
+DOMAIN,cpc-service-square.aiclk.com,REJECT,extended-matching,pre-matching
+DOMAIN,logrcv.aiclk.com,REJECT,extended-matching,pre-matching
+DOMAIN,tracelog-debug.aiclk.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdk.zhangyuyidong.cn,REJECT,extended-matching,pre-matching
+DOMAIN,sdk-log.partner.sm.cn,REJECT,extended-matching,pre-matching
+DOMAIN,qh-material.taobao.com,REJECT,extended-matching,pre-matching
+DOMAIN,atoken.m.taobao.com,REJECT,extended-matching,pre-matching
+DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
+
+# 归因/埋点广告噪声。Mixpanel 在本 HAR 中 status=None，可拒绝减少启动噪声。
+DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
+
+[URL Rewrite]
+# HAR 命中的 PCDN 启动设置。
+^https:\/\/is\.snssdk\.com\/service\/settings\/v2\/\?[^#]*(?:caller_name=pcdn_client_novelapp|aid=1967) - reject
+
+# Pangle/穿山甲/GroMore 广告请求。get_ads 用 Map Local 返回无广告，material/check 直接拒绝。
+^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/material\/check\/ - reject
+^https?:\/\/[^\/]+\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ - reject
+^https?:\/\/lf-cdn-tos\.bytescm\.com\/obj\/static\/ad\/ - reject
+^https?:\/\/[^\/]+\.douyinpic\.com\/ - reject
+^https?:\/\/webcast-open\.douyin\.com\/webcast\/openapi\/pangle\/setting\/ - reject
+^https?:\/\/klink\.volceapplog\.com\/service\/2\/device_register\/ - reject
+^https?:\/\/log-klink\.zijieapi\.com\/service\/2\/device_register\/ - reject
+^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ - reject
+
+# Kuaishou/KSAd 开屏/激励回退。
+^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/univ - reject
+^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/logBatch - reject
+
+# GDT/Baidu/1RTB/QTT/Aiclk/Zhangyu 回退请求。
+^https?:\/\/v2mi\.gdt\.qq\.com\/gdt_mview\.fcg - reject
+^https?:\/\/sdkquic\.e\.qq\.com\/launch - reject
+^https?:\/\/sdk\.e\.qq\.com\/ola\/v2 - reject
+^https?:\/\/sdk\.1rtb\.net\/sdk\/(config|req_ad|notice) - reject
+^https?:\/\/cdn\.1rtb\.com\/ - reject
+^https?:\/\/bgg\.baidu\.com\/bgg\/produce - reject
+^https?:\/\/feed-image\.baidu\.com\/ - reject
+^https?:\/\/api\.qttunion\.com\/v5\/json - reject
+^https?:\/\/service\.qttunion\.com\/qmcd\/get - reject
+^https?:\/\/cpc-service-square\.aiclk\.com\/v1\/getConfig - reject
+^https?:\/\/logrcv\.aiclk\.com\/ - reject
+^https?:\/\/tracelog-debug\.aiclk\.com\/ - reject
+^https?:\/\/sdk\.zhangyuyidong\.cn\/(api\/zysdk|sdk\/config) - reject
+^https?:\/\/sdk-log\.partner\.sm\.cn\/sdk_log - reject
+^https?:\/\/qh-material\.taobao\.com\/ - reject
+^https?:\/\/atoken\.m\.taobao\.com\/ - reject
+^https?:\/\/usr-api\.1sapp\.com\/report\/v1 - reject
+^https?:\/\/api\.mixpanel\.com\/track\/ - reject
+
+# 番茄/字节增长侧激励广告弹窗资源。只拦 ad-reward-modal，不拦 luckycat 任务/钱包主接口。
+^https?:\/\/lf-sourcecdn-tos\.bytegecko\.com\/obj\/byte-gurd-source\/growth\/luckycat\/lynx\/[^\/]+\/ad-reward-modal\/template\.js - reject
+
+# 阅读器“看视频免广告”激励入口。只覆盖广告获取、评论广告上报与视频完成回调，不拦 luckycat 钱包/任务主域。
+^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/novel\/v1\/task\/get_ad_info - reject
+^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/novel\/v[12]\/report\/ad_comment - reject
+
+[Map Local]
+# 启动 PCDN 设置空响应。
+^https:\/\/is\.snssdk\.com\/service\/settings\/v2\/\?[^#]*(?:caller_name=pcdn_client_novelapp|aid=1967) data-type=text data="{\"settings\":{},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
+
+# Pangle/GroMore 空广告响应。保留请求完成语义，减少硬拒绝导致卡等待的概率。
+^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/get_ads\/ data-type=text data="{\"request_id\":\"surge-no-ad\",\"status_code\":20001,\"reason\":141,\"desc\":\"no ad\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/webcast-open\.douyin\.com\/webcast\/openapi\/pangle\/setting\/ data-type=text data="{\"data\":{\"init_enable\":false,\"extra_settings\":{\"init_enable\":false,\"use_pangle_plugin\":false,\"enable_feed_no_ad\":true,\"ad_id\":{}}},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ data-type=text data="{\"data\":{},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
+
+# Kuaishou/KSAd 空广告响应。
+^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/univ data-type=text data="{\"llsid\":0,\"result\":1,\"errorMsg\":\"OK\",\"hasMore\":false,\"impAdInfo\":\"\",\"extra\":\"\",\"adGlobalConfigInfo\":\"\",\"hasAd\":false}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/logBatch data-type=text data="{\"llsid\":0,\"result\":1,\"errorMsg\":\"OK\",\"hasMore\":false,\"interval\":3600}" status-code=200 header="Content-Type:application/json"
+
+# JSON/HTML 型 SDK 空广告响应。
+^https?:\/\/v2mi\.gdt\.qq\.com\/gdt_mview\.fcg data-type=text data="{\"ret\":0,\"msg\":\"\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/mobads\.baidu\.com\/cpro\/ui\/mads\.php data-type=text data="<html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body></body></html>" status-code=200 header="Content-Type:text/html; charset=utf-8"
+^https?:\/\/api\.qttunion\.com\/v5\/json data-type=text data="{\"code\":0,\"data\":{\"ads\":[]},\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/service\.qttunion\.com\/qmcd\/get data-type=text data="{\"code\":0,\"data\":[],\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/cpc-service-square\.aiclk\.com\/v1\/getConfig data-type=text data="{\"code\":0,\"data\":{}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/usr-api\.1sapp\.com\/report\/v1 data-type=text data="{\"code\":\"000\",\"msg\":\"ok\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
+
+# 激励广告弹窗资源置空。避免阻断 luckycat 任务接口本身，只去掉广告弹窗模板。
+^https?:\/\/lf-sourcecdn-tos\.bytegecko\.com\/obj\/byte-gurd-source\/growth\/luckycat\/lynx\/[^\/]+\/ad-reward-modal\/template\.js data-type=text data="" status-code=204 header="Content-Type:application/javascript"
+
+# 阅读器内激励视频入口空响应/成功响应，减少“看视频免广告”广告位继续预加载。
+^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/novel\/v1\/task\/get_ad_info data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"is_ad_preload\":false,\"ad_info\":null,\"ad_list\":[],\"ads\":[],\"has_ad\":false}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/novel\/v1\/excitation_ad\/watch_done data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"success\":true,\"is_ad_free\":true,\"has_ad\":false}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/novel\/v[12]\/report\/ad_comment data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
+
+[MITM]
+hostname = %APPEND% is.snssdk.com, api.mixpanel.com, api.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, *.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, *.douyinpic.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, open.e.kuaishou.com, open.e.kuaishou.cn, *.ksapisrv.com, *.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, *.gdtimg.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com, lf-sourcecdn-tos.bytegecko.com
