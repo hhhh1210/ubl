@@ -24,17 +24,21 @@
 #    因此只处理 luckycat 广告子路径，不整域拦截 fqnovel 主业务。
 # 8. HAR: /Users/aa/Downloads/2026-07-06-071648.har 只有 1 条 is.snssdk.com/service/settings/v2，
 #    且 response=None，说明上一版已命中启动 PCDN；残留激励广告更可能来自 SDK 缓存、未进 HTTP 引擎的广告链路或离线 Lynx 模板。
-# 9. growth_incentive-monorepo_novel.zst 同时包含 ad-reward-modal 与 watch-ad-reward-modal，
+# 9. HAR: /Users/aa/Downloads/2026-07-06-084029.har 显示 is.snssdk.com/service/settings/v2 又返回 200；
+#    修正 force-http-engine-hosts 所在段落，并对 /service/settings/v2 做无 query 依赖的稳定匹配。
+# 10. growth_incentive-monorepo_novel.zst 同时包含 ad-reward-modal 与 watch-ad-reward-modal，
 #    并定义 GET_AD_INFO_WITH_ECPM、POST_WATCH_DONE、REPORT_AD_COMMENT。
-# 10. ecom_mall_cards_noveldr.zst 包含 ad.zijieapi.com、ecombdapi.com、jinritemai.com 等电商卡资源；
+# 11. ecom_mall_cards_noveldr.zst 包含 ad.zijieapi.com、ecombdapi.com、jinritemai.com 等电商卡资源；
 #    截图中的天猫商品卡属于该类广告落地卡。
-# 11. 参考本地七猫小说模块：Pangle/穿山甲、Kuaishou/KSAd、GDT、Baidu、1RTB、Aiclk、QTT、Zhangyu 等
+# 12. 参考本地七猫小说模块：Pangle/穿山甲、Kuaishou/KSAd、GDT、Baidu、1RTB、Aiclk、QTT、Zhangyu 等
 #    在小说类 App 中常作为广告回退链；这里仅拦请求型广告接口，不整域拦截番茄主业务域。
 
+[General]
 force-http-engine-hosts = %APPEND% is.snssdk.com, api.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, lf-sourcecdn-tos.bytegecko.com, tosv.byted.org, lf-cdn-tos.bytescm.com, webcast-open.douyin.com, open.e.kuaishou.com, open.e.kuaishou.cn, ad.zijieapi.com, ecom.snssdk.com, growth.ecombdapi.com, isaas.ecombdapi.com, doulite-mall.ecombdapi.com, mix.jinritemai.com, ffh.jinritemai.com
 
 [Rule]
 # HAR 当前命中的启动侧 PCDN 配置不做 Rule 层整域拒绝，只在 URL Rewrite / Map Local 精确处理。
+URL-REGEX,^https?:\/\/is\.snssdk\.com\/service\/settings\/v2(?:[?#/]|$),REJECT
 
 # 字节/Pangle/GroMore 广告 SDK 入口。api-access 主域不整域拦截，用 URL/Map Local 处理 get_ads/material/check。
 DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
@@ -92,7 +96,7 @@ DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
 
 [URL Rewrite]
 # HAR 命中的 PCDN 启动设置。
-^https:\/\/is\.snssdk\.com\/service\/settings\/v2\/\?[^#]*(?:caller_name=pcdn_client_novelapp|aid=1967) - reject
+^https?:\/\/is\.snssdk\.com\/service\/settings\/v2\/?(?:\?.*)?$ - reject
 
 # Pangle/穿山甲/GroMore 广告请求。get_ads 用 Map Local 返回无广告，material/check 直接拒绝。
 ^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/material\/check\/ - reject
@@ -147,7 +151,7 @@ DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
 
 [Map Local]
 # 启动 PCDN 设置空响应。
-^https:\/\/is\.snssdk\.com\/service\/settings\/v2\/\?[^#]*(?:caller_name=pcdn_client_novelapp|aid=1967) data-type=text data="{\"settings\":{},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/is\.snssdk\.com\/service\/settings\/v2\/?(?:\?.*)?$ data-type=text data="{\"settings\":{},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
 
 # Pangle/GroMore 空广告响应。保留请求完成语义，减少硬拒绝导致卡等待的概率。
 ^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/get_ads\/ data-type=text data="{\"request_id\":\"surge-no-ad\",\"status_code\":20001,\"reason\":141,\"desc\":\"no ad\"}" status-code=200 header="Content-Type:application/json"
