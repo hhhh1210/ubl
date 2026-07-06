@@ -32,9 +32,13 @@
 #    截图中的天猫商品卡属于该类广告落地卡。
 # 12. 参考本地七猫小说模块：Pangle/穿山甲、Kuaishou/KSAd、GDT、Baidu、1RTB、Aiclk、QTT、Zhangyu 等
 #    在小说类 App 中常作为广告回退链；这里仅拦请求型广告接口，不整域拦截番茄主业务域。
+# 13. HAR: /Users/aa/Downloads/2026-07-06-190641.har 仍只有 is.snssdk.com/service/settings/v2 且 response=None；
+#    说明残留激励广告没有稳定暴露在 HAR 中，需要加强离线 Lynx 模板和 luckycat 激励接口兜底。
+# 14. novel-ug-share-works-fission.zst 同时包含 /luckycat/novel_fm/v1/task/get_ad_info 与 is_ad_preload；
+#    growth_incentive-monorepo_novel.zst 明确引用 growth_incentive-monorepo_novel-popup/*-ad-reward-modal/template.js。
 
 [General]
-force-http-engine-hosts = %APPEND% is.snssdk.com, api.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, lf-sourcecdn-tos.bytegecko.com, tosv.byted.org, lf-cdn-tos.bytescm.com, webcast-open.douyin.com, open.e.kuaishou.com, open.e.kuaishou.cn, ad.zijieapi.com, ecom.snssdk.com, growth.ecombdapi.com, isaas.ecombdapi.com, doulite-mall.ecombdapi.com, mix.jinritemai.com, ffh.jinritemai.com
+force-http-engine-hosts = %APPEND% is.snssdk.com, api.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, lf-cdn-tos.bytescm.com, webcast-open.douyin.com, open.e.kuaishou.com, open.e.kuaishou.cn, ad.zijieapi.com, ecom.snssdk.com, growth.ecombdapi.com, isaas.ecombdapi.com, doulite-mall.ecombdapi.com, mix.jinritemai.com, ffh.jinritemai.com
 
 [Rule]
 # HAR 当前命中的启动侧 PCDN 配置不做 Rule 层整域拒绝，只在 URL Rewrite / Map Local 精确处理。
@@ -43,6 +47,7 @@ URL-REGEX,^https?:\/\/is\.snssdk\.com\/service\/settings\/v2(?:[?#/]|$),REJECT
 # 字节/Pangle/GroMore 广告 SDK 入口。api-access 主域不整域拦截，用 URL/Map Local 处理 get_ads/material/check。
 DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,bytescm.com,REJECT,extended-matching,pre-matching
+DOMAIN,lf-sourcecdn-tos.bytegoofy.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,douyinpic.com,REJECT,extended-matching,pre-matching
 DOMAIN,pangolin.snssdk.com,REJECT,extended-matching,pre-matching
 DOMAIN,pangolin16.snssdk.com,REJECT,extended-matching,pre-matching
@@ -134,8 +139,9 @@ DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/usr-api\.1sapp\.com\/report\/v1 - reject
 ^https?:\/\/api\.mixpanel\.com\/track\/ - reject
 
-# 番茄/字节增长侧激励广告弹窗资源。只拦 ad-reward-modal，不拦 luckycat 任务/钱包主接口。
+# 番茄/字节增长侧激励广告弹窗资源。只拦广告弹窗模板，不拦 luckycat 任务/钱包主接口。
 ^https?:\/\/(?:lf-sourcecdn-tos\.bytegecko\.com\/obj\/byte-gurd-source|tosv\.byted\.org\/obj\/gecko-internal)\/growth\/luckycat\/lynx\/[^\/]+\/(?:ad-reward-modal|watch-ad-reward-modal)\/template\.js - reject
+^https?:\/\/(?:lf-sourcecdn-tos\.bytegecko\.com|lf-sourcecdn-tos\.bytegoofy\.com|tosv\.byted\.org)\/.*\/growth_incentive-monorepo_novel-popup\/(?:ad-reward-modal|watch-ad-reward-modal|millionaire-plan-excitation-modal)\/template\.js - reject
 
 # 电商广告卡/落地页链路，来自 ecom_mall_cards_noveldr 离线包与截图商品卡。
 ^https?:\/\/ad\.zijieapi\.com\/ - reject
@@ -145,9 +151,10 @@ DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/lf-ecom-gr-sourcecdn\.bytegecko\.com\/ - reject
 ^https?:\/\/lf3-fe\.ecombdstatic\.com\/ - reject
 
-# 阅读器“看视频免广告”激励入口。只覆盖广告获取、评论广告上报与视频完成回调，不拦 luckycat 钱包/任务主域。
-^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/novel\/v1\/task\/get_ad_info - reject
-^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/novel\/v[12]\/report\/ad_comment - reject
+# 阅读器“看视频免广告”激励入口。只覆盖广告获取、评论广告上报与视频完成/任务完成回调，不拦 luckycat 钱包主接口。
+^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v1\/task\/get_ad_info - reject
+^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v[12]\/report\/ad_comment - reject
+^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v1\/task\/done\/[^\/?#]+ - reject
 
 [Map Local]
 # 启动 PCDN 设置空响应。
@@ -172,11 +179,13 @@ DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
 
 # 激励广告弹窗资源置空。避免阻断 luckycat 任务接口本身，只去掉广告弹窗模板。
 ^https?:\/\/(?:lf-sourcecdn-tos\.bytegecko\.com\/obj\/byte-gurd-source|tosv\.byted\.org\/obj\/gecko-internal)\/growth\/luckycat\/lynx\/[^\/]+\/(?:ad-reward-modal|watch-ad-reward-modal)\/template\.js data-type=text data="" status-code=204 header="Content-Type:application/javascript"
+^https?:\/\/(?:lf-sourcecdn-tos\.bytegecko\.com|lf-sourcecdn-tos\.bytegoofy\.com|tosv\.byted\.org)\/.*\/growth_incentive-monorepo_novel-popup\/(?:ad-reward-modal|watch-ad-reward-modal|millionaire-plan-excitation-modal)\/template\.js data-type=text data="" status-code=204 header="Content-Type:application/javascript"
 
 # 阅读器内激励视频入口空响应/成功响应，减少“看视频免广告”广告位继续预加载。
-^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/novel\/v1\/task\/get_ad_info data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"is_ad_preload\":false,\"ad_info\":null,\"ad_list\":[],\"ads\":[],\"has_ad\":false}}" status-code=200 header="Content-Type:application/json"
-^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/novel\/v1\/excitation_ad\/watch_done data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"success\":true,\"is_ad_free\":true,\"has_ad\":false}}" status-code=200 header="Content-Type:application/json"
-^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/novel\/v[12]\/report\/ad_comment data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v1\/task\/get_ad_info data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"is_ad_preload\":false,\"ad_info\":null,\"ad_list\":[],\"ads\":[],\"has_ad\":false,\"ad_reward_amount\":0,\"post_done_extra\":\"\"}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v1\/excitation_ad\/watch_done data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"success\":true,\"is_ad_free\":true,\"has_ad\":false,\"free_ad_time\":0,\"ad_count\":0,\"ad_remains\":0}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v1\/task\/done\/[^\/?#]+ data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"success\":true,\"rewarded\":true,\"has_ad\":false,\"ad_count\":0,\"ad_remains\":0}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v[12]\/report\/ad_comment data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
 
 [MITM]
-hostname = %APPEND% is.snssdk.com, api.mixpanel.com, api.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, pangolin.snssdk.com, pangolin16.snssdk.com, *.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, *.douyinpic.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, toblog.ctobsnssdk.com, open.e.kuaishou.com, open.e.kuaishou.cn, *.ksapisrv.com, *.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, *.gdtimg.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com, lf-sourcecdn-tos.bytegecko.com, tosv.byted.org, ad.zijieapi.com, ecom.snssdk.com, growth.ecombdapi.com, isaas.ecombdapi.com, doulite-mall.ecombdapi.com, mix.jinritemai.com, ffh.jinritemai.com, lf-ecom-gr-sourcecdn.bytegecko.com, lf3-fe.ecombdstatic.com
+hostname = %APPEND% is.snssdk.com, api.mixpanel.com, api.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, pangolin.snssdk.com, pangolin16.snssdk.com, *.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, *.douyinpic.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, toblog.ctobsnssdk.com, open.e.kuaishou.com, open.e.kuaishou.cn, *.ksapisrv.com, *.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, *.gdtimg.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, ad.zijieapi.com, ecom.snssdk.com, growth.ecombdapi.com, isaas.ecombdapi.com, doulite-mall.ecombdapi.com, mix.jinritemai.com, ffh.jinritemai.com, lf-ecom-gr-sourcecdn.bytegecko.com, lf3-fe.ecombdstatic.com
