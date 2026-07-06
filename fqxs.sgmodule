@@ -39,10 +39,17 @@
 # 15. HAR: /Users/aa/Downloads/2026-07-06-212035.har 仍只捕到 is.snssdk.com/service/settings/v2；
 #    截图 /Users/aa/Downloads/IMG_7392.PNG 显示已进入“打开微信小游戏”的激励视频广告页。
 # 16. IPA tnc.json 直接列出 ads.zijieapi.com、ads3-normal*.zijieapi.com、ads5-normal*.zijieapi.com；
-#    这是比 minigame*.zijieapi.com 更窄的广告主机组，优先补齐，不整域拦截小游戏组件。
+#    这是比 minigame*.zijieapi.com 更窄的广告主机组；后续截图确认小游戏承载页后再补 minigame 精确主机。
+# 17. 截图 /Users/aa/Downloads/IMG_7392.PNG 显示残留广告页为“打开微信小游戏”；IPA tnc.json
+#    明确存在 minigame.zijieapi.com -> minigame5-normal.zijieapi.com 的 minigame_default 路由，
+#    并列出 minigame3-normal.zijieapi.com / minigame5-normal.zijieapi.com 串行容灾。
+# 18. drlynx_monetize_game.zst 包含 drlynx_monetize_game/game-*-card/template.js、
+#    minigameRewardTaskParams、minigame_reward_task_params 与 jumpUrl，说明小游戏卡片/激励入口是离线 Lynx 组件。
+# 19. 本版补齐 minigame*.zijieapi.com、小游戏 Lynx 模板与 fqnovelstatic/reading.snssdk.com 的
+#    drlynx_monetize_game 资源拦截，以覆盖“看视频/小游戏”类残留广告页。
 
 [General]
-force-http-engine-hosts = %APPEND% is.snssdk.com, api.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, lf-cdn-tos.bytescm.com, webcast-open.douyin.com, open.e.kuaishou.com, open.e.kuaishou.cn, ad.zijieapi.com, ads.zijieapi.com, ads3-normal.zijieapi.com, ads3-normal-lf.zijieapi.com, ads3-normal-hl.zijieapi.com, ads3-normal-lq.zijieapi.com, ads5-normal.zijieapi.com, ads5-normal-lf.zijieapi.com, ads5-normal-hl.zijieapi.com, ads5-normal-lq.zijieapi.com, ecom.snssdk.com, growth.ecombdapi.com, isaas.ecombdapi.com, doulite-mall.ecombdapi.com, mix.jinritemai.com, ffh.jinritemai.com
+force-http-engine-hosts = %APPEND% is.snssdk.com, api.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, lf-cdn-tos.bytescm.com, webcast-open.douyin.com, open.e.kuaishou.com, open.e.kuaishou.cn, ad.zijieapi.com, ads.zijieapi.com, ads3-normal.zijieapi.com, ads3-normal-lf.zijieapi.com, ads3-normal-hl.zijieapi.com, ads3-normal-lq.zijieapi.com, ads5-normal.zijieapi.com, ads5-normal-lf.zijieapi.com, ads5-normal-hl.zijieapi.com, ads5-normal-lq.zijieapi.com, minigame.zijieapi.com, minigame3-normal.zijieapi.com, minigame3-normal-lf.zijieapi.com, minigame3-normal-hl.zijieapi.com, minigame3-normal-lq.zijieapi.com, minigame5-normal.zijieapi.com, minigame5-normal-lf.zijieapi.com, minigame5-normal-hl.zijieapi.com, minigame5-normal-lq.zijieapi.com, reading.snssdk.com, lf-fe.fqnovelstatic.com, ecom.snssdk.com, growth.ecombdapi.com, isaas.ecombdapi.com, doulite-mall.ecombdapi.com, mix.jinritemai.com, ffh.jinritemai.com
 
 [Rule]
 # HAR 当前命中的启动侧 PCDN 配置不做 Rule 层整域拒绝，只在 URL Rewrite / Map Local 精确处理。
@@ -100,6 +107,19 @@ DOMAIN,ads5-normal.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,ads5-normal-lf.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,ads5-normal-hl.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,ads5-normal-lq.zijieapi.com,REJECT,extended-matching,pre-matching
+
+# 13:21 截图确认残留为“打开微信小游戏”激励页。IPA tnc.json 明确列出 minigame 路由；
+# 这里仅拦小游戏广告承载域，避免扩大到整个 zijieapi。
+DOMAIN,minigame.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,minigame3-normal.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,minigame3-normal-lf.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,minigame3-normal-hl.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,minigame3-normal-lq.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,minigame5-normal.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,minigame5-normal-lf.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,minigame5-normal-hl.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,minigame5-normal-lq.zijieapi.com,REJECT,extended-matching,pre-matching
+
 DOMAIN,ecom.snssdk.com,REJECT,extended-matching,pre-matching
 DOMAIN,growth.ecombdapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,isaas.ecombdapi.com,REJECT,extended-matching,pre-matching
@@ -165,6 +185,12 @@ DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/lf-ecom-gr-sourcecdn\.bytegecko\.com\/ - reject
 ^https?:\/\/lf3-fe\.ecombdstatic\.com\/ - reject
 
+# 小游戏广告承载页/激励卡片。覆盖 IMG_7392.PNG 中“打开微信小游戏”残留广告，以及 drlynx_monetize_game 离线/远程模板。
+^https?:\/\/minigame(?:[35]-normal(?:-[a-z]{2})?)?\.zijieapi\.com\/ - reject
+^https?:\/\/reading\.snssdk\.com\/reading_offline\/drlynx_monetize_game\/(?:game-[^\/]+-card|[^?#]*)\/ - reject
+^https?:\/\/lf-fe\.fqnovelstatic\.com\/obj\/novel-fanqie-fe\/novel-dragon\/feoffline\/drlynx_monetize_game\/ - reject
+^https?:\/\/(?:lf-sourcecdn-tos\.bytegecko\.com|lf-sourcecdn-tos\.bytegoofy\.com|tosv\.byted\.org)\/.*\/drlynx_monetize_game\/.*template\.js - reject
+
 # 阅读器“看视频免广告”激励入口。只覆盖广告获取、评论广告上报与视频完成/任务完成回调，不拦 luckycat 钱包主接口。
 ^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v1\/task\/get_ad_info - reject
 ^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v[12]\/report\/ad_comment - reject
@@ -197,10 +223,13 @@ DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
 
 # 阅读器内激励视频入口空响应/成功响应，减少“看视频免广告”广告位继续预加载。
 ^https?:\/\/ads(?:[35]-normal(?:-[a-z]{2})?)?\.zijieapi\.com\/ data-type=text data="{\"request_id\":\"surge-no-ad\",\"status_code\":20001,\"reason\":141,\"desc\":\"no ad\",\"data\":null}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/minigame(?:[35]-normal(?:-[a-z]{2})?)?\.zijieapi\.com\/ data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"list\":[],\"games\":[],\"cards\":[],\"has_more\":false,\"has_ad\":false,\"minigame_reward_task_params\":null,\"minigameRewardTaskParams\":null}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/reading\.snssdk\.com\/reading_offline\/drlynx_monetize_game\/(?:game-[^\/]+-card|[^?#]*)\/.*template\.js data-type=text data="" status-code=204 header="Content-Type:application/javascript"
+^https?:\/\/lf-fe\.fqnovelstatic\.com\/obj\/novel-fanqie-fe\/novel-dragon\/feoffline\/drlynx_monetize_game\/ data-type=text data="" status-code=204 header="Content-Type:application/javascript"
 ^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v1\/task\/get_ad_info data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"is_ad_preload\":false,\"ad_info\":null,\"ad_list\":[],\"ads\":[],\"has_ad\":false,\"ad_reward_amount\":0,\"post_done_extra\":\"\"}}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v1\/excitation_ad\/watch_done data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"success\":true,\"is_ad_free\":true,\"has_ad\":false,\"free_ad_time\":0,\"ad_count\":0,\"ad_remains\":0}}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v1\/task\/done\/[^\/?#]+ data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"success\":true,\"rewarded\":true,\"has_ad\":false,\"ad_count\":0,\"ad_remains\":0}}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v[12]\/report\/ad_comment data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
 
 [MITM]
-hostname = %APPEND% is.snssdk.com, api.mixpanel.com, api.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, pangolin.snssdk.com, pangolin16.snssdk.com, *.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, *.douyinpic.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, toblog.ctobsnssdk.com, open.e.kuaishou.com, open.e.kuaishou.cn, *.ksapisrv.com, *.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, *.gdtimg.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, ad.zijieapi.com, ads.zijieapi.com, ads3-normal.zijieapi.com, ads3-normal-lf.zijieapi.com, ads3-normal-hl.zijieapi.com, ads3-normal-lq.zijieapi.com, ads5-normal.zijieapi.com, ads5-normal-lf.zijieapi.com, ads5-normal-hl.zijieapi.com, ads5-normal-lq.zijieapi.com, ecom.snssdk.com, growth.ecombdapi.com, isaas.ecombdapi.com, doulite-mall.ecombdapi.com, mix.jinritemai.com, ffh.jinritemai.com, lf-ecom-gr-sourcecdn.bytegecko.com, lf3-fe.ecombdstatic.com
+hostname = %APPEND% is.snssdk.com, api.mixpanel.com, api.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, pangolin.snssdk.com, pangolin16.snssdk.com, *.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, *.douyinpic.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, toblog.ctobsnssdk.com, open.e.kuaishou.com, open.e.kuaishou.cn, *.ksapisrv.com, *.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, *.gdtimg.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, ad.zijieapi.com, ads.zijieapi.com, ads3-normal.zijieapi.com, ads3-normal-lf.zijieapi.com, ads3-normal-hl.zijieapi.com, ads3-normal-lq.zijieapi.com, ads5-normal.zijieapi.com, ads5-normal-lf.zijieapi.com, ads5-normal-hl.zijieapi.com, ads5-normal-lq.zijieapi.com, minigame.zijieapi.com, minigame3-normal.zijieapi.com, minigame3-normal-lf.zijieapi.com, minigame3-normal-hl.zijieapi.com, minigame3-normal-lq.zijieapi.com, minigame5-normal.zijieapi.com, minigame5-normal-lf.zijieapi.com, minigame5-normal-hl.zijieapi.com, minigame5-normal-lq.zijieapi.com, reading.snssdk.com, lf-fe.fqnovelstatic.com, ecom.snssdk.com, growth.ecombdapi.com, isaas.ecombdapi.com, doulite-mall.ecombdapi.com, mix.jinritemai.com, ffh.jinritemai.com, lf-ecom-gr-sourcecdn.bytegecko.com, lf3-fe.ecombdstatic.com
