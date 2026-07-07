@@ -1,0 +1,136 @@
+#!name=fqxs_6.0.9_strict
+#!desc=番茄小说 6.0.9 严格去广告模块。基于 /Users/aa/Downloads/2026-07-08-013839.har 与番茄小说_6.0.9（正版）.ipa 静态分析，重点拦截 Pangle/穿山甲、字节广告路由、离线开屏/激励模板与常见广告 SDK 回退链。
+#!author=Cowork local analysis
+#!category=iKeLee
+#!openUrl=https://apps.apple.com/app/id1468454200
+#!tag=番茄小说,去广告,严格,开屏广告,激励广告,Pangle
+#!date=2026-07-08
+
+# 分析依据：
+# 1. HAR /Users/aa/Downloads/2026-07-08-013839.har 共 4 条请求，App UA 为 Dragon/6.0.9，x-app-id=1967。
+# 2. HAR 明确命中 Pangle/穿山甲 SDK：api-access.pangolin-sdk-toutiao1.com/api/ad/union/sdk/stats/batch 返回 200；
+#    api-access.pangolin-sdk-toutiao.com/api/ad/union/sdk/settings 被其他模块 URL-REGEX 拒绝。
+# 3. HAR 命中 mon.zijieapi.com/monitor/collect/c/cloudcontrol/get，属于字节监控/云控链路；严格版按广告 SDK 配置/遥测处理。
+# 4. IPA /Users/aa/Downloads/i4ToolsDownloads/App/番茄小说_6.0.9（正版）.ipa：Bundle ID=com.dragon.read，版本 6.0.9 / 6.0.9.32，主二进制 Reading。
+# 5. IPA 资源确认存在 CSJAdSDK.bundle、BDARewardedVideo.bundle、BDARewardedVideo_applet.bundle、splashResourceCore.bundle、LynxResources.bundle、TimorOfflineBundle.bundle/dat.bundle/zxo.dat。
+# 6. IPA tnc.json 确认 ad.zijieapi.com、ads.zijieapi.com 分发到 ads5-normal.zijieapi.com / ads3-normal.zijieapi.com。
+# 7. 本模块是“严格版”：比前一个 7.2.7 保守模块更激进，优先清除广告与广告 SDK 配置；如果出现功能误伤，可回退到较保守的 fqxs.sgmodule。
+
+[General]
+force-http-engine-hosts = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, ad.zijieapi.com, ads.zijieapi.com, ads3-normal.zijieapi.com, ads3-normal-lf.zijieapi.com, ads3-normal-hl.zijieapi.com, ads3-normal-lq.zijieapi.com, ads5-normal.zijieapi.com, ads5-normal-lf.zijieapi.com, ads5-normal-hl.zijieapi.com, ads5-normal-lq.zijieapi.com, mon.zijieapi.com, mssdk.zijieapi.com, mssdk.snssdk.com, mssdk.bytedance.com, toblog.ctobsnssdk.com, tnc3-alisc1.zijieapi.com, pangolin.snssdk.com, pangolin16.snssdk.com, pglstatp-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, douyinpic.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, reading.snssdk.com, lf-fe.fqnovelstatic.com, open.e.kuaishou.com, open.e.kuaishou.cn, sdk.e.qq.com, sdkquic.e.qq.com, v2mi.gdt.qq.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdk.1rtb.net, cdn.1rtb.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com
+
+[Rule]
+# 字节广告主域与素材域。api-access 主域不在 Rule 层整域拒绝，交给 Map Local 返回空广告/空配置，减少 SDK 重试。
+DOMAIN,ad.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads3-normal.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads3-normal-lf.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads3-normal-hl.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads3-normal-lq.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads5-normal.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads5-normal-lf.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads5-normal-hl.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads5-normal-lq.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,pangolin.snssdk.com,REJECT,extended-matching,pre-matching
+DOMAIN,pangolin16.snssdk.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,bytescm.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,douyinpic.com,REJECT,extended-matching,pre-matching
+# tnc3/mon 云控交给 Map Local 返回空配置，不在 Rule 层硬拒绝，减少 SDK 重试或回退本地广告配置。
+DOMAIN,toblog.ctobsnssdk.com,REJECT,extended-matching,pre-matching
+
+# 字节风控/遥测，严格版拦截；mon.zijieapi.com 云控用 Map Local 空响应。
+DOMAIN,mssdk.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,mssdk.snssdk.com,REJECT,extended-matching,pre-matching
+DOMAIN,mssdk.bytedance.com,REJECT,extended-matching,pre-matching
+
+# 常见广告 SDK 回退链路。
+DOMAIN,open.e.kuaishou.com,REJECT,extended-matching,pre-matching
+DOMAIN,open.e.kuaishou.cn,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,ksapisrv.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,gdt.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdkquic.e.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdk.e.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,v2mi.gdt.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,gdtimg.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdk.1rtb.net,REJECT,extended-matching,pre-matching
+DOMAIN,cdn.1rtb.com,REJECT,extended-matching,pre-matching
+DOMAIN,bgg.baidu.com,REJECT,extended-matching,pre-matching
+DOMAIN,feed-image.baidu.com,REJECT,extended-matching,pre-matching
+DOMAIN,api.qttunion.com,REJECT,extended-matching,pre-matching
+DOMAIN,service.qttunion.com,REJECT,extended-matching,pre-matching
+DOMAIN,cpc-service-square.aiclk.com,REJECT,extended-matching,pre-matching
+DOMAIN,logrcv.aiclk.com,REJECT,extended-matching,pre-matching
+DOMAIN,tracelog-debug.aiclk.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdk.zhangyuyidong.cn,REJECT,extended-matching,pre-matching
+DOMAIN,sdk-log.partner.sm.cn,REJECT,extended-matching,pre-matching
+DOMAIN,qh-material.taobao.com,REJECT,extended-matching,pre-matching
+DOMAIN,atoken.m.taobao.com,REJECT,extended-matching,pre-matching
+DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
+
+[URL Rewrite]
+# HAR 直接命中的 Pangle SDK 设置/统计与常见广告请求。
+^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/material\/check\/? - reject
+^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/app_log\/? - reject
+# stats/batch 用 Map Local 返回成功空响应，不在 Rewrite 硬拒绝，减少 SDK 重试。
+^https?:\/\/ad\.zijieapi\.com\/ - reject
+^https?:\/\/ads(?:[35]-normal(?:-[a-z]{2})?)?\.zijieapi\.com\/ - reject
+^https?:\/\/pangolin(?:16)?\.snssdk\.com\/ - reject
+^https?:\/\/[^\/]+\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ - reject
+^https?:\/\/lf-cdn-tos\.bytescm\.com\/obj\/static\/ad\/ - reject
+^https?:\/\/[^\/]+\.douyinpic\.com\/ - reject
+^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ - reject
+^https?:\/\/toblog\.ctobsnssdk\.com\/service\/2\/(?:log_settings|device_register|device_register_only|app_alert_check)\/ - reject
+^https?:\/\/mssdk\.(?:zijieapi|snssdk|bytedance)\.com\/ - reject
+# mon cloudcontrol 用 Map Local 返回空云控，不在 Rewrite 硬拒绝。
+
+# IPA 6.0.9 离线/动态资源严格规则：命中广告、开屏、激励、Pangle、CSJ、BDAD、monetize 等关键词才处理，不整域拦 reading.snssdk.com/fqnovelstatic。
+^https?:\/\/reading\.snssdk\.com\/reading_offline\/.*(?:ad|ads|csj|pangolin|pangle|bdad|splash|reward|rewarded|monetize|commerce|ecom|template).* - reject
+^https?:\/\/lf-fe\.fqnovelstatic\.com\/obj\/novel-fanqie-fe\/novel-dragon\/feoffline\/.*(?:ad|ads|csj|pangolin|pangle|bdad|splash|reward|rewarded|monetize|commerce|ecom|template).* - reject
+^https?:\/\/(?:lf-sourcecdn-tos\.bytegecko\.com|lf-sourcecdn-tos\.bytegoofy\.com|tosv\.byted\.org)\/.*(?:CSJ|csj|BDA|bdad|pangle|pangolin|splash|reward|rewarded|ad-|_ad|monetize).* - reject
+
+# 常见回退 SDK 请求。
+^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/(?:univ|logBatch) - reject
+^https?:\/\/v2mi\.gdt\.qq\.com\/gdt_mview\.fcg - reject
+^https?:\/\/sdkquic\.e\.qq\.com\/launch - reject
+^https?:\/\/sdk\.e\.qq\.com\/ola\/v2 - reject
+^https?:\/\/sdk\.1rtb\.net\/sdk\/(?:config|req_ad|notice) - reject
+^https?:\/\/cdn\.1rtb\.com\/ - reject
+^https?:\/\/bgg\.baidu\.com\/bgg\/produce - reject
+^https?:\/\/feed-image\.baidu\.com\/ - reject
+^https?:\/\/api\.qttunion\.com\/v5\/json - reject
+^https?:\/\/service\.qttunion\.com\/qmcd\/get - reject
+^https?:\/\/cpc-service-square\.aiclk\.com\/v1\/getConfig - reject
+^https?:\/\/logrcv\.aiclk\.com\/ - reject
+^https?:\/\/tracelog-debug\.aiclk\.com\/ - reject
+^https?:\/\/sdk\.zhangyuyidong\.cn\/(?:api\/zysdk|sdk\/config) - reject
+^https?:\/\/sdk-log\.partner\.sm\.cn\/sdk_log - reject
+^https?:\/\/qh-material\.taobao\.com\/ - reject
+^https?:\/\/atoken\.m\.taobao\.com\/ - reject
+^https?:\/\/usr-api\.1sapp\.com\/report\/v1 - reject
+
+[Map Local]
+# Pangle/穿山甲：对广告获取/设置返回空配置，保留请求完成语义；统计/云控返回成功空响应。
+^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/settings\/? data-type=text data="{\"code\":\"20000\",\"data\":{\"init_enable\":false,\"ad_enable\":false,\"enable\":false,\"settings\":{},\"ad_id\":{},\"rit\":{},\"slots\":[],\"placements\":[],\"extra_settings\":{\"init_enable\":false,\"use_pangle_plugin\":false,\"enable_feed_no_ad\":true}}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/get_ads\/? data-type=text data="{\"request_id\":\"surge-no-ad\",\"status_code\":20001,\"reason\":141,\"desc\":\"no ad\",\"data\":null,\"ads\":[],\"ad_info\":null}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/stats\/batch\/? data-type=text data="{\"code\":\"20000\",\"data\":\"\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/mon\.zijieapi\.com\/monitor\/collect\/c\/cloudcontrol\/get\/ data-type=text data="{\"data\":\"\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ data-type=text data="{\"data\":{},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
+
+# 离线广告模板置空。严格版覆盖广告关键词模板，但不整域置空 reading/fqnovelstatic。
+^https?:\/\/reading\.snssdk\.com\/reading_offline\/.*(?:ad|ads|csj|pangolin|pangle|bdad|splash|reward|rewarded|monetize|commerce|ecom).*\/(?:template\.js|app-service\.js|prefetch\.js) data-type=text data="" status-code=204 header="Content-Type:application/javascript"
+^https?:\/\/lf-fe\.fqnovelstatic\.com\/obj\/novel-fanqie-fe\/novel-dragon\/feoffline\/.*(?:ad|ads|csj|pangolin|pangle|bdad|splash|reward|rewarded|monetize|commerce|ecom).*\/(?:template\.js|app-service\.js|prefetch\.js) data-type=text data="" status-code=204 header="Content-Type:application/javascript"
+^https?:\/\/(?:lf-sourcecdn-tos\.bytegecko\.com|lf-sourcecdn-tos\.bytegoofy\.com|tosv\.byted\.org)\/.*(?:CSJ|csj|BDA|bdad|pangle|pangolin|splash|reward|rewarded|ad-|_ad|monetize).*\/(?:template\.js|app-service\.js|prefetch\.js) data-type=text data="" status-code=204 header="Content-Type:application/javascript"
+
+# 回退 SDK 空响应。
+^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/univ data-type=text data="{\"llsid\":0,\"result\":1,\"errorMsg\":\"OK\",\"hasMore\":false,\"impAdInfo\":\"\",\"extra\":\"\",\"adGlobalConfigInfo\":\"\",\"hasAd\":false}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/open\.e\.kuaishou\.(?:com|cn)\/rest\/e\/v3\/open\/logBatch data-type=text data="{\"llsid\":0,\"result\":1,\"errorMsg\":\"OK\",\"hasMore\":false,\"interval\":3600}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/v2mi\.gdt\.qq\.com\/gdt_mview\.fcg data-type=text data="{\"ret\":0,\"msg\":\"\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/mobads\.baidu\.com\/cpro\/ui\/mads\.php data-type=text data="<html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body></body></html>" status-code=200 header="Content-Type:text/html; charset=utf-8"
+^https?:\/\/api\.qttunion\.com\/v5\/json data-type=text data="{\"code\":0,\"data\":{\"ads\":[]},\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/service\.qttunion\.com\/qmcd\/get data-type=text data="{\"code\":0,\"data\":[],\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/cpc-service-square\.aiclk\.com\/v1\/getConfig data-type=text data="{\"code\":0,\"data\":{}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/usr-api\.1sapp\.com\/report\/v1 data-type=text data="{\"code\":\"000\",\"msg\":\"ok\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
+
+[MITM]
+hostname = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, ad.zijieapi.com, ads.zijieapi.com, ads3-normal.zijieapi.com, ads3-normal-lf.zijieapi.com, ads3-normal-hl.zijieapi.com, ads3-normal-lq.zijieapi.com, ads5-normal.zijieapi.com, ads5-normal-lf.zijieapi.com, ads5-normal-hl.zijieapi.com, ads5-normal-lq.zijieapi.com, mon.zijieapi.com, mssdk.zijieapi.com, mssdk.snssdk.com, mssdk.bytedance.com, toblog.ctobsnssdk.com, tnc3-alisc1.zijieapi.com, pangolin.snssdk.com, pangolin16.snssdk.com, *.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, *.douyinpic.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, reading.snssdk.com, lf-fe.fqnovelstatic.com, open.e.kuaishou.com, open.e.kuaishou.cn, *.ksapisrv.com, *.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, *.gdtimg.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdk.1rtb.net, cdn.1rtb.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com
