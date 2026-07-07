@@ -1,5 +1,5 @@
 #!name=fqxs_6.0.9_strict
-#!desc=番茄小说 6.0.9 严格去广告模块。基于 /Users/aa/Downloads/2026-07-08-013839.har 与番茄小说_6.0.9（正版）.ipa 静态分析，重点拦截 Pangle/穿山甲、字节广告路由、离线开屏/激励模板与常见广告 SDK 回退链。
+#!desc=番茄小说 6.0.9 严格去广告模块。基于 /Users/aa/Downloads/2026-07-08-013839.har 与番茄小说_6.0.9（正版）.ipa 静态分析，采用 zgyd 本机断网法处理 Pangle/穿山甲、字节广告路由、离线开屏/激励模板与常见广告 SDK 回退链。
 #!author=Cowork local analysis
 #!category=iKeLee
 #!openUrl=https://apps.apple.com/app/id1468454200
@@ -18,6 +18,8 @@
 # 8. /Users/aa/Downloads/86_1783447334355.zip 不是 HAR/截图，而是 28 个请求抓包目录；残留广告明确加载
 #    sf3/sf6-fe-tos.pglstatp-toutiao.com/obj/ad-pattern/renderer/build 以及 lf-cdn-tos.bytescm.com/obj/static/ad/play-comp。
 #    本版显式补齐 Pangle renderer/playable 资产规则和对应 MITM/HTTP engine 主机。
+# 9. 用户反馈 JSON/204/普通 REJECT 仍不能屏蔽，需采用本地 zgyd 模块方法：把广告请求改写到 http://127.0.0.1:9，
+#    并强制 localhost/127.0.0.0/8 DIRECT，让广告链路在本机快速 Connection refused，实现“直接断网”。
 
 [General]
 force-http-engine-hosts = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, ad.zijieapi.com, ads.zijieapi.com, ads3-normal.zijieapi.com, ads3-normal-lf.zijieapi.com, ads3-normal-hl.zijieapi.com, ads3-normal-lq.zijieapi.com, ads5-normal.zijieapi.com, ads5-normal-lf.zijieapi.com, ads5-normal-hl.zijieapi.com, ads5-normal-lq.zijieapi.com, mon.zijieapi.com, mssdk.zijieapi.com, mssdk.snssdk.com, mssdk.bytedance.com, toblog.ctobsnssdk.com, tnc3-alisc1.zijieapi.com, pangolin.snssdk.com, pangolin16.snssdk.com, pglstatp-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, douyinpic.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, reading.snssdk.com, lf-fe.fqnovelstatic.com, open.e.kuaishou.com, open.e.kuaishou.cn, sdk.e.qq.com, sdkquic.e.qq.com, v2mi.gdt.qq.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdk.1rtb.net, cdn.1rtb.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com
@@ -74,6 +76,7 @@ DOMAIN,atoken.m.taobao.com,REJECT,extended-matching,pre-matching
 DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 
 [URL Rewrite]
+# 关键 Pangle/字节广告链路改由下方 Script 做 zgyd 式本机断网；这里保留素材与回退 SDK 的普通拒绝兜底。
 # HAR 直接命中的 Pangle SDK 设置/统计与常见广告请求。
 ^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/material\/check\/? - reject
 ^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/app_log\/? - reject
@@ -140,6 +143,15 @@ DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/service\.qttunion\.com\/qmcd\/get data-type=text data="{\"code\":0,\"data\":[],\"msg\":\"ok\"}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/cpc-service-square\.aiclk\.com\/v1\/getConfig data-type=text data="{\"code\":0,\"data\":{}}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/usr-api\.1sapp\.com\/report\/v1 data-type=text data="{\"code\":\"000\",\"msg\":\"ok\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
+
+[Script]
+uBO FQXS Pangle Network Cut = type=http-request, pattern=^https?:\/\/(?:api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/(?:settings|stats\/batch|get_ads|material\/check|app_log)\/?|(?:sf3|sf6)-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/|lf-cdn-tos\.bytescm\.com\/obj\/static\/ad\/|(?:ad|ads|ads3-normal(?:-[a-z]{2})?|ads5-normal(?:-[a-z]{2})?)\.zijieapi\.com\/|pangolin(?:16)?\.snssdk\.com\/|mon\.zijieapi\.com\/monitor\/collect\/c\/cloudcontrol\/get\/?|tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/?|toblog\.ctobsnssdk\.com\/service\/2\/(?:log_settings|device_register|device_register_only|app_alert_check)\/|mssdk\.(?:zijieapi|snssdk|bytedance)\.com\/), script-path=/Users/aa/Documents/uBlock0.chromium/fqxs-network-cut.js, script-update-interval=86400, timeout=2, engine=jsc
+
+[Rule]
+# zgyd 断网法必需：脚本改写到 127.0.0.1:9 后必须直连，否则可能被总配置 SUBNET/代理接管。
+DOMAIN,localhost,DIRECT
+IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
+IP-CIDR6,::1/128,DIRECT,no-resolve
 
 [MITM]
 hostname = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, ad.zijieapi.com, ads.zijieapi.com, ads3-normal.zijieapi.com, ads3-normal-lf.zijieapi.com, ads3-normal-hl.zijieapi.com, ads3-normal-lq.zijieapi.com, ads5-normal.zijieapi.com, ads5-normal-lf.zijieapi.com, ads5-normal-hl.zijieapi.com, ads5-normal-lq.zijieapi.com, mon.zijieapi.com, mssdk.zijieapi.com, mssdk.snssdk.com, mssdk.bytedance.com, toblog.ctobsnssdk.com, tnc3-alisc1.zijieapi.com, pangolin.snssdk.com, pangolin16.snssdk.com, *.pglstatp-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, *.douyinpic.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, reading.snssdk.com, lf-fe.fqnovelstatic.com, open.e.kuaishou.com, open.e.kuaishou.cn, *.ksapisrv.com, *.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, *.gdtimg.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdk.1rtb.net, cdn.1rtb.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com
