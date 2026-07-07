@@ -65,6 +65,11 @@
 #    说明残留广告可能来自本地 settings/AB 配置或离线 Lynx/Gecko 缓存，不会稳定出现在 HAR。
 # 26. drlynx_static.zst 暴露 novel_ad_config/NOVEL_AD_CONFIG、ReadingAdFree/WatchingAdFree，
 #    并包含 /reading/ugc/ab/config/v:version 与 /luckycat/novel/v1/v_lab/get_ab_info；本版补齐 AB/广告配置空响应。
+# 27. HAR: /Users/aa/Downloads/2026-07-08-005859.har entries 为空；继续从 IPA 离线资源追踪入口。
+#    drlynx_monetize_fqdc_tab.zst 包含 book-normal-seckill-card-tab、HongguoAdvertiseCreativeComment、seckill_data；
+#    drlynx_dynamic_card.zst 包含 ecom-tabs-card/ecom-book-product/ecom-coupon/ecom-sale；drlynx_monetize.zst 包含
+#    ecom-search、book-search-banner、vip-search-banner、feed_ad/adJsonClickReport；novel-ug-share-works-fission.zst 包含
+#    /v1/task/luck_draw 与 excitation_ad_scratch_lottery_chance。本版补齐这些离线电商/抽奖激励广告入口。
 
 [General]
 force-http-engine-hosts = %APPEND% is.snssdk.com, i.snssdk.com, ib.snssdk.com, api.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api5-normal-sinfonlineb.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, lf-cdn-tos.bytescm.com, webcast-open.douyin.com, open.e.kuaishou.com, open.e.kuaishou.cn, ad.zijieapi.com, ads.zijieapi.com, ads3-normal.zijieapi.com, ads3-normal-lf.zijieapi.com, ads3-normal-hl.zijieapi.com, ads3-normal-lq.zijieapi.com, ads5-normal.zijieapi.com, ads5-normal-lf.zijieapi.com, ads5-normal-hl.zijieapi.com, ads5-normal-lq.zijieapi.com, minigame.zijieapi.com, minigame3-normal.zijieapi.com, minigame3-normal-lf.zijieapi.com, minigame3-normal-hl.zijieapi.com, minigame3-normal-lq.zijieapi.com, minigame5-normal.zijieapi.com, minigame5-normal-lf.zijieapi.com, minigame5-normal-hl.zijieapi.com, minigame5-normal-lq.zijieapi.com, reading.snssdk.com, lf-fe.fqnovelstatic.com, ecom.snssdk.com, growth.ecombdapi.com, isaas.ecombdapi.com, doulite-mall.ecombdapi.com, mix.jinritemai.com, ffh.jinritemai.com, lf3-fe.ecombdstatic.com, lf-ecom-gr-sourcecdn.bytegecko.com
@@ -199,6 +204,7 @@ DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/(?:growth|isaas|doulite-mall)\.ecombdapi\.com\/ - reject
 ^https?:\/\/(?:mix|ffh)\.jinritemai\.com\/ - reject
 ^https?:\/\/lf3-fe\.ecombdstatic\.com\/obj\/ecom-cdn-default\/ecom_mall_cards_noveldr\/(?:cards\/popup_layer_v2|popup_layer_v2|.*(?:count_down|countdown|ug_task_countdown|popup_layer))\/(?!.*template\.js) - reject
+# 新增离线电商/广告卡模板交给 Map Local 204，不在 Rewrite 硬拒绝，减少离线缓存回退。
 
 # 小游戏广告承载页/激励卡片。覆盖 IMG_7392.PNG 中“打开微信小游戏”残留广告，以及 drlynx_monetize_game 离线/远程模板。
 ^https?:\/\/minigame(?:[35]-normal(?:-[a-z]{2})?)?\.zijieapi\.com\/ - reject
@@ -248,6 +254,14 @@ DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/reading\.snssdk\.com\/reading_offline\/drlynx_static\/(?:vip-finish|ad[^\/]*|.*ad[-_][^\/]*)\/.*(?:template\.js|app-service\.js) data-type=text data="" status-code=204 header="Content-Type:application/javascript"
 ^https?:\/\/lf-fe\.fqnovelstatic\.com\/obj\/novel-fanqie-fe\/novel-dragon\/feoffline\/drlynx_static\/(?:vip-finish|ad[^\/]*|.*ad[-_][^\/]*)\/.*(?:template\.js|app-service\.js) data-type=text data="" status-code=204 header="Content-Type:application/javascript"
 
+# HAR 为空时继续补的离线电商/广告卡入口：秒杀卡、动态电商卡、搜索横幅与 feed_ad 相关卡片。
+^https?:\/\/reading\.snssdk\.com\/reading_offline\/drlynx_monetize_fqdc_tab\/book-normal-seckill-card-tab\/.*(?:template\.js|app-service\.js) data-type=text data="" status-code=204 header="Content-Type:application/javascript"
+^https?:\/\/lf-fe\.fqnovelstatic\.com\/obj\/novel-fanqie-fe\/novel-dragon\/feoffline\/drlynx_monetize_fqdc_tab\/book-normal-seckill-card-tab\/.*(?:template\.js|app-service\.js) data-type=text data="" status-code=204 header="Content-Type:application/javascript"
+^https?:\/\/reading\.snssdk\.com\/reading_offline\/drlynx_dynamic_card\/ecom-tabs-card\/.*(?:template\.js|app-service\.js) data-type=text data="" status-code=204 header="Content-Type:application/javascript"
+^https?:\/\/lf-fe\.fqnovelstatic\.com\/obj\/novel-fanqie-fe\/novel-dragon\/feoffline\/drlynx_dynamic_card\/ecom-tabs-card\/.*(?:template\.js|app-service\.js) data-type=text data="" status-code=204 header="Content-Type:application/javascript"
+^https?:\/\/reading\.snssdk\.com\/reading_offline\/drlynx_monetize\/(?:ecom-search[^\/]*|book-search-banner|vip-search-banner)\/.*(?:template\.js|app-service\.js) data-type=text data="" status-code=204 header="Content-Type:application/javascript"
+^https?:\/\/lf-fe\.fqnovelstatic\.com\/obj\/novel-fanqie-fe\/novel-dragon\/feoffline\/drlynx_monetize\/(?:ecom-search[^\/]*|book-search-banner|vip-search-banner)\/.*(?:template\.js|app-service\.js) data-type=text data="" status-code=204 header="Content-Type:application/javascript"
+
 # 阅读器内激励视频入口空响应/成功响应，减少“看视频免广告”广告位继续预加载。
 ^https?:\/\/ads(?:[35]-normal(?:-[a-z]{2})?)?\.zijieapi\.com\/ data-type=text data="{\"request_id\":\"surge-no-ad\",\"status_code\":20001,\"reason\":141,\"desc\":\"no ad\",\"data\":null}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/minigame(?:[35]-normal(?:-[a-z]{2})?)?\.zijieapi\.com\/ data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"list\":[],\"games\":[],\"cards\":[],\"has_more\":false,\"has_ad\":false,\"minigame_reward_task_params\":null,\"minigameRewardTaskParams\":null}}" status-code=200 header="Content-Type:application/json"
@@ -259,6 +273,8 @@ DOMAIN,api.mixpanel.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?|5-normal-sinfonlineb)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v1\/excitation_ad\/watch_done data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"success\":true,\"is_ad_free\":true,\"has_ad\":false,\"free_ad_time\":0,\"ad_count\":0,\"ad_remains\":0}}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?|5-normal-sinfonlineb)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v1\/task\/done\/[^\/?#]+ data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"success\":true,\"rewarded\":true,\"has_ad\":false,\"ad_count\":0,\"ad_remains\":0}}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?|5-normal-sinfonlineb)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v[12]\/report\/ad_comment data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?|5-normal-sinfonlineb)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v1\/task\/luck_draw data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"has_ad\":false,\"is_ad_preload\":false,\"ad_info\":null,\"ad_list\":[],\"reward\":null,\"lottery\":null,\"can_draw\":false}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api(?:[35]-normal(?:-[a-z]{2})?|5-normal-sinfonlineb)?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm):?\/v1\/task\/done\/(?:excitation_ad_scratch_lottery_chance|scratch_lottery_chance|scratch_lottery) data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"success\":true,\"has_ad\":false,\"is_ad_preload\":false,\"ad_info\":null,\"ad_count\":0,\"ad_remains\":0}}" status-code=200 header="Content-Type:application/json"
 
 # 5 秒倒计时/聚合广告资源空响应：覆盖 growth_incentive 的 read_gain_ad_info/incentive_ad_info 与 resource popup，
 # 以及 ecom_mall_cards_noveldr 的 popup_layer_v2 / ug_task_countdown / pangle 营销资源。
