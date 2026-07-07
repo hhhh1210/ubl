@@ -15,9 +15,12 @@
 # 5. IPA 资源确认存在 CSJAdSDK.bundle、BDARewardedVideo.bundle、BDARewardedVideo_applet.bundle、splashResourceCore.bundle、LynxResources.bundle、TimorOfflineBundle.bundle/dat.bundle/zxo.dat。
 # 6. IPA tnc.json 确认 ad.zijieapi.com、ads.zijieapi.com 分发到 ads5-normal.zijieapi.com / ads3-normal.zijieapi.com。
 # 7. 本模块是“严格版”：比前一个 7.2.7 保守模块更激进，优先清除广告与广告 SDK 配置；如果出现功能误伤，可回退到较保守的 fqxs.sgmodule。
+# 8. /Users/aa/Downloads/86_1783447334355.zip 不是 HAR/截图，而是 28 个请求抓包目录；残留广告明确加载
+#    sf3/sf6-fe-tos.pglstatp-toutiao.com/obj/ad-pattern/renderer/build 以及 lf-cdn-tos.bytescm.com/obj/static/ad/play-comp。
+#    本版显式补齐 Pangle renderer/playable 资产规则和对应 MITM/HTTP engine 主机。
 
 [General]
-force-http-engine-hosts = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, ad.zijieapi.com, ads.zijieapi.com, ads3-normal.zijieapi.com, ads3-normal-lf.zijieapi.com, ads3-normal-hl.zijieapi.com, ads3-normal-lq.zijieapi.com, ads5-normal.zijieapi.com, ads5-normal-lf.zijieapi.com, ads5-normal-hl.zijieapi.com, ads5-normal-lq.zijieapi.com, mon.zijieapi.com, mssdk.zijieapi.com, mssdk.snssdk.com, mssdk.bytedance.com, toblog.ctobsnssdk.com, tnc3-alisc1.zijieapi.com, pangolin.snssdk.com, pangolin16.snssdk.com, pglstatp-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, douyinpic.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, reading.snssdk.com, lf-fe.fqnovelstatic.com, open.e.kuaishou.com, open.e.kuaishou.cn, sdk.e.qq.com, sdkquic.e.qq.com, v2mi.gdt.qq.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdk.1rtb.net, cdn.1rtb.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com
+force-http-engine-hosts = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, ad.zijieapi.com, ads.zijieapi.com, ads3-normal.zijieapi.com, ads3-normal-lf.zijieapi.com, ads3-normal-hl.zijieapi.com, ads3-normal-lq.zijieapi.com, ads5-normal.zijieapi.com, ads5-normal-lf.zijieapi.com, ads5-normal-hl.zijieapi.com, ads5-normal-lq.zijieapi.com, mon.zijieapi.com, mssdk.zijieapi.com, mssdk.snssdk.com, mssdk.bytedance.com, toblog.ctobsnssdk.com, tnc3-alisc1.zijieapi.com, pangolin.snssdk.com, pangolin16.snssdk.com, pglstatp-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, douyinpic.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, reading.snssdk.com, lf-fe.fqnovelstatic.com, open.e.kuaishou.com, open.e.kuaishou.cn, sdk.e.qq.com, sdkquic.e.qq.com, v2mi.gdt.qq.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdk.1rtb.net, cdn.1rtb.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com
 
 [Rule]
 # 字节广告主域与素材域。api-access 主域不在 Rule 层整域拒绝，交给 Map Local 返回空广告/空配置，减少 SDK 重试。
@@ -36,6 +39,8 @@ DOMAIN,pangolin16.snssdk.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,bytescm.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,douyinpic.com,REJECT,extended-matching,pre-matching
+# 86_1783447334355.zip 中出现腾讯 DNSPod DoH 到 120.53.53.53/dns-query；严格版禁止广告 SDK 绕过本地解析。
+IP-CIDR,120.53.53.53/32,REJECT,no-resolve
 # tnc3/mon 云控交给 Map Local 返回空配置，不在 Rule 层硬拒绝，减少 SDK 重试或回退本地广告配置。
 DOMAIN,toblog.ctobsnssdk.com,REJECT,extended-matching,pre-matching
 
@@ -76,7 +81,9 @@ DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/ad\.zijieapi\.com\/ - reject
 ^https?:\/\/ads(?:[35]-normal(?:-[a-z]{2})?)?\.zijieapi\.com\/ - reject
 ^https?:\/\/pangolin(?:16)?\.snssdk\.com\/ - reject
+^https?:\/\/(?:sf3|sf6)-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/(?:renderer\/package\.json|build\/renderer\/[^\/?#]+\/(?:index\.html|index\.js|fallback\.js|vendors~lp-sdk\.js)) - reject
 ^https?:\/\/[^\/]+\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ - reject
+^https?:\/\/lf-cdn-tos\.bytescm\.com\/obj\/static\/ad\/play-comp\/ - reject
 ^https?:\/\/lf-cdn-tos\.bytescm\.com\/obj\/static\/ad\/ - reject
 ^https?:\/\/[^\/]+\.douyinpic\.com\/ - reject
 ^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ - reject
@@ -114,6 +121,8 @@ DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/settings\/? data-type=text data="{\"code\":\"20000\",\"data\":{\"init_enable\":false,\"ad_enable\":false,\"enable\":false,\"settings\":{},\"ad_id\":{},\"rit\":{},\"slots\":[],\"placements\":[],\"extra_settings\":{\"init_enable\":false,\"use_pangle_plugin\":false,\"enable_feed_no_ad\":true}}}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/get_ads\/? data-type=text data="{\"request_id\":\"surge-no-ad\",\"status_code\":20001,\"reason\":141,\"desc\":\"no ad\",\"data\":null,\"ads\":[],\"ad_info\":null}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/stats\/batch\/? data-type=text data="{\"code\":\"20000\",\"data\":\"\"}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/(?:sf3|sf6)-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/(?:renderer\/package\.json|build\/renderer\/[^\/?#]+\/(?:index\.html|index\.js|fallback\.js|vendors~lp-sdk\.js)) data-type=text data="" status-code=204 header="Content-Type:application/javascript"
+^https?:\/\/lf-cdn-tos\.bytescm\.com\/obj\/static\/ad\/play-comp\/.* data-type=text data="" status-code=204 header="Content-Type:application/javascript"
 ^https?:\/\/mon\.zijieapi\.com\/monitor\/collect\/c\/cloudcontrol\/get\/ data-type=text data="{\"data\":\"\"}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/tnc3-alisc1\.zijieapi\.com\/get_domains\/v4\/ data-type=text data="{\"data\":{},\"message\":\"success\"}" status-code=200 header="Content-Type:application/json"
 
@@ -133,4 +142,4 @@ DOMAIN,usr-api.1sapp.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/usr-api\.1sapp\.com\/report\/v1 data-type=text data="{\"code\":\"000\",\"msg\":\"ok\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
 
 [MITM]
-hostname = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, ad.zijieapi.com, ads.zijieapi.com, ads3-normal.zijieapi.com, ads3-normal-lf.zijieapi.com, ads3-normal-hl.zijieapi.com, ads3-normal-lq.zijieapi.com, ads5-normal.zijieapi.com, ads5-normal-lf.zijieapi.com, ads5-normal-hl.zijieapi.com, ads5-normal-lq.zijieapi.com, mon.zijieapi.com, mssdk.zijieapi.com, mssdk.snssdk.com, mssdk.bytedance.com, toblog.ctobsnssdk.com, tnc3-alisc1.zijieapi.com, pangolin.snssdk.com, pangolin16.snssdk.com, *.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, *.douyinpic.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, reading.snssdk.com, lf-fe.fqnovelstatic.com, open.e.kuaishou.com, open.e.kuaishou.cn, *.ksapisrv.com, *.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, *.gdtimg.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdk.1rtb.net, cdn.1rtb.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com
+hostname = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, ad.zijieapi.com, ads.zijieapi.com, ads3-normal.zijieapi.com, ads3-normal-lf.zijieapi.com, ads3-normal-hl.zijieapi.com, ads3-normal-lq.zijieapi.com, ads5-normal.zijieapi.com, ads5-normal-lf.zijieapi.com, ads5-normal-hl.zijieapi.com, ads5-normal-lq.zijieapi.com, mon.zijieapi.com, mssdk.zijieapi.com, mssdk.snssdk.com, mssdk.bytedance.com, toblog.ctobsnssdk.com, tnc3-alisc1.zijieapi.com, pangolin.snssdk.com, pangolin16.snssdk.com, *.pglstatp-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, *.douyinpic.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, reading.snssdk.com, lf-fe.fqnovelstatic.com, open.e.kuaishou.com, open.e.kuaishou.cn, *.ksapisrv.com, *.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, *.gdtimg.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdk.1rtb.net, cdn.1rtb.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com
