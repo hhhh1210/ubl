@@ -5,7 +5,7 @@
 #!category=iKeLee
 #!openUrl=https://apps.apple.com/app/id1387717110
 #!tag=去广告,开屏广告,Lite
-#!date=2026-06-14
+#!date=2026-07-11
 
 # 精简依据：
 # 1. 旧模块只处理 api-cfg.wtzw.com/v*/splash，不覆盖七猫小说 8.0 的实际开屏链路。
@@ -43,8 +43,7 @@ DOMAIN-SUFFIX,66mobi.com,REJECT,extended-matching,pre-matching
 DOMAIN,partner.uc.cn,REJECT,extended-matching,pre-matching
 DOMAIN,hc-ssp.sm.cn,REJECT,extended-matching,pre-matching
 
-# Pangle/Volc 配置链：只保留开屏初始化相关域名，移除更宽泛的 douyin.com/douyinstatic.com 后缀拦截
-DOMAIN,webcast-open.douyin.com,REJECT,extended-matching,pre-matching
+# Pangle/Volc 配置链：不整域拒绝抖音域名，只在 URL Rewrite / Map Local 中处理七猫实际命中的 Pangle 配置路径。
 # webcast5-open-lf.douyin.com/webcast/openapi/setting 是 Douyin/Webcast SDK 大配置，10:34 功能异常 HAR 证明不应拦截。
 DOMAIN,klink.volceapplog.com,REJECT,extended-matching,pre-matching
 DOMAIN,log-klink.zijieapi.com,REJECT,extended-matching,pre-matching
@@ -64,7 +63,6 @@ DOMAIN-SUFFIX,kuaishou.cn,REJECT,extended-matching,pre-matching
 # 04:42 Lite 失效补回：Pangle/穿山甲、1RTB、Baidu、QTT、Aiclk、Zhangyu 等通用 SDK 回退链路
 # api-access/pangolin 主域不做 Rule 层整域拦截：短剧页面/播放期会调用 settings、stats/batch、app_log 等状态回调；仅在 URL Rewrite 中拦截 get_ads/material/check。
 DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
-DOMAIN-SUFFIX,douyinpic.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,bytescm.com,REJECT,extended-matching,pre-matching
 DOMAIN,sdk.1rtb.net,REJECT,extended-matching,pre-matching
 DOMAIN,cdn.1rtb.com,REJECT,extended-matching,pre-matching
@@ -144,7 +142,6 @@ DOMAIN,mssdk.volces.com,DIRECT
 ^https?:\/\/api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/material\/check\/ - reject
 # Pangle get_ads 不再 URL Rewrite 硬拒绝，改在 Map Local 返回无广告 JSON，保留请求完成语义。
 # Pangle settings / stats / app_log 放行：19:58 HAR 里打开模块后 settings/app_log 被拦截会导致短剧页面只显示缓存、点击网络失败。
-^https?:\/\/[^\/]+\.douyinpic\.com\/ - reject
 ^https?:\/\/[^\/]+\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ - reject
 ^https?:\/\/lf-cdn-tos\.bytescm\.com\/obj\/static\/ad\/ - reject
 ^https?:\/\/sdk\.1rtb\.net\/sdk\/(config|req_ad|notice) - reject
@@ -226,4 +223,4 @@ http-response-jq ^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? 'de
 # show-api.1sapp.com/report/v1 放行，避免 crawler/风控配置缺失。
 
 [MITM]
-hostname = %APPEND% api-cfg.wtzw.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, xiaoshuo.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, a6-remad.qm989.com, api-adx.52qumao.com, api-cfg.52qumao.com, entry-su1.ubixioe.com, md-cfg-u1.ubixioe.com, adx-cfg-u1.ubixioe.com, e-u1.ubixioe.com, partner.uc.cn, hc-ssp.sm.cn, tencent-ssp.66mobi.com, static.66mobi.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, open.e.kuaishou.com, open.e.kuaishou.cn, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, *.pglstatp-toutiao.com, *.douyinpic.com, lf-cdn-tos.bytescm.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, cfgc.zztfly.com, cdn-api-auth.zztfly.com, api-auth.zztfly.com, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com
+hostname = %APPEND% api-cfg.wtzw.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, xiaoshuo.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, a6-remad.qm989.com, api-adx.52qumao.com, api-cfg.52qumao.com, entry-su1.ubixioe.com, md-cfg-u1.ubixioe.com, adx-cfg-u1.ubixioe.com, e-u1.ubixioe.com, partner.uc.cn, hc-ssp.sm.cn, tencent-ssp.66mobi.com, static.66mobi.com, webcast-open.douyin.com, klink.volceapplog.com, log-klink.zijieapi.com, tnc3-alisc1.zijieapi.com, open.e.kuaishou.com, open.e.kuaishou.cn, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, *.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, sdk.1rtb.net, cdn.1rtb.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, api.qttunion.com, service.qttunion.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, cfgc.zztfly.com, cdn-api-auth.zztfly.com, api-auth.zztfly.com, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com
