@@ -1,7 +1,7 @@
 /*
  * Huya iOS Ad Clean helper for Surge
  * Standalone companion for huya-core-scripted.sgmodule.
- * Scope: neutralize ad SDK/config/log responses observed in Huya iOS 13.3.40 HAR captures.
+ * Scope: neutralize ad SDK/config/log responses observed in Huya iOS 13.3.0 HAR captures.
  */
 
 (function () {
@@ -17,6 +17,20 @@
     const headers = Object.assign({}, ($response && $response.headers) || {});
     headers["Content-Type"] = "application/json; charset=utf-8";
     return $done({ headers, body: JSON.stringify(obj) });
+  }
+
+  function finishDirectJson(obj) {
+    return $done({
+      response: {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "no-store",
+          "X-uBO-Huya": "gdt-setting-request-clean-1"
+        },
+        body: JSON.stringify(obj)
+      }
+    });
   }
 
   function finishText(text, contentType) {
@@ -48,8 +62,7 @@
     return out;
   }
 
-  function cleanGdtSetting() {
-    const original = parseJson($response && $response.body);
+  function noAdGdtSetting(original) {
     const cleanSdkSetting = {
       perfRate: 0,
       reportRate: 0,
@@ -74,7 +87,7 @@
       reqInterval: 86400,
       videoTopPortrait: 0
     };
-    const cleaned = {
+    return {
       ret: 0,
       seq: original.seq || 0,
       suid: original.suid || "",
@@ -82,7 +95,11 @@
       ebid: original.ebid || "",
       setting: { sdk: b64EncodeUtf8(JSON.stringify(cleanSdkSetting)) }
     };
-    return finishJson(cleaned);
+  }
+
+  function cleanGdtSetting() {
+    const original = parseJson($response && $response.body);
+    return finishJson(noAdGdtSetting(original));
   }
 
   function cleanGdtExapp() {
@@ -132,6 +149,7 @@
   }
 
   try {
+    if (/phase=gdt-setting-request/.test(arg)) return finishDirectJson(noAdGdtSetting({}));
     if (/tangram\.e\.qq\.com\/updateSetting/.test(url) || /phase=gdt-setting/.test(arg)) return cleanGdtSetting();
     if (/us\.l\.qq\.com\/exapp/.test(url) || /phase=gdt-exapp/.test(arg)) return cleanGdtExapp();
     if (/pglstatp-toutiao\.com\/obj\/ad-pattern\/renderer\/package\.json/.test(url) || /phase=pangle-renderer/.test(arg)) return cleanPangleRenderer();
