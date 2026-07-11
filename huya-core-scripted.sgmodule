@@ -5,8 +5,8 @@
 force-http-engine-hosts = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, mssdk.volces.com, toblog.ctobsnssdk.com, sdkreport.e.qq.com, tangram.e.qq.com, us.l.qq.com, xs.gdt.qq.com, business.msstatic.com, fileserver.cdn.huya.com, diy-front.cdn.huya.com, statwup.huya.com, wsapi.huya.com, udbdf.huya.com, cloud.tgpa.qq.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, pgdt.gtimg.cn, pgdt.ugdtimg.com, adsmind.gdtimg.com, adsmind.ugdtimg.com
 
 [Rule]
-# Third-party ad SDK / report endpoints: Pangle/CSJ, ByteDance AppLog, Volcengine MSSDK and GDT report.
-URL-REGEX,^https?:\/\/(?:api-access\.pangolin-sdk-toutiao1?\.com\/api\/ad\/union\/sdk\/(?:settings|stats\/batch)|mssdk\.volces\.com\/ri\/report_otob|toblog\.ctobsnssdk\.com\/service\/2\/(?:log_settings|device_register_only|app_alert_check)\/|sdkreport\.e\.qq\.com\/link_event)(?:[?#/]|$),REJECT
+# Third-party ad SDK reports: Pangle/CSJ, ByteDance AppLog, Volcengine MSSDK and GDT. Pangle settings use a successful empty Map Local response below to prevent cached-config fallback.
+URL-REGEX,^https?:\/\/(?:api-access\.pangolin-sdk-toutiao1?\.com\/api\/ad\/union\/sdk\/stats\/batch|mssdk\.volces\.com\/ri\/report_otob|toblog\.ctobsnssdk\.com\/service\/2\/(?:log_settings|device_register_only|app_alert_check)\/|sdkreport\.e\.qq\.com\/link_event)(?:[?#/]|$),REJECT
 # Huya/TGPA telemetry and fingerprint reports. Keep cdn.wup.huya.com, cgi.connect.qq.com and udbdf.huya.com/dckey/check allowed.
 URL-REGEX,^https?:\/\/(?:statwup\.huya\.com\/(?:[?#]|$)|wsapi\.huya\.com\/(?:[?#]|$)|udbdf\.huya\.com\/device\/fingerprint\/log|cloud\.tgpa\.qq\.com\/(?:api\/device\/get_token|cloudctrl\/cloud_ctrl))(?:[?#/]|$),REJECT
 # Stable upstream GDT material endpoints from the previous aggressive version. Dynamic template endpoints use successful empty Map Local responses below so the SDK does not reuse cached templates after a network rejection.
@@ -24,6 +24,7 @@ hostname = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk
 
 [Map Local]
 # AMS config, latest HAR observed startup popup payload, and Huya commercial image fallbacks.
+^https?:\/\/api-access\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/settings\/\?(?:[^#]*&)?aid=5000546(?:&|$) data-type=text data="{\"code\":20000,\"message\":\"success\",\"data\":{},\"settings\":{},\"ad_slot_conf_list\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
 ^https?:\/\/xs\.gdt\.qq\.com\/style_factory\/module_list(?:\?.*)?$ data-type=text data="{\"modules\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
 ^https?:\/\/xs\.gdt\.qq\.com\/style_factory\/template_list(?:\?.*)?$ data-type=text data="{\"ret\":0,\"msg\":\"success\",\"templates\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
 ^https?:\/\/xs\.gdt\.qq\.com\/style_factory\/(?:\?.*)?$ data-type=text data="{\"ret\":0,\"msg\":\"success\",\"modules\":[],\"templates\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
