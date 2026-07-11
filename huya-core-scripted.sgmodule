@@ -9,8 +9,8 @@ force-http-engine-hosts = %APPEND% api-access.pangolin-sdk-toutiao.com, api-acce
 URL-REGEX,^https?:\/\/(?:api-access\.pangolin-sdk-toutiao1?\.com\/api\/ad\/union\/sdk\/(?:settings|stats\/batch)|mssdk\.volces\.com\/ri\/report_otob|toblog\.ctobsnssdk\.com\/service\/2\/(?:log_settings|device_register_only|app_alert_check)\/|sdkreport\.e\.qq\.com\/link_event)(?:[?#/]|$),REJECT
 # Huya/TGPA telemetry and fingerprint reports. Keep cdn.wup.huya.com, cgi.connect.qq.com and udbdf.huya.com/dckey/check allowed.
 URL-REGEX,^https?:\/\/(?:statwup\.huya\.com\/(?:[?#]|$)|wsapi\.huya\.com\/(?:[?#]|$)|udbdf\.huya\.com\/device\/fingerprint\/log|cloud\.tgpa\.qq\.com\/(?:api\/device\/get_token|cloudctrl\/cloud_ctrl))(?:[?#/]|$),REJECT
-# Stable upstream GDT material/template endpoints from the previous aggressive version. These prevent later per-material popup/image leaks.
-URL-REGEX,^https?:\/\/(?:(?:pgdt\.gtimg\.cn|pgdt\.ugdtimg\.com)\/\d+\/\d+\/snscosdownload\/SZ\/reserved\/|(?:adsmind\.gdtimg\.com|adsmind\.ugdtimg\.com)\/ads_svp_video__|xs\.gdt\.qq\.com\/style_factory\/(?:template_list|module_list))(?:[?#/]|$),REJECT
+# Stable upstream GDT material endpoints from the previous aggressive version. Dynamic template endpoints use successful empty Map Local responses below so the SDK does not reuse cached templates after a network rejection.
+URL-REGEX,^https?:\/\/(?:(?:pgdt\.gtimg\.cn|pgdt\.ugdtimg\.com)\/\d+\/\d+\/snscosdownload\/SZ\/reserved\/|(?:adsmind\.gdtimg\.com|adsmind\.ugdtimg\.com)\/ads_svp_video__)(?:[?#/]|$),REJECT
 [Script]
 # Return the Huya no-ad GDT setting at request time. This avoids a same-URL response-script collision with the shared core module.
 uBO Huya iOS GDT Setting Request Clean = type=http-request, pattern=^https?:\/\/tangram\.e\.qq\.com\/updateSetting(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/3b5d065f90c116024ccf802d104dc25abac4ce72/huya-core-scripted.js, script-update-interval=86400, argument=phase=gdt-setting-request, requires-body=true, max-size=16384, timeout=5, engine=jsc
@@ -24,6 +24,9 @@ hostname = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk
 
 [Map Local]
 # AMS config, latest HAR observed startup popup payload, and Huya commercial image fallbacks.
+^https?:\/\/xs\.gdt\.qq\.com\/style_factory\/module_list(?:\?.*)?$ data-type=text data="{\"modules\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
+^https?:\/\/xs\.gdt\.qq\.com\/style_factory\/template_list(?:\?.*)?$ data-type=text data="{\"ret\":0,\"msg\":\"success\",\"templates\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
+^https?:\/\/xs\.gdt\.qq\.com\/style_factory\/(?:\?.*)?$ data-type=text data="{\"ret\":0,\"msg\":\"success\",\"modules\":[],\"templates\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
 ^https?:\/\/business\.msstatic\.com\/dsp\/public\/sdkconfig\.xml(?:\?.*)?$ data-type=text data="<?xml version=\"1.0\" encoding=\"UTF-8\"?><config><offlineCache><length>0</length></offlineCache><companies></companies></config>" status-code=200 header="Content-Type:text/xml; charset=utf-8"
 ^https?:\/\/diy-front\.cdn\.huya\.com\/zt\/frontpage\/16\/huyaprivacy2\.html(?:\?.*)?$ data-type=text data="{\"need_show_dialog\":\"0\",\"key_privacy_window_content\":\"\",\"keyword\":\"\",\"clickurl\":\"\"}" status-code=200 header="Content-Type:application/json; charset=utf-8"
 ^https?:\/\/fileserver\.cdn\.huya\.com\/ladder_app_navigate\/[a-f0-9]{32}\.png(?:\?.*)?$ data-type=tiny-gif status-code=200
