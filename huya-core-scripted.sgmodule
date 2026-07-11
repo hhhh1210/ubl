@@ -1,8 +1,8 @@
 #!name=Huya iOS Ad Clean Lite for Surge
-#!desc=虎牙直播 iOS 13.3.0 稳定去广告模块。基于 2026-07-11 HAR 修复 GDT 开屏配置脚本冲突、动态 app 槽位与本地缓存广告展示；保留播放、HTTPDNS、登录和 QQ SDK 配置。
+#!desc=虎牙直播 iOS 13.3.x 稳定去广告模块。基于 2026-07-11 HAR 与 13.3.60 IPA 修复 GDT/穿山甲及虎牙原生 LaunchAlert 启动广告；保留播放、HTTPDNS、登录和 QQ SDK 配置。
 
 [General]
-force-http-engine-hosts = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, mssdk.volces.com, toblog.ctobsnssdk.com, sdkreport.e.qq.com, tangram.e.qq.com, us.l.qq.com, xs.gdt.qq.com, business.msstatic.com, fileserver.cdn.huya.com, diy-front.cdn.huya.com, statwup.huya.com, wsapi.huya.com, udbdf.huya.com, cloud.tgpa.qq.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, pgdt.gtimg.cn, pgdt.ugdtimg.com, adsmind.gdtimg.com, adsmind.ugdtimg.com
+force-http-engine-hosts = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, mssdk.volces.com, toblog.ctobsnssdk.com, sdkreport.e.qq.com, tangram.e.qq.com, us.l.qq.com, xs.gdt.qq.com, business.msstatic.com, fileserver.cdn.huya.com, diy-front.cdn.huya.com, kiwistatic.huya.com, statwup.huya.com, wsapi.huya.com, udbdf.huya.com, cloud.tgpa.qq.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, pgdt.gtimg.cn, pgdt.ugdtimg.com, adsmind.gdtimg.com, adsmind.ugdtimg.com
 
 [Rule]
 # Third-party ad SDK reports: Pangle/CSJ, ByteDance AppLog, Volcengine MSSDK and GDT. Pangle settings use a successful empty Map Local response below to prevent cached-config fallback.
@@ -20,10 +20,11 @@ uBO Huya iOS GDT Exapp Clean = type=http-response, pattern=^https?:\/\/us\.l\.qq
 uBO Huya iOS Pangle Renderer Empty = type=http-response, pattern=^https?:\/\/sf[36]-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/renderer\/package\.json\?(?:[^#]*&)?aid=5000546(?:&|$), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/3b5d065f90c116024ccf802d104dc25abac4ce72/huya-core-scripted.js, script-update-interval=86400, argument=phase=pangle-renderer, requires-body=true, max-size=65536, timeout=5, engine=jsc
 
 [MITM]
-hostname = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, mssdk.volces.com, toblog.ctobsnssdk.com, sdkreport.e.qq.com, tangram.e.qq.com, us.l.qq.com, xs.gdt.qq.com, business.msstatic.com, fileserver.cdn.huya.com, diy-front.cdn.huya.com, statwup.huya.com, wsapi.huya.com, udbdf.huya.com, cloud.tgpa.qq.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, pgdt.gtimg.cn, pgdt.ugdtimg.com, adsmind.gdtimg.com, adsmind.ugdtimg.com
+hostname = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, mssdk.volces.com, toblog.ctobsnssdk.com, sdkreport.e.qq.com, tangram.e.qq.com, us.l.qq.com, xs.gdt.qq.com, business.msstatic.com, fileserver.cdn.huya.com, diy-front.cdn.huya.com, kiwistatic.huya.com, statwup.huya.com, wsapi.huya.com, udbdf.huya.com, cloud.tgpa.qq.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, pgdt.gtimg.cn, pgdt.ugdtimg.com, adsmind.gdtimg.com, adsmind.ugdtimg.com
 
 [Map Local]
 # AMS config, latest HAR observed startup popup payload, and Huya commercial image fallbacks.
+^https?:\/\/kiwistatic\.huya\.com\/kiwi_lizard\/LaunchAlert\/7\/LaunchAlert\.ios\.lzc(?:\?.*)?$ data-type=text data="" status-code=204
 ^https?:\/\/api-access\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/settings\/\?(?:[^#]*&)?aid=5000546(?:&|$) data-type=text data="{\"code\":20000,\"message\":\"success\",\"data\":{},\"settings\":{},\"ad_slot_conf_list\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
 ^https?:\/\/xs\.gdt\.qq\.com\/style_factory\/module_list(?:\?.*)?$ data-type=text data="{\"modules\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
 ^https?:\/\/xs\.gdt\.qq\.com\/style_factory\/template_list(?:\?.*)?$ data-type=text data="{\"ret\":0,\"msg\":\"success\",\"templates\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
