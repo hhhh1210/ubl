@@ -19,14 +19,14 @@
     return $done({ headers, body: JSON.stringify(obj) });
   }
 
-  function finishDirectJson(obj) {
+  function finishDirectJson(obj, marker) {
     return $done({
       response: {
         status: 200,
         headers: {
           "Content-Type": "application/json; charset=utf-8",
           "Cache-Control": "no-store",
-          "X-uBO-Huya": "gdt-setting-request-clean-1"
+          "X-uBO-Huya": marker
         },
         body: JSON.stringify(obj)
       }
@@ -78,9 +78,15 @@
       enableDSDKBackgroundSaveTemplateDict: 0,
       newDeviceIntoFetch: 0,
       cookieForLastAds: 0,
+      enableIdfaCache: 0,
       maxCount: 0,
       native_loadad_count_limit: 0,
       inter_loadad_count_limit: 0,
+      sscaad: 0,
+      pingLocalDnsList: "",
+      srcap: 0,
+      spl_exptime: 0,
+      spl_ltime: 0,
       lgtSplash_isDestroyInUIThread: 1,
       rewardH5EffectiveTime: 0,
       miniCardList: "",
@@ -101,8 +107,28 @@
       suid: original.suid || "",
       sig: original.sig || {},
       ebid: original.ebid || "",
-      setting: { sdk: b64EncodeUtf8(JSON.stringify(cleanSdkSetting)) }
+      setting: {
+        sdk: b64EncodeUtf8(JSON.stringify(cleanSdkSetting)),
+        app: b64EncodeUtf8(JSON.stringify({
+          "5035917038257268": { dynamic_use_lgt: 0 }
+        }))
+      }
     };
+  }
+
+  function isHuyaGdtExappRequest() {
+    const body = ($request && $request.body) || "";
+    const hasSlot = /(?:^|&)posid=(?:3026774105282411|3096015588382074|4076515691155523|6076318568786637)(?:&|$)/.test(body);
+    const hasApp = /hostappid%22%3A%221112179873|hostappid"?\s*[:=]\s*"?1112179873|com\.yy\.kiwi/i.test(body);
+    return hasSlot && hasApp;
+  }
+
+  function cleanGdtExappRequest() {
+    if (!isHuyaGdtExappRequest()) return $done({});
+    return finishDirectJson(
+      { ret: 0, rpt: 0, msg: "", reqinterval: 3600, last_ads: {}, data: {} },
+      "gdt-exapp-request-nofill-1"
+    );
   }
 
   function cleanGdtSetting() {
@@ -157,7 +183,8 @@
   }
 
   try {
-    if (/phase=gdt-setting-request/.test(arg)) return finishDirectJson(noAdGdtSetting({}));
+    if (/phase=gdt-setting-request/.test(arg)) return finishDirectJson(noAdGdtSetting({}), "gdt-setting-request-clean-2");
+    if (/phase=gdt-exapp-request/.test(arg)) return cleanGdtExappRequest();
     if (/tangram\.e\.qq\.com\/updateSetting/.test(url) || /phase=gdt-setting/.test(arg)) return cleanGdtSetting();
     if (/us\.l\.qq\.com\/exapp/.test(url) || /phase=gdt-exapp/.test(arg)) return cleanGdtExapp();
     if (/pglstatp-toutiao\.com\/obj\/ad-pattern\/renderer\/package\.json/.test(url) || /phase=pangle-renderer/.test(arg)) return cleanPangleRenderer();
