@@ -17,6 +17,12 @@ const removableKeys = new Set([
   'ad_materials',
   'advertisement',
   'advertisements',
+  'activity_banner',
+  'banner_ad',
+  'banner_ads',
+  'banner_data',
+  'banner_info',
+  'bottom_banner',
   'chapter_ad',
   'chapter_ad_card',
   'chapter_end_ad',
@@ -30,8 +36,14 @@ const removableKeys = new Set([
   'interstitial_ad',
   'reader_ad',
   'reader_ads',
+  'reader_banner',
+  'reader_bottom_banner',
   'reading_ad',
+  'reading_banner',
   'reward_ad',
+  'marketing_banner',
+  'operation_banner',
+  'promotion_banner',
 ]);
 
 const adTypePattern = /^(?:ad|ads|advertisement|chapter_ad|chapter_ad_card|chapter_end_ad|chapter_end_ad_card|content_ad|feed_ad|game_center_ad|inspire_ad|insert_ad|interstitial_ad|reader_ad|reading_ad|reading_chapter_ad|reward_ad)$/i;
@@ -39,6 +51,8 @@ const strongAdIdentityKeyPattern = /^(?:ad_id|adid|ad_info|ad_data|ad_material|a
 const weakAdIdentityKeyPattern = /^(?:creative_id|rit|rit_id)$/i;
 const adContextKeyPattern = /^(?:ad_type|ad_source|ad_position|ad_position_id|ad_platform|ad_scene|is_ad)$/i;
 const disabledFlagPattern = /^(?:(?:is_|has_|show_|need_|enable_|preload_)?(?:ad|ads)(?:_|$)|(?:ad|ads)_(?:enable|enabled|show|visible|preload|loaded)|(?:feed|read|reader|reading|chapter|content|insert|interstitial|reward|inspire|video|splash)_ad_(?:enable|enabled|show|visible|preload))$/i;
+const promoPositionPattern = /(?:bottom|reader|reading|chapter[_-]?end)/i;
+const promoContentKeyPattern = /(?:image|icon|title|desc|text|button|schema|url|link|close)/i;
 
 let removed = 0;
 let disabled = 0;
@@ -57,11 +71,35 @@ function isAdNode(value) {
   return value.is_ad === true || value.is_ad === 1 || value.is_ad === '1';
 }
 
+function isBottomPromoNode(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+
+  const keys = Object.keys(value);
+  const hasGenericBanner = keys.some((key) => /banner/i.test(key));
+  const hasExplicitPromoName = keys.some((key) => /(?:bottom|activity|operation|marketing|promotion|campaign|reader.*banner)/i.test(key))
+    || ['type', 'item_type', 'card_type', 'module_type', 'biz_type', 'scene']
+      .map((key) => value[key])
+      .some((item) => typeof item === 'string' && /(?:bottom|banner|activity|operation|marketing|promotion|campaign)/i.test(item));
+  const position = ['position', 'slot', 'placement', 'scene', 'module_type', 'biz_type']
+    .map((key) => value[key])
+    .find((item) => typeof item === 'string' && promoPositionPattern.test(item));
+  const hasVisualContent = keys.filter((key) => promoContentKeyPattern.test(key)).length >= 2;
+  const hasDestination = keys.some((key) => /(?:schema|url|link|jump|open)/i.test(key));
+
+  const hasCloseControl = keys.some((key) => /(?:close|closable|closeable)/i.test(key));
+
+  return (hasExplicitPromoName || position || (hasGenericBanner && hasCloseControl)) && hasVisualContent && hasDestination;
+}
+
 function clean(value) {
   if (Array.isArray(value)) {
     const cleaned = [];
     for (const item of value) {
       if (isAdNode(item)) {
+        removed += 1;
+        continue;
+      }
+      if (isBottomPromoNode(item)) {
         removed += 1;
         continue;
       }
@@ -76,6 +114,12 @@ function clean(value) {
     const normalized = key.toLowerCase();
 
     if (removableKeys.has(normalized)) {
+      delete value[key];
+      removed += 1;
+      continue;
+    }
+
+    if (isBottomPromoNode(value[key])) {
       delete value[key];
       removed += 1;
       continue;
