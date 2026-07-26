@@ -30,9 +30,11 @@ const removableKeys = new Set([
   'content_ad',
   'feed_ad',
   'feed_ads',
+  'game_ad',
   'game_center_ad',
   'inspire_ad',
   'insert_ad',
+  'insert_ad_rit_type',
   'interstitial_ad',
   'reader_ad',
   'reader_ads',
@@ -41,16 +43,18 @@ const removableKeys = new Set([
   'reading_ad',
   'reading_banner',
   'reward_ad',
+  'ad_json',
   'marketing_banner',
   'operation_banner',
   'promotion_banner',
 ]);
 
-const adTypePattern = /^(?:ad|ads|advertisement|chapter_ad|chapter_ad_card|chapter_end_ad|chapter_end_ad_card|content_ad|feed_ad|game_center_ad|inspire_ad|insert_ad|interstitial_ad|reader_ad|reading_ad|reading_chapter_ad|reward_ad)$/i;
-const strongAdIdentityKeyPattern = /^(?:ad_id|adid|ad_info|ad_data|ad_material|ad_slot|ad_slot_id)$/i;
+const adTypePattern = /^(?:ad|ads|advertisement|chapter_ad|chapter_ad_card|chapter_end_ad|chapter_end_ad_card|content_ad|feed_ad|game_ad|game_center_ad|inspire_ad|insert_ad|interstitial_ad|reader_ad|reading_ad|reading_chapter_ad|reward_ad)$/i;
+const strongAdIdentityKeyPattern = /^(?:ad_id|adid|ad_info|ad_data|ad_json|ad_material|ad_slot|ad_slot_id|game_ad)$/i;
 const weakAdIdentityKeyPattern = /^(?:creative_id|rit|rit_id)$/i;
 const adContextKeyPattern = /^(?:ad_type|ad_source|ad_position|ad_position_id|ad_platform|ad_scene|is_ad)$/i;
-const disabledFlagPattern = /^(?:(?:is_|has_|show_|need_|enable_|preload_)?(?:ad|ads)(?:_|$)|(?:ad|ads)_(?:enable|enabled|show|visible|preload|loaded)|(?:feed|read|reader|reading|chapter|content|insert|interstitial|reward|inspire|video|splash)_ad_(?:enable|enabled|show|visible|preload))$/i;
+const disabledFlagPattern = /^(?:(?:is_|has_|show_|need_|enable_|preload_)?(?:ad|ads)(?:_|$)|(?:ad|ads)_(?:enable|enabled|show|visible|preload|loaded)|(?:feed|read|reader|reading|chapter|content|insert|interstitial|reward|inspire|video|splash)_ad_(?:enable|enabled|show|visible|preload)|(?:enable|show|need|preload|has|is)_(?:feed|read|reader|reading|chapter|content|insert|interstitial|reward|inspire|video|splash)_ad)$/i;
+const removableConfigKeyPattern = /^(?:reader_front_ad_slide_config(?:_v\d+)?|insert_ad_rit_type)$/i;
 const promoPositionPattern = /(?:bottom|reader|reading|chapter[_-]?end)/i;
 const promoContentKeyPattern = /(?:image|icon|title|desc|text|button|schema|url|link|close)/i;
 
@@ -113,13 +117,13 @@ function clean(value) {
   for (const key of Object.keys(value)) {
     const normalized = key.toLowerCase();
 
-    if (removableKeys.has(normalized)) {
+    if (removableKeys.has(normalized) || removableConfigKeyPattern.test(normalized)) {
       delete value[key];
       removed += 1;
       continue;
     }
 
-    if (isBottomPromoNode(value[key])) {
+    if (isAdNode(value[key]) || isBottomPromoNode(value[key])) {
       delete value[key];
       removed += 1;
       continue;
