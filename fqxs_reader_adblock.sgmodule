@@ -20,6 +20,15 @@ force-http-engine-hosts = %APPEND% is.snssdk.com, i.snssdk.com, ib.snssdk.com, a
 # 广告/小游戏承载域直接拒绝；番茄业务域只做响应清理，不整域拦截。
 DOMAIN,ad.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,ads.zijieapi.com,REJECT,extended-matching,pre-matching
+# tnc.json 会在应用内部把 ad/ads 重写到这些节点；域名层拒绝不依赖 MITM。
+DOMAIN,ads3-normal.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads3-normal-lf.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads3-normal-hl.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads3-normal-lq.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads5-normal.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads5-normal-lf.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads5-normal-hl.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads5-normal-lq.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,bytescm.com,REJECT,extended-matching,pre-matching
 DOMAIN,pangolin.snssdk.com,REJECT,extended-matching,pre-matching
