@@ -8,7 +8,8 @@
 
 # IPA: 番茄小说 7.2.9 / 7.2.9.32, Bundle ID com.dragon.read, aid 1967。
 # 结构证据: EcomData.ad_json/game_ad, GameAdData.xs_ad_pos/xs_chapter_pos,
-# enable_insert_ad, insert_ad_rit_type, reader_front_ad_slide_config_v286。
+# chapter_middle_ad_config, reading_ad_lynx, novel_ad_config,
+# reader_front_ad_slide_config_v286，以及 //nonStandardAd、//ad_lynx_aggregation 路由。
 # HAR 无法捕获广告包，因此本模块强制相关主机进入 Surge HTTP 引擎，并同时处理
 # 番茄 JSON 中的阅读器广告/底部运营位、开屏 SDK、小游戏承载页和广告素材。
 
@@ -18,6 +19,10 @@ force-http-engine-hosts = %APPEND% is.snssdk.com, i.snssdk.com, ib.snssdk.com, a
 
 [Rule]
 # 广告/小游戏承载域直接拒绝；番茄业务域只做响应清理，不整域拦截。
+# Pangle 主广告请求在 HTTPS 解密前直接拒绝，避免 get_ads 未进入重写引擎时启动整页广告容器。
+DOMAIN,api-access.pangolin-sdk-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-access.pangolin-sdk-toutiao1.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-access.pangolin-sdk-toutiao-b.com,REJECT,extended-matching,pre-matching
 DOMAIN,ad.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,ads.zijieapi.com,REJECT,extended-matching,pre-matching
 # tnc.json 会在应用内部把 ad/ads 重写到这些节点；域名层拒绝不依赖 MITM。
@@ -113,7 +118,7 @@ DOMAIN,minigame5-normal-lq.zijieapi.com,REJECT,extended-matching,pre-matching
 
 [Script]
 # 清理番茄 settings/AB、正文广告节点与底部活动横幅。
-番茄阅读广告与底部活动响应清理 = type=http-response, pattern=^https?:\/\/(?:(?:is|i|ib)\.snssdk\.com\/service\/settings\/v[23]\/?|api(?:[35]-normal(?:-[a-z]{2})?|5-normal-sinfonline[ab])?\.fqnovel\.com\/), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/fqxs-reader-ad-clean.js?v=20260726-1, requires-body=true, max-size=5242880, timeout=5, engine=jsc
+番茄阅读广告与底部活动响应清理 = type=http-response, pattern=^https?:\/\/(?:(?:is|i|ib)\.snssdk\.com\/service\/settings\/v[23]\/?|api(?:[35]-normal(?:-[a-z]{2})?|5-normal-sinfonline[ab])?\.fqnovel\.com\/), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/fqxs-reader-ad-clean.js?v=20260726-3, requires-body=true, max-size=5242880, timeout=5, engine=jsc
 
 [MITM]
 hostname = %APPEND% lf-sourcecdn-tos.bytegecko.com, lf-dy-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, lf3-reading.fqnovelpic.com, open.e.kuaishou.com, open.e.kuaishou.cn, *.ksapisrv.com, *.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, *.gdtimg.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdk.1rtb.net, cdn.1rtb.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com

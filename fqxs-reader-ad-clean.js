@@ -50,11 +50,12 @@ const removableKeys = new Set([
 ]);
 
 const adTypePattern = /^(?:ad|ads|advertisement|chapter_ad|chapter_ad_card|chapter_end_ad|chapter_end_ad_card|content_ad|feed_ad|game_ad|game_center_ad|inspire_ad|insert_ad|interstitial_ad|reader_ad|reading_ad|reading_chapter_ad|reward_ad)$/i;
-const strongAdIdentityKeyPattern = /^(?:ad_id|adid|ad_info|ad_data|ad_json|ad_material|ad_slot|ad_slot_id|game_ad)$/i;
+const strongAdIdentityKeyPattern = /^(?:ad_id|adid|ad_slot|ad_slot_id)$/i;
 const weakAdIdentityKeyPattern = /^(?:creative_id|rit|rit_id)$/i;
 const adContextKeyPattern = /^(?:ad_type|ad_source|ad_position|ad_position_id|ad_platform|ad_scene|is_ad)$/i;
 const disabledFlagPattern = /^(?:(?:is_|has_|show_|need_|enable_|preload_)?(?:ad|ads)(?:_|$)|(?:ad|ads)_(?:enable|enabled|show|visible|preload|loaded)|(?:feed|read|reader|reading|chapter|content|insert|interstitial|reward|inspire|video|splash)_ad_(?:enable|enabled|show|visible|preload)|(?:enable|show|need|preload|has|is)_(?:feed|read|reader|reading|chapter|content|insert|interstitial|reward|inspire|video|splash)_ad)$/i;
-const removableConfigKeyPattern = /^(?:reader_front_ad_slide_config(?:_v\d+)?|insert_ad_rit_type)$/i;
+const removableConfigKeyPattern = /^(?:ad_available_config(?:_v\d+)?|ad_config|ad_new_loading_and_error_switch(?:_v\d+)?|ad_sticky_config|chapter_middle_ad_config|front_ad_inspire(?:_v\d+)?|gold_coin_patch_ad_config(?:_v\d+)?|inspire_dynamic_add_config|libra_ad_config|novel_ad_config|reader_front_ad_slide_config(?:_v\d+)?|reading_ad_lynx|reading_ad_ssr_optimize_config|reading_ad_title_config(?:_v\d+)?|insert_ad_rit_type)$/i;
+const adModuleRoutePattern = /(?:\/\/(?:nonStandardAd|ad_lynx_aggregation)(?:[/?#&]|$)|drlynx_monetize_game)/i;
 const promoPositionPattern = /(?:bottom|reader|reading|chapter[_-]?end)/i;
 const promoContentKeyPattern = /(?:image|icon|title|desc|text|button|schema|url|link|close)/i;
 
@@ -73,6 +74,11 @@ function isAdNode(value) {
   }
 
   return value.is_ad === true || value.is_ad === 1 || value.is_ad === '1';
+}
+
+function isAdModuleNode(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  return Object.values(value).some((item) => typeof item === 'string' && adModuleRoutePattern.test(item));
 }
 
 function isBottomPromoNode(value) {
@@ -99,7 +105,7 @@ function clean(value) {
   if (Array.isArray(value)) {
     const cleaned = [];
     for (const item of value) {
-      if (isAdNode(item)) {
+      if ((typeof item === 'string' && adModuleRoutePattern.test(item)) || isAdNode(item) || isAdModuleNode(item)) {
         removed += 1;
         continue;
       }
@@ -123,7 +129,7 @@ function clean(value) {
       continue;
     }
 
-    if (isAdNode(value[key]) || isBottomPromoNode(value[key])) {
+    if ((typeof value[key] === 'string' && adModuleRoutePattern.test(value[key])) || isAdNode(value[key]) || isAdModuleNode(value[key]) || isBottomPromoNode(value[key])) {
       delete value[key];
       removed += 1;
       continue;
