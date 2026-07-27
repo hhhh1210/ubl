@@ -5,7 +5,7 @@
 #!openUrl=https://apps.apple.com/app/id1468454200
 #!tag=番茄小说,正文广告,底部横幅,开屏,小游戏,激励广告
 #!date=2026-07-27
-#!version=20260727-4
+#!version=20260727-5
 
 # IPA: 番茄小说 7.2.9 / 7.2.9.32, Bundle ID com.dragon.read, aid 1967。
 # 结构证据: EcomData.ad_json/game_ad, GameAdData.xs_ad_pos/xs_chapter_pos,
@@ -22,12 +22,15 @@
 # IPA KMP 元数据确认正文来自 /reading/reader/batch_full/v*/，并包含 AdContext、
 # AdUrlData/non_std_ad_id；激励入口为 get_ad_info 与 excitation_ad_right/detail。
 # 本版从这两条上游链处理，动态 fqnovelvod/byteimg 素材域不再作为主要拦截目标。
+# 19:44 anti-AD 规则实测可屏蔽残留广告；从中提取 Pangle 可玩广告、签名素材和
+# pglstatp SDK CDN，精确补齐连接层拒绝，不整域封锁普通 byteimg/fqnovelvod。
 
 [General]
 skip-proxy = %APPEND% 127.0.0.1, localhost, ::1
 force-http-engine-hosts = %APPEND% i-hl.snssdk.com, i-lq.snssdk.com
 force-http-engine-hosts = %APPEND% lf-sourcecdn-tos.bytegecko.com, lf-dy-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, lf3-reading.fqnovelpic.com, open.e.kuaishou.com, open.e.kuaishou.cn, sdk.e.qq.com, sdkquic.e.qq.com, v2mi.gdt.qq.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdk.1rtb.net, cdn.1rtb.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com
 force-http-engine-hosts = %APPEND% is.snssdk.com, i.snssdk.com, ib.snssdk.com, api.fqnovel.com, api-hl.fqnovel.com, api-lq.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api5-normal-sinfonlinea.fqnovel.com, api5-normal-sinfonlineb.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, ad.zijieapi.com, ads.zijieapi.com, ads3-normal.zijieapi.com, ads3-normal-lf.zijieapi.com, ads3-normal-hl.zijieapi.com, ads3-normal-lq.zijieapi.com, ads5-normal.zijieapi.com, ads5-normal-lf.zijieapi.com, ads5-normal-hl.zijieapi.com, ads5-normal-lq.zijieapi.com, minigame.zijieapi.com, minigame3-normal.zijieapi.com, minigame3-normal-lf.zijieapi.com, minigame3-normal-hl.zijieapi.com, minigame3-normal-lq.zijieapi.com, minigame5-normal.zijieapi.com, minigame5-normal-lf.zijieapi.com, minigame5-normal-hl.zijieapi.com, minigame5-normal-lq.zijieapi.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, reading.snssdk.com, reading-hl.snssdk.com, reading-lq.snssdk.com, gecko.zijieapi.com, gecko3.zijieapi.com, gecko5.zijieapi.com, lf-fe.fqnovelstatic.com
+force-http-engine-hosts = %APPEND% p3-ad-sign.byteimg.com, p6-ad-sign.byteimg.com, p9-ad-sign.byteimg.com, pangolin-dsp-toutiao.com, pangolin-dsp-toutiao-b.com, pangolin-sdk-toutiao.com, pangolin-sdk-toutiao1.com, pangolin-sdk-toutiao-b.com, api-access.pangolin-sdk-toutiao2.com, api-access.pangolin-sdk-toutiao3.com, api-access.pangolin-sdk-toutiao4.com, api-access.pangolin-sdk-toutiao5.com, panplayable-toutiao.com, panplayable-toutiao-b.com, pglstatp-sdk-toutiao.com, pglstatp-snssdk-toutiao.com, pglstatp-toutiao-b.com
 
 [Rule]
 # 广告/小游戏承载域直接拒绝；番茄业务域只做响应清理，不整域拦截。
@@ -52,6 +55,24 @@ DOMAIN,ads5-normal-lq.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,isaas5-normal-hl.ecombdapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,ec5-core-hl.ecombdapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,ecom5-normal-hl.ecombdapi.com,REJECT,extended-matching,pre-matching
+# anti-AD 中与番茄内置 Pangle 明确相关的签名素材、可玩广告和 SDK CDN。
+DOMAIN,p3-ad-sign.byteimg.com,REJECT,extended-matching,pre-matching
+DOMAIN,p6-ad-sign.byteimg.com,REJECT,extended-matching,pre-matching
+DOMAIN,p9-ad-sign.byteimg.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pangolin-dsp-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pangolin-dsp-toutiao-b.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pangolin-sdk-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pangolin-sdk-toutiao1.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pangolin-sdk-toutiao-b.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-access.pangolin-sdk-toutiao2.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-access.pangolin-sdk-toutiao3.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-access.pangolin-sdk-toutiao4.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-access.pangolin-sdk-toutiao5.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,panplayable-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,panplayable-toutiao-b.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pglstatp-sdk-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pglstatp-snssdk-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pglstatp-toutiao-b.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,bytescm.com,REJECT,extended-matching,pre-matching
 DOMAIN,pangolin.snssdk.com,REJECT,extended-matching,pre-matching
@@ -156,3 +177,4 @@ auto-quic-block = true
 hostname = %APPEND% i-hl.snssdk.com, i-lq.snssdk.com
 hostname = %APPEND% lf-sourcecdn-tos.bytegecko.com, lf-dy-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com, tosv.byted.org, lf3-reading.fqnovelpic.com, open.e.kuaishou.com, open.e.kuaishou.cn, *.ksapisrv.com, *.gdt.qq.com, sdkquic.e.qq.com, sdk.e.qq.com, v2mi.gdt.qq.com, *.gdtimg.com, mobads.baidu.com, bgg.baidu.com, feed-image.baidu.com, sdk.1rtb.net, cdn.1rtb.com, api.qttunion.com, service.qttunion.com, cpc-service-square.aiclk.com, logrcv.aiclk.com, tracelog-debug.aiclk.com, sdk.zhangyuyidong.cn, sdk-log.partner.sm.cn, qh-material.taobao.com, atoken.m.taobao.com, usr-api.1sapp.com
 hostname = %APPEND% is.snssdk.com, i.snssdk.com, ib.snssdk.com, api.fqnovel.com, api-hl.fqnovel.com, api-lq.fqnovel.com, api3-normal.fqnovel.com, api5-normal.fqnovel.com, api3-normal-lf.fqnovel.com, api3-normal-hl.fqnovel.com, api3-normal-lq.fqnovel.com, api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api5-normal-sinfonlinea.fqnovel.com, api5-normal-sinfonlineb.fqnovel.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, api-access.pangolin-sdk-toutiao-b.com, ad.zijieapi.com, ads.zijieapi.com, ads3-normal.zijieapi.com, ads3-normal-lf.zijieapi.com, ads3-normal-hl.zijieapi.com, ads3-normal-lq.zijieapi.com, ads5-normal.zijieapi.com, ads5-normal-lf.zijieapi.com, ads5-normal-hl.zijieapi.com, ads5-normal-lq.zijieapi.com, minigame.zijieapi.com, minigame3-normal.zijieapi.com, minigame3-normal-lf.zijieapi.com, minigame3-normal-hl.zijieapi.com, minigame3-normal-lq.zijieapi.com, minigame5-normal.zijieapi.com, minigame5-normal-lf.zijieapi.com, minigame5-normal-hl.zijieapi.com, minigame5-normal-lq.zijieapi.com, *.pglstatp-toutiao.com, lf-cdn-tos.bytescm.com, reading.snssdk.com, reading-hl.snssdk.com, reading-lq.snssdk.com, gecko.zijieapi.com, gecko3.zijieapi.com, gecko5.zijieapi.com, lf-fe.fqnovelstatic.com
+hostname = %APPEND% p3-ad-sign.byteimg.com, p6-ad-sign.byteimg.com, p9-ad-sign.byteimg.com, *.pangolin-dsp-toutiao.com, *.pangolin-dsp-toutiao-b.com, *.pangolin-sdk-toutiao.com, *.pangolin-sdk-toutiao1.com, *.pangolin-sdk-toutiao-b.com, api-access.pangolin-sdk-toutiao2.com, api-access.pangolin-sdk-toutiao3.com, api-access.pangolin-sdk-toutiao4.com, api-access.pangolin-sdk-toutiao5.com, *.panplayable-toutiao.com, *.panplayable-toutiao-b.com, *.pglstatp-sdk-toutiao.com, *.pglstatp-snssdk-toutiao.com, *.pglstatp-toutiao-b.com
