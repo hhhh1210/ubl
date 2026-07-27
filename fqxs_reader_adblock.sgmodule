@@ -4,8 +4,8 @@
 #!category=iKeLee
 #!openUrl=https://apps.apple.com/app/id1468454200
 #!tag=番茄小说,正文广告,底部横幅,开屏,小游戏,激励广告
-#!date=2026-07-26
-#!version=20260726-5
+#!date=2026-07-27
+#!version=20260727-1
 
 # IPA: 番茄小说 7.2.9 / 7.2.9.32, Bundle ID com.dragon.read, aid 1967。
 # 结构证据: EcomData.ad_json/game_ad, GameAdData.xs_ad_pos/xs_chapter_pos,
@@ -13,6 +13,8 @@
 # reader_front_ad_slide_config_v286，以及 //nonStandardAd、//ad_lynx_aggregation 路由。
 # HAR 无法捕获广告包，因此本模块强制相关主机进入 Surge HTTP 引擎，并同时处理
 # 番茄 JSON 中的阅读器广告/底部运营位、开屏 SDK、小游戏承载页和广告素材。
+# 2026-07-27 抓包显示点击“看视频免30分钟广告”后会访问三个 ecombdapi 区域节点；
+# 其他抓包软件令这些连接失败时，App 显示网络异常且不会启动广告视频。
 
 [General]
 force-http-engine-hosts = %APPEND% i-hl.snssdk.com, i-lq.snssdk.com
@@ -36,6 +38,10 @@ DOMAIN,ads5-normal.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,ads5-normal-lf.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,ads5-normal-hl.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,ads5-normal-lq.zijieapi.com,REJECT,extended-matching,pre-matching
+# 新抓包中的激励广告/电商广告区域节点。连接层拒绝用于复现有效的网络异常行为。
+DOMAIN,isaas5-normal-hl.ecombdapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ec5-core-hl.ecombdapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ecom5-normal-hl.ecombdapi.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,bytescm.com,REJECT,extended-matching,pre-matching
 DOMAIN,pangolin.snssdk.com,REJECT,extended-matching,pre-matching
