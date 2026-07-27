@@ -4,16 +4,22 @@ function done(payload) {
 
 function parseUrl(url) {
   const match = String(url || '').match(/^https?:\/\/([^/?#:]+)([^?#]*)(?:\?([^#]*))?/i);
-  if (!match) return { host: '', path: '/' };
+  if (!match) return { host: '', path: '/', query: '' };
   return {
     host: match[1].toLowerCase(),
     path: match[2] || '/',
+    query: match[3] || '',
   };
 }
 
 function shouldCut(urlInfo) {
   const host = urlInfo.host;
   const path = urlInfo.path;
+  const query = urlInfo.query;
+
+  if (/^(?:i|i-(?:hl|lq))\.snssdk\.com$/.test(host)) {
+    return /^\/video\/play\//.test(path) && /(?:^|&)ad_id=\d+(?:&|$)/.test(query);
+  }
 
   if (/^api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com$/.test(host)) {
     return /^\/api\/ad\/union\/sdk\/(?:settings|stats\/batch|get_ads|material\/check|app_log)\/?$/.test(path);

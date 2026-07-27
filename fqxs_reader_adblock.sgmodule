@@ -5,7 +5,7 @@
 #!openUrl=https://apps.apple.com/app/id1468454200
 #!tag=番茄小说,正文广告,底部横幅,开屏,小游戏,激励广告
 #!date=2026-07-27
-#!version=20260727-2
+#!version=20260727-3
 
 # IPA: 番茄小说 7.2.9 / 7.2.9.32, Bundle ID com.dragon.read, aid 1967。
 # 结构证据: EcomData.ad_json/game_ad, GameAdData.xs_ad_pos/xs_chapter_pos,
@@ -17,6 +17,8 @@
 # 其他抓包软件令这些连接失败时，App 显示网络异常且不会启动广告视频。
 # 18:32 新 HAR 在两类广告出现期间仍只捕到 PCDN settings，说明 Pangle/正文广告继续绕过 HTTP 引擎。
 # 本版改用请求阶段本机断网，并补齐 api-hl/api-lq、激励信息与阅读 AB 配置入口。
+# 19:05 HAR 命中 i.snssdk.com/video/play，查询参数包含 ad_id，响应返回完整广告视频播放地址；
+# 本版仅切断带 ad_id 的 video/play 请求，不影响无 ad_id 的普通视频。
 
 [General]
 skip-proxy = %APPEND% 127.0.0.1, localhost, ::1
@@ -141,7 +143,7 @@ DOMAIN,minigame5-normal-lq.zijieapi.com,REJECT,extended-matching,pre-matching
 
 [Script]
 # 复现抓包软件下“网络异常且不播放广告”的行为；脚本只切 Pangle 广告 API/素材链。
-番茄 Pangle 广告本机断网 = type=http-request, pattern=^https?:\/\/(?:api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/(?:settings|stats\/batch|get_ads|material\/check|app_log)\/?|(?:sf3|sf6)-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/|lf-cdn-tos\.bytescm\.com\/obj\/static\/ad\/|(?:ad|ads|ads3-normal(?:-[a-z]{2})?|ads5-normal(?:-[a-z]{2})?)\.zijieapi\.com\/|pangolin(?:16)?\.snssdk\.com\/), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/fqxs-network-cut.js?v=20260727-2, script-update-interval=86400, timeout=2, engine=jsc
+番茄 Pangle 广告本机断网 = type=http-request, pattern=^https?:\/\/(?:(?:i|i-(?:hl|lq))\.snssdk\.com\/video\/play\/[^?#]+\?(?:[^#]*&)?ad_id=\d+|api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/(?:settings|stats\/batch|get_ads|material\/check|app_log)\/?|(?:sf3|sf6)-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/|lf-cdn-tos\.bytescm\.com\/obj\/static\/ad\/|(?:ad|ads|ads3-normal(?:-[a-z]{2})?|ads5-normal(?:-[a-z]{2})?)\.zijieapi\.com\/|pangolin(?:16)?\.snssdk\.com\/), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/fqxs-network-cut.js?v=20260727-3, script-update-interval=86400, timeout=2, engine=jsc
 # 清理番茄 settings/AB、正文广告节点与底部活动横幅。
 番茄阅读广告与底部活动响应清理 = type=http-response, pattern=^https?:\/\/(?:(?:is|i|ib)\.snssdk\.com\/service\/settings\/v[23]\/?|api(?:-(?:hl|lq)|[35]-normal(?:-[a-z]{2})?|5-normal-sinfonline[ab])?\.fqnovel\.com\/), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/fqxs-reader-ad-clean.js?v=20260726-3, requires-body=true, max-size=5242880, timeout=5, engine=jsc
 番茄区域 settings 广告响应清理 = type=http-response, pattern=^https?:\/\/i-(?:hl|lq)\.snssdk\.com\/service\/settings\/v[23]\/?, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/fqxs-reader-ad-clean.js?v=20260726-3, requires-body=true, max-size=5242880, timeout=5, engine=jsc
