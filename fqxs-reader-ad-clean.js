@@ -7,6 +7,7 @@ const removableKeys = new Set([
   'ad',
   'ads',
   'ad_data',
+  'ad_context',
   'ad_info',
   'ad_infos',
   'ad_item',
@@ -15,6 +16,7 @@ const removableKeys = new Set([
   'ad_lists',
   'ad_material',
   'ad_materials',
+  'ad_url_data',
   'advertisement',
   'advertisements',
   'activity_banner',
@@ -50,7 +52,7 @@ const removableKeys = new Set([
 ]);
 
 const adTypePattern = /^(?:ad|ads|advertisement|chapter_ad|chapter_ad_card|chapter_end_ad|chapter_end_ad_card|content_ad|feed_ad|game_ad|game_center_ad|inspire_ad|insert_ad|interstitial_ad|reader_ad|reading_ad|reading_chapter_ad|reward_ad)$/i;
-const strongAdIdentityKeyPattern = /^(?:ad_id|adid|ad_slot|ad_slot_id)$/i;
+const strongAdIdentityKeyPattern = /^(?:ad_id|adid|ad_slot|ad_slot_id|non_std_ad_id)$/i;
 const weakAdIdentityKeyPattern = /^(?:creative_id|rit|rit_id)$/i;
 const adContextKeyPattern = /^(?:ad_type|ad_source|ad_position|ad_position_id|ad_platform|ad_scene|is_ad)$/i;
 const disabledFlagPattern = /^(?:(?:is_|has_|show_|need_|enable_|preload_)?(?:ad|ads)(?:_|$)|(?:ad|ads)_(?:enable|enabled|show|visible|preload|loaded)|(?:feed|read|reader|reading|chapter|content|insert|interstitial|reward|inspire|video|splash)_ad_(?:enable|enabled|show|visible|preload)|(?:enable|show|need|preload|has|is)_(?:feed|read|reader|reading|chapter|content|insert|interstitial|reward|inspire|video|splash)_ad)$/i;

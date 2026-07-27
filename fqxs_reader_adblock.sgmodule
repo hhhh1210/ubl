@@ -5,7 +5,7 @@
 #!openUrl=https://apps.apple.com/app/id1468454200
 #!tag=番茄小说,正文广告,底部横幅,开屏,小游戏,激励广告
 #!date=2026-07-27
-#!version=20260727-3
+#!version=20260727-4
 
 # IPA: 番茄小说 7.2.9 / 7.2.9.32, Bundle ID com.dragon.read, aid 1967。
 # 结构证据: EcomData.ad_json/game_ad, GameAdData.xs_ad_pos/xs_chapter_pos,
@@ -19,6 +19,9 @@
 # 本版改用请求阶段本机断网，并补齐 api-hl/api-lq、激励信息与阅读 AB 配置入口。
 # 19:05 HAR 命中 i.snssdk.com/video/play，查询参数包含 ad_id，响应返回完整广告视频播放地址；
 # 本版仅切断带 ad_id 的 video/play 请求，不影响无 ad_id 的普通视频。
+# IPA KMP 元数据确认正文来自 /reading/reader/batch_full/v*/，并包含 AdContext、
+# AdUrlData/non_std_ad_id；激励入口为 get_ad_info 与 excitation_ad_right/detail。
+# 本版从这两条上游链处理，动态 fqnovelvod/byteimg 素材域不再作为主要拦截目标。
 
 [General]
 skip-proxy = %APPEND% 127.0.0.1, localhost, ::1
@@ -139,14 +142,14 @@ DOMAIN,minigame5-normal-lq.zijieapi.com,REJECT,extended-matching,pre-matching
 ^https?:\/\/v2mi\.gdt\.qq\.com\/gdt_mview\.fcg data-type=text data="{\"ret\":0,\"msg\":\"\",\"data\":{}}" status-code=200 header="Content-Type:application/json"
 # 阅读 AB 与“看视频免广告”数据源。覆盖 TNC 的 api-hl/api-lq 和 api3/api5 区域节点。
 ^https?:\/\/api(?:-(?:hl|lq)|[35]-normal(?:-[a-z]{2})?|5-normal-sinfonline[ab])?\.fqnovel\.com\/reading\/ugc\/ab\/config\/v[^\/?#]+ data-type=text data="{\"code\":0,\"message\":\"success\",\"data\":{\"ab_config\":{},\"configs\":{},\"settings\":{},\"novel_ad_config\":{\"enable\":false,\"has_ad\":false,\"ad_enable\":false,\"read_ad_enable\":false,\"video_ad_enable\":false,\"feed_ad_enable\":false},\"NOVEL_AD_CONFIG\":{\"enable\":false,\"has_ad\":false,\"ad_enable\":false,\"read_ad_enable\":false,\"video_ad_enable\":false,\"feed_ad_enable\":false}}}" status-code=200 header="Content-Type:application/json"
-^https?:\/\/api(?:-(?:hl|lq)|[35]-normal(?:-[a-z]{2})?|5-normal-sinfonline[ab])?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v1\/task\/(?:get_ad_info|get_single_ad_info|get_excitation_info) data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"is_ad_preload\":false,\"ad_info\":null,\"ad_list\":[],\"ads\":[],\"has_ad\":false,\"ad_reward_amount\":0,\"ad_countdown\":0,\"count_down\":0,\"count_down_time\":0,\"incentive_ad_info\":null,\"read_gain_ad_info\":null,\"post_done_extra\":\"\"}}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api(?:-(?:hl|lq)|[35]-normal(?:-[a-z]{2})?|5-normal-sinfonline[ab])?\.fqnovel\.com\/luckycat\/(?:novel|novel_fm)\/v1\/task\/(?:get_single_ad_info|get_excitation_info) data-type=text data="{\"err_no\":0,\"err_tips\":\"success\",\"data\":{\"is_ad_preload\":false,\"ad_info\":null,\"ad_list\":[],\"ads\":[],\"has_ad\":false,\"ad_reward_amount\":0,\"ad_countdown\":0,\"count_down\":0,\"count_down_time\":0,\"incentive_ad_info\":null,\"read_gain_ad_info\":null,\"post_done_extra\":\"\"}}" status-code=200 header="Content-Type:application/json"
 
 [Script]
 # 复现抓包软件下“网络异常且不播放广告”的行为；脚本只切 Pangle 广告 API/素材链。
-番茄 Pangle 广告本机断网 = type=http-request, pattern=^https?:\/\/(?:(?:i|i-(?:hl|lq))\.snssdk\.com\/video\/play\/[^?#]+\?(?:[^#]*&)?ad_id=\d+|api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/(?:settings|stats\/batch|get_ads|material\/check|app_log)\/?|(?:sf3|sf6)-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/|lf-cdn-tos\.bytescm\.com\/obj\/static\/ad\/|(?:ad|ads|ads3-normal(?:-[a-z]{2})?|ads5-normal(?:-[a-z]{2})?)\.zijieapi\.com\/|pangolin(?:16)?\.snssdk\.com\/), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/fqxs-network-cut.js?v=20260727-3, script-update-interval=86400, timeout=2, engine=jsc
+番茄广告上游本机断网 = type=http-request, pattern=^https?:\/\/(?:api(?:-(?:hl|lq)|[35]-normal(?:-[a-z]{2})?|5-normal-sinfonline[ab])?\.fqnovel\.com\/luckycat\/novel\/v1\/task\/(?:get_ad_info|excitation_ad_right\/detail)\/?|(?:i|i-(?:hl|lq))\.snssdk\.com\/video\/play\/[^?#]+\?(?:[^#]*&)?ad_id=\d+|api-access\.pangolin-sdk-toutiao(?:1|-b)?\.com\/api\/ad\/union\/sdk\/(?:settings|stats\/batch|get_ads|material\/check|app_log)\/?|(?:sf3|sf6)-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/|lf-cdn-tos\.bytescm\.com\/obj\/static\/ad\/|(?:ad|ads|ads3-normal(?:-[a-z]{2})?|ads5-normal(?:-[a-z]{2})?)\.zijieapi\.com\/|pangolin(?:16)?\.snssdk\.com\/), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/fqxs-network-cut.js?v=20260727-4, script-update-interval=86400, timeout=2, engine=jsc
 # 清理番茄 settings/AB、正文广告节点与底部活动横幅。
-番茄阅读广告与底部活动响应清理 = type=http-response, pattern=^https?:\/\/(?:(?:is|i|ib)\.snssdk\.com\/service\/settings\/v[23]\/?|api(?:-(?:hl|lq)|[35]-normal(?:-[a-z]{2})?|5-normal-sinfonline[ab])?\.fqnovel\.com\/), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/fqxs-reader-ad-clean.js?v=20260726-3, requires-body=true, max-size=5242880, timeout=5, engine=jsc
-番茄区域 settings 广告响应清理 = type=http-response, pattern=^https?:\/\/i-(?:hl|lq)\.snssdk\.com\/service\/settings\/v[23]\/?, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/fqxs-reader-ad-clean.js?v=20260726-3, requires-body=true, max-size=5242880, timeout=5, engine=jsc
+番茄阅读广告与底部活动响应清理 = type=http-response, pattern=^https?:\/\/(?:(?:is|i|ib)\.snssdk\.com\/service\/settings\/v[23]\/?|reading(?:-(?:hl|lq))?\.snssdk\.com\/reading\/reader\/batch_full\/v[^\/?#]+\/?|api(?:-(?:hl|lq)|[35]-normal(?:-[a-z]{2})?|5-normal-sinfonline[ab])?\.fqnovel\.com\/), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/fqxs-reader-ad-clean.js?v=20260727-4, requires-body=true, max-size=5242880, timeout=5, engine=jsc
+番茄区域 settings 广告响应清理 = type=http-response, pattern=^https?:\/\/i-(?:hl|lq)\.snssdk\.com\/service\/settings\/v[23]\/?, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/fqxs-reader-ad-clean.js?v=20260727-4, requires-body=true, max-size=5242880, timeout=5, engine=jsc
 
 [MITM]
 auto-quic-block = true

@@ -17,6 +17,10 @@ function shouldCut(urlInfo) {
   const path = urlInfo.path;
   const query = urlInfo.query;
 
+  if (/^api(?:-(?:hl|lq)|[35]-normal(?:-[a-z]{2})?|5-normal-sinfonline[ab])?\.fqnovel\.com$/.test(host)) {
+    return /^\/luckycat\/novel\/v1\/task\/(?:get_ad_info|excitation_ad_right\/detail)\/?$/.test(path);
+  }
+
   if (/^(?:i|i-(?:hl|lq))\.snssdk\.com$/.test(host)) {
     return /^\/video\/play\//.test(path) && /(?:^|&)ad_id=\d+(?:&|$)/.test(query);
   }
