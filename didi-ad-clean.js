@@ -436,14 +436,19 @@ function patchDaggerLaunchConfig(object, state) {
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     return;
   }
-  const before = JSON.stringify(parsed);
+  let changed = false;
   if (Array.isArray(parsed.page_names)) {
-    parsed.page_names = parsed.page_names.filter((name) => name !== 'DSplashViewController' && name !== 'ORSSplashViewController');
+    const pageNames = parsed.page_names.filter((name) => name !== 'DSplashViewController' && name !== 'ORSSplashViewController');
+    if (pageNames.length !== parsed.page_names.length) {
+      parsed.page_names = pageNames;
+      changed = true;
+    }
   }
-  if (parsed.prewarming_threshold !== undefined) {
+  if (parsed.prewarming_threshold !== undefined && parsed.prewarming_threshold !== '0') {
     parsed.prewarming_threshold = '0';
+    changed = true;
   }
-  if (JSON.stringify(parsed) !== before) {
+  if (changed) {
     args.launch_config = JSON.stringify(parsed);
     state.changed = true;
   }
@@ -538,9 +543,9 @@ function cleanStringifiedJson(text, state) {
   if (parsed === undefined) {
     return text;
   }
-  const before = JSON.stringify(parsed);
-  cleanTogglePayload(parsed, state);
-  if (JSON.stringify(parsed) !== before) {
+  const nestedState = { changed: false };
+  cleanTogglePayload(parsed, nestedState);
+  if (nestedState.changed) {
     state.changed = true;
     return JSON.stringify(parsed);
   }

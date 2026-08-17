@@ -39,23 +39,24 @@ try {
 
   if (body === '' || /html/i.test(contentType) === false) {
     done({});
+  } else {
+    const { styleId, selectors, css } = parseArgument($argument);
+    const blocks = [];
+
+    if (selectors.length !== 0) {
+      blocks.push(`${selectors.join(', ')} { display: none !important; }`);
+    }
+    if (css) {
+      blocks.push(css);
+    }
+    if (blocks.length === 0) {
+      done({});
+    } else {
+      const nextBody = injectStyle(body, blocks.join('\n'), styleId);
+      done(nextBody === body ? {} : { body: nextBody });
+    }
   }
 
-  const { styleId, selectors, css } = parseArgument($argument);
-  const blocks = [];
-
-  if (selectors.length !== 0) {
-    blocks.push(`${selectors.join(', ')} { display: none !important; }`);
-  }
-  if (css) {
-    blocks.push(css);
-  }
-  if (blocks.length === 0) {
-    done({});
-  }
-
-  const nextBody = injectStyle(body, blocks.join('\n'), styleId);
-  done(nextBody === body ? {} : { body: nextBody });
 } catch (error) {
   console.log('uBO html style clean script failed:', error && error.message ? error.message : String(error));
   done({});

@@ -485,12 +485,11 @@ function cleanStringJson(text, state) {
   if (parsed === undefined) {
     return text;
   }
-  const before = JSON.stringify(parsed);
-  const cleaned = cleanValue(parsed, state);
-  const after = JSON.stringify(cleaned);
-  if (after !== before) {
+  const nestedState = { changed: false };
+  const cleaned = cleanValue(parsed, nestedState);
+  if (nestedState.changed) {
     state.changed = true;
-    return after;
+    return JSON.stringify(cleaned);
   }
   return text;
 }

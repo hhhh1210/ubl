@@ -49,6 +49,11 @@ const DROP_RENDERER_KEYS = new Set([
   'playerLegacyDesktopWatchAdsRenderer',
   'inFeedAdLayoutRenderer',
 ]);
+const AD_CANDIDATE_RE = /"(?:adPlacements|playerAds|adSlots|adBreakHeartbeatParams|legacyImportant|adClientParams|adSlotRenderer|displayAdRenderer|promotedSparklesWebRenderer|promotedVideoRenderer|videoMastheadAdV3Renderer|mastheadAdRenderer|playerLegacyDesktopWatchAdsRenderer|inFeedAdLayoutRenderer)"/;
+
+function hasAdCandidates(body) {
+  return AD_CANDIDATE_RE.test(body);
+}
 
 function containsAdRenderer(container) {
   if (!isPlainObject(container)) {
@@ -102,7 +107,8 @@ function cleanNode(node, state) {
   }
 
   let out = null;
-  for (const [key, value] of Object.entries(node)) {
+  for (const key of keys) {
+    const value = node[key];
     if (REMOVE_KEYS.has(key) || DROP_RENDERER_KEYS.has(key)) {
       if (out === null) {
         out = { ...node };
@@ -151,7 +157,11 @@ try {
   const body = typeof response.body === 'string' ? response.body : '';
   const contentType = String(headers['Content-Type'] || headers['content-type'] || '');
 
-  if (shouldSkipUrl($request && $request.url) || !shouldHandle(body, contentType)) {
+  if (
+    shouldSkipUrl($request && $request.url) ||
+    !shouldHandle(body, contentType) ||
+    !hasAdCandidates(body)
+  ) {
     done({});
   } else {
     const { prefix, jsonText } = splitXssiPrefix(body);

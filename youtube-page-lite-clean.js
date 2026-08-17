@@ -430,6 +430,11 @@ function buildInlineScript() {
       const now = Date.now();
       if (now - (reloadTimes.get(videoId) || 0) < 30000) return;
       reloadTimes.set(videoId, now);
+      if (reloadTimes.size > 64) {
+        for (const [id, timestamp] of reloadTimes) {
+          if (now - timestamp > 10 * 60 * 1000) reloadTimes.delete(id);
+        }
+      }
       sawInterruptionSnackbar = false;
 
       try {
@@ -463,6 +468,16 @@ function buildInlineScript() {
     stripInterruptionSnackbar();
   }
 
+  let domScanScheduled = false;
+  function scheduleDomScan() {
+    if (domScanScheduled) return;
+    domScanScheduled = true;
+    requestAnimationFrame(() => {
+      domScanScheduled = false;
+      stripDomAds();
+    });
+  }
+
   patchYtcfgGlobal();
   patchAdWaitTimer();
   patchJsonStringify();
@@ -471,14 +486,14 @@ function buildInlineScript() {
   patchInitialObject('playerResponse');
   patchInitialObject('ytInitialData');
   stripDomAds();
-  new MutationObserver(stripDomAds).observe(document, { childList: true, subtree: true });
+  new MutationObserver(scheduleDomScan).observe(document, { childList: true, subtree: true });
   window.addEventListener('yt-navigate-finish', () => {
     patchInitialObject('ytInitialPlayerResponse');
     patchInitialObject('playerResponse');
     patchInitialObject('ytInitialData');
-    stripDomAds();
+    scheduleDomScan();
   }, true);
-  setInterval(stripDomAds, 1500);
+  setInterval(scheduleDomScan, 5000);
 })();`;
 
   return script.replace(/<\/script/gi, '<\\/script');

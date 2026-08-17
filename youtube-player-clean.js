@@ -28,12 +28,10 @@ function splitXssiPrefix(body) {
 }
 
 function renameAdFieldsText(body) {
-  return String(body)
-    .replace(/"adPlacements"/g, '"no_ads"')
-    .replace(/"adSlots"/g, '"no_ads"')
-    .replace(/"playerAds"/g, '"no_ads"')
-    .replace(/"adBreakHeartbeatParams"/g, '"no_ads"')
-    .replace(/"legacyImportant"/g, '"no_ads"');
+  return String(body).replace(
+    /"(?:adPlacements|adSlots|playerAds|adBreakHeartbeatParams|legacyImportant)"/g,
+    '"no_ads"'
+  );
 }
 
 const DROP = Symbol('drop');
@@ -56,6 +54,11 @@ const DROP_RENDERER_KEYS = new Set([
   'promotedSparklesTextSearchRenderer',
   'carouselAdRenderer',
 ]);
+const AD_CANDIDATE_RE = /"(?:adPlacements|adSlots|playerAds|adBreakHeartbeatParams|legacyImportant|adClientParams|adSlotRenderer|displayAdRenderer|promotedSparklesWebRenderer|promotedVideoRenderer|videoMastheadAdV3Renderer|mastheadAdRenderer|playerLegacyDesktopWatchAdsRenderer|inFeedAdLayoutRenderer|promotedSparklesTextSearchRenderer|carouselAdRenderer)"/;
+
+function hasAdCandidates(body) {
+  return AD_CANDIDATE_RE.test(body);
+}
 
 function cleanNode(node, state) {
   if (Array.isArray(node)) {
@@ -93,7 +96,8 @@ function cleanNode(node, state) {
   }
 
   let out = null;
-  for (const [key, value] of Object.entries(node)) {
+  for (const key of keys) {
+    const value = node[key];
     if (REMOVE_KEYS.has(key) || DROP_RENDERER_KEYS.has(key)) {
       if (out === null) {
         out = { ...node };
@@ -128,6 +132,13 @@ function cleanJsonBody(body) {
   const parsed = JSON.parse(jsonText);
   const state = { removedKeys: 0, dropped: 0 };
   const cleaned = cleanNode(parsed, state);
+  if (cleaned !== DROP && state.removedKeys === 0 && state.dropped === 0) {
+    return {
+      body,
+      removedKeys: 0,
+      dropped: 0,
+    };
+  }
   return {
     body: `${prefix}${JSON.stringify(cleaned === DROP ? {} : cleaned)}`,
     removedKeys: state.removedKeys,
@@ -141,7 +152,7 @@ try {
   const body = typeof response.body === 'string' ? response.body : '';
   const contentType = String(headers['Content-Type'] || headers['content-type'] || '');
 
-  if (!shouldHandle(body, contentType)) {
+  if (!shouldHandle(body, contentType) || !hasAdCandidates(body)) {
     done({});
   } else {
     let result;

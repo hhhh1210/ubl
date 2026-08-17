@@ -32,9 +32,8 @@ try {
 
   if (body === '' || /html/i.test(contentType) === false) {
     done({});
-  }
-
-  const removePatterns = [
+  } else {
+    const removePatterns = [
     /<!--\s*广告banner start\s*-->[\s\S]*?<!--\s*广告banner end\s*-->\s*/g,
     /<div class="tags-group">[\s\S]*?<\/div>\s*<!--\s*标签组 end\s*-->/g,
     /<div class="text-wrap">\s*<blockquote>[\s\S]*?海角网最新地址[\s\S]*?<\/blockquote>\s*<\/div>\s*/g,
@@ -44,23 +43,24 @@ try {
     /<!--\s*精品格 start\s*-->[\s\S]*?<!--\s*精品格 end\s*-->\s*/g,
     /<!--\s*遮罩层 start\s*-->[\s\S]*?<!--\s*遮罩层 end\s*-->\s*/g,
     /<div class="van-overlay hidden"><\/div>\s*/g,
-  ];
+    ];
 
-  const css = [
+    const css = [
     '.xqbj-list-rows:has(> .xqbj-list-rows-placard) { display: none !important; }',
     '.xqbj-list-rows-placard { display: none !important; }',
     '.xqbj-component-advertises, .xqbj-component-advertises-0, .xqbj-component-advertises-1 { display: none !important; }',
     '.van-overlay, .van-overlay.hidden { display: none !important; }',
     'body.fixbody { overflow: auto !important; position: static !important; }',
-  ].join('');
+    ].join('');
 
-  let nextBody = removeBlocks(body, removePatterns);
-  nextBody = injectStyle(nextBody, css, '<!-- codex-hjw01-clean-v3 -->');
-  nextBody = nextBody
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/>\s{2,}</g, '><');
+    let nextBody = removeBlocks(body, removePatterns);
+    nextBody = injectStyle(nextBody, css, '<!-- codex-hjw01-clean-v3 -->');
+    nextBody = nextBody
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/>\s{2,}</g, '><');
 
-  done(nextBody === body ? {} : { body: nextBody });
+    done(nextBody === body ? {} : { body: nextBody });
+  }
 } catch (error) {
   console.log('uBO HJW01 clean v3 script failed:', error && error.message ? error.message : String(error));
   done({});

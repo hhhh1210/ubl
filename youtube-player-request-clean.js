@@ -65,6 +65,15 @@ function hasPlaybackMarker(userAgent) {
   return /adunit|channel|lactmilli|instream|eafg/i.test(String(userAgent || ''));
 }
 
+const PLAYER_MARKER_RE = /adunit|channel|lactmilli|instream|eafg/i;
+const REMOVE_KEYS = new Set([
+  'adPlacements',
+  'adSlots',
+  'playerAds',
+  'adBreakHeartbeatParams',
+  'legacyImportant',
+]);
+
 function pruneAdFields(node) {
   if (Array.isArray(node)) {
     for (let i = node.length - 1; i >= 0; i--) {
@@ -86,20 +95,12 @@ function pruneAdFields(node) {
     return false;
   }
 
-  for (const key of [
-    'adPlacements',
-    'adSlots',
-    'playerAds',
-    'adBreakHeartbeatParams',
-    'legacyImportant',
-  ]) {
-    if (Object.prototype.hasOwnProperty.call(node, key)) {
+  for (const key of Object.keys(node)) {
+    if (REMOVE_KEYS.has(key)) {
       delete node[key];
+      continue;
     }
-  }
-
-  for (const [key, value] of Object.entries(node)) {
-    if (pruneAdFields(value) === false) {
+    if (pruneAdFields(node[key]) === false) {
       delete node[key];
     }
   }
@@ -109,6 +110,9 @@ function pruneAdFields(node) {
 
 function editPlayerPayload(body, requestHeaders) {
   if (typeof body !== 'string' || body === '') {
+    return null;
+  }
+  if (!PLAYER_MARKER_RE.test(body)) {
     return null;
   }
 
