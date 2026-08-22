@@ -1,23 +1,12 @@
 /*
  * Huya iOS Ad Clean helper for Surge
  * Standalone companion for huya-core-scripted.sgmodule.
- * Scope: neutralize ad SDK/config/log responses observed in Huya iOS 13.3.x-13.4.20 HAR captures.
+ * Scope: return request-stage no-fill responses for Huya iOS startup ad traffic.
  */
 
 (function () {
   const url = ($request && $request.url) || "";
   const arg = typeof $argument === "string" ? $argument : "";
-
-  function finish(obj) {
-    if (typeof obj === "string") return $done({ body: obj });
-    return $done({ body: JSON.stringify(obj) });
-  }
-
-  function finishJson(obj) {
-    const headers = Object.assign({}, ($response && $response.headers) || {});
-    headers["Content-Type"] = "application/json; charset=utf-8";
-    return $done({ headers, body: JSON.stringify(obj) });
-  }
 
   function finishDirectJson(obj, marker) {
     return $done({
@@ -31,16 +20,6 @@
         body: JSON.stringify(obj)
       }
     });
-  }
-
-  function finishText(text, contentType) {
-    const headers = Object.assign({}, ($response && $response.headers) || {});
-    if (contentType) headers["Content-Type"] = contentType;
-    return $done({ headers, body: text });
-  }
-
-  function parseJson(text) {
-    try { return JSON.parse(text || "{}"); } catch (_) { return {}; }
   }
 
   function b64EncodeUtf8(str) {
@@ -116,11 +95,20 @@
     };
   }
 
-  function isHuyaGdtExappRequest() {
+  function getRequestData() {
     const body = ($request && $request.body) || "";
     const queryIndex = url.indexOf("?");
     const query = queryIndex === -1 ? "" : url.slice(queryIndex + 1);
-    const requestData = body && query ? body + "&" + query : body || query;
+    return String(body && query ? body + "&" + query : body || query);
+  }
+
+  function isHuyaGdtSettingRequest() {
+    const requestData = getRequestData();
+    return /1112179873/.test(requestData) && /com(?:%2E|\.)yy(?:%2E|\.)kiwi/i.test(requestData);
+  }
+
+  function isHuyaGdtExappRequest() {
+    const requestData = getRequestData();
     const hasSlot = /(?:^|&)posid=(?:3026774105282411|3096015588382074|4076515691155523|6076318568786637)(?:&|$)/.test(requestData);
     const hasApp = /hostappid%22%3A%221112179873|hostappid"?\s*[:=]\s*"?1112179873|com\.yy\.kiwi/i.test(requestData);
     return hasSlot && hasApp;
@@ -134,67 +122,14 @@
     );
   }
 
-  function cleanGdtSetting() {
-    const original = parseJson($response && $response.body);
-    return finishJson(noAdGdtSetting(original));
-  }
-
-  function cleanGdtExapp() {
-    return finishJson({ ret: 0, msg: "no ad", data: [], ads: [], list: [] });
-  }
-
-  function cleanPangleRenderer() {
-    return finishJson({ resources: [], templates: [], data: {}, code: 0, message: "success" });
-  }
-
-  function cleanPangleSettings() {
-    return finishJson({ code: 20000, message: "success", data: {}, settings: {}, ad_slot_conf_list: [] });
-  }
-
-  function cleanByteDanceLog() {
-    if (/\/service\/2\/log_settings\//.test(url)) {
-      return finishJson({
-        server_time: Math.floor(Date.now() / 1000),
-        magic_tag: "ss_app_log",
-        config: {
-          bav_log_collect: false,
-          bav_ab_config: false,
-          bav_monitor_rate: 0,
-          batch_event_interval: 86400,
-          http_monitor_port: 0,
-          real_time_events: [],
-          send_launch_timely: 0,
-          session_interval: 86400
-        }
-      });
-    }
-    if (/\/service\/2\/device_register_only\//.test(url)) {
-      return finishJson({
-        server_time: Math.floor(Date.now() / 1000),
-        device_id: 0,
-        device_id_str: "",
-        install_id: 0,
-        install_id_str: "",
-        caid1: "",
-        caid2: ""
-      });
-    }
-    if (/\/service\/2\/app_alert_check\//.test(url)) {
-      return finishJson({ message: "success", data: { is_activated: 0 } });
-    }
-    return finishJson({});
-  }
-
   try {
-    if (/phase=gdt-setting-request/.test(arg)) return finishDirectJson(noAdGdtSetting({}), "gdt-setting-request-clean-2");
+    if (/phase=gdt-setting-request/.test(arg)) {
+      if (!isHuyaGdtSettingRequest()) return $done({});
+      return finishDirectJson(noAdGdtSetting({}), "gdt-setting-request-clean-3");
+    }
     if (/phase=gdt-exapp-request/.test(arg)) return cleanGdtExappRequest();
-    if (/tangram\.e\.qq\.com\/updateSetting/.test(url) || /phase=gdt-setting/.test(arg)) return cleanGdtSetting();
-    if (/us\.l\.qq\.com\/exapp/.test(url) || /phase=gdt-exapp/.test(arg)) return cleanGdtExapp();
-    if (/pglstatp-toutiao\.com\/obj\/ad-pattern\/renderer\/package\.json/.test(url) || /phase=pangle-renderer/.test(arg)) return cleanPangleRenderer();
-    if (/api-access\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/settings\//.test(url) || /phase=pangle-settings/.test(arg)) return cleanPangleSettings();
-    if (/toblog\.ctobsnssdk\.com\/service\/2\//.test(url) || /phase=bytedance-log/.test(arg)) return cleanByteDanceLog();
-    return finish($response && $response.body ? $response.body : "");
-  } catch (e) {
-    return finishText("", "text/plain; charset=utf-8");
+    return $done({});
+  } catch (_) {
+    return $done({});
   }
 })();
