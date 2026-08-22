@@ -1,35 +1,19 @@
 #!name=Huya iOS Ad Clean Lite for Surge
-#!desc=虎牙直播 iOS 13.3.x-13.4.20 稳定去广告模块。基于 2026-08-22 HAR 与 13.4.20 IPA 修复 GET 查询式 GDT 开屏请求，并保留穿山甲、虎牙原生 LaunchAlert、播放、HTTPDNS、登录和 QQ SDK 配置。
+#!desc=虎牙直播 iOS 13.3.x-13.4.20 稳定去广告模块。按 Surge iOS 5.9+ 脚本文档收敛为请求阶段 no-fill 与精确 Map Local，避免响应正文缓冲、共享 SDK 过度屏蔽及 Network Extension 内存压力。
 
 [General]
-force-http-engine-hosts = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, mssdk.volces.com, toblog.ctobsnssdk.com, sdkreport.e.qq.com, tangram.e.qq.com, us.l.qq.com, xs.gdt.qq.com, business.msstatic.com, fileserver.cdn.huya.com, diy-front.cdn.huya.com, kiwistatic.huya.com, statwup.huya.com, wsapi.huya.com, udbdf.huya.com, cloud.tgpa.qq.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, pgdt.gtimg.cn, pgdt.ugdtimg.com, adsmind.gdtimg.com, adsmind.ugdtimg.com
+force-http-engine-hosts = %APPEND% tangram.e.qq.com, us.l.qq.com, api-access.pangolin-sdk-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, kiwistatic.huya.com
 
-[Rule]
-# Third-party ad SDK reports: Pangle/CSJ, ByteDance AppLog, Volcengine MSSDK and GDT. Pangle settings use a successful empty Map Local response below to prevent cached-config fallback.
-URL-REGEX,^https?:\/\/(?:api-access\.pangolin-sdk-toutiao1?\.com\/api\/ad\/union\/sdk\/stats\/batch|mssdk\.volces\.com\/ri\/report_otob|toblog\.ctobsnssdk\.com\/service\/2\/(?:log_settings|device_register_only|app_alert_check)\/|sdkreport\.e\.qq\.com\/link_event)(?:[?#/]|$),REJECT
-# Huya/TGPA telemetry and fingerprint reports. Keep cdn.wup.huya.com, cgi.connect.qq.com and udbdf.huya.com/dckey/check allowed.
-URL-REGEX,^https?:\/\/(?:statwup\.huya\.com\/(?:[?#]|$)|wsapi\.huya\.com\/(?:[?#]|$)|udbdf\.huya\.com\/device\/fingerprint\/log|cloud\.tgpa\.qq\.com\/(?:api\/device\/get_token|cloudctrl\/cloud_ctrl))(?:[?#/]|$),REJECT
-# Stable upstream GDT material endpoints from the previous aggressive version. Dynamic template endpoints use successful empty Map Local responses below so the SDK does not reuse cached templates after a network rejection.
-URL-REGEX,^https?:\/\/(?:(?:pgdt\.gtimg\.cn|pgdt\.ugdtimg\.com)\/\d+\/\d+\/snscosdownload\/SZ\/reserved\/|(?:adsmind\.gdtimg\.com|adsmind\.ugdtimg\.com)\/ads_svp_video__)(?:[?#/]|$),REJECT
 [Script]
-# Return the Huya no-ad GDT setting at request time. This avoids a same-URL response-script collision with the shared core module.
-uBO Huya iOS GDT Setting Request Clean = type=http-request, pattern=^https?:\/\/tangram\.e\.qq\.com\/updateSetting(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/3b5d065f90c116024ccf802d104dc25abac4ce72/huya-core-scripted.js, script-update-interval=86400, argument=phase=gdt-setting-request, requires-body=true, max-size=16384, timeout=5, engine=jsc
-uBO Huya iOS GDT Setting Clean = type=http-response, pattern=^https?:\/\/tangram\.e\.qq\.com\/updateSetting(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/3b5d065f90c116024ccf802d104dc25abac4ce72/huya-core-scripted.js, script-update-interval=86400, argument=phase=gdt-setting, requires-body=true, max-size=131072, timeout=5, engine=jsc
-uBO Huya iOS GDT Exapp Request NoFill = type=http-request, pattern=^https?:\/\/us\.l\.qq\.com\/exapp(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/f5f72c4733085830803f185bf2857102120ef480/huya-core-scripted.js, script-update-interval=86400, argument=phase=gdt-exapp-request, timeout=5, engine=jsc
-uBO Huya iOS GDT Exapp Clean = type=http-response, pattern=^https?:\/\/us\.l\.qq\.com\/exapp(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/3b5d065f90c116024ccf802d104dc25abac4ce72/huya-core-scripted.js, script-update-interval=86400, argument=phase=gdt-exapp, requires-body=true, max-size=262144, timeout=5, engine=jsc
-uBO Huya iOS Pangle Renderer Empty = type=http-response, pattern=^https?:\/\/sf[36]-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/renderer\/package\.json\?(?:[^#]*&)?aid=5000546(?:&|$), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/3b5d065f90c116024ccf802d104dc25abac4ce72/huya-core-scripted.js, script-update-interval=86400, argument=phase=pangle-renderer, requires-body=true, max-size=65536, timeout=5, engine=jsc
+# Only the two Huya-marked request paths execute JavaScript. All failures pass through unchanged.
+uBO Huya iOS GDT Setting Request Clean = type=http-request, pattern=^https?:\/\/tangram\.e\.qq\.com\/updateSetting(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/34aca2184b1358566ebb906df1d095ed703b7123/huya-core-scripted.js, script-update-interval=86400, argument=phase=gdt-setting-request, requires-body=true, max-size=16384, timeout=5, engine=jsc
+uBO Huya iOS GDT Exapp Request NoFill = type=http-request, pattern=^https?:\/\/us\.l\.qq\.com\/exapp(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/34aca2184b1358566ebb906df1d095ed703b7123/huya-core-scripted.js, script-update-interval=86400, argument=phase=gdt-exapp-request, timeout=5, engine=jsc
 
 [MITM]
-hostname = %APPEND% api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, mssdk.volces.com, toblog.ctobsnssdk.com, sdkreport.e.qq.com, tangram.e.qq.com, us.l.qq.com, xs.gdt.qq.com, business.msstatic.com, fileserver.cdn.huya.com, diy-front.cdn.huya.com, kiwistatic.huya.com, statwup.huya.com, wsapi.huya.com, udbdf.huya.com, cloud.tgpa.qq.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, pgdt.gtimg.cn, pgdt.ugdtimg.com, adsmind.gdtimg.com, adsmind.ugdtimg.com
+hostname = %APPEND% tangram.e.qq.com, us.l.qq.com, api-access.pangolin-sdk-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, kiwistatic.huya.com
 
 [Map Local]
-# AMS config, latest HAR observed startup popup payload, and Huya commercial image fallbacks.
+# Exact startup control responses only; ordinary telemetry, SDK reports, app APIs and CDN assets pass through.
 ^https?:\/\/kiwistatic\.huya\.com\/kiwi_lizard\/LaunchAlert\/7\/LaunchAlert\.ios\.lzc(?:\?.*)?$ data-type=text data="" status-code=204
 ^https?:\/\/api-access\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/settings\/\?(?:[^#]*&)?aid=5000546(?:&|$) data-type=text data="{\"code\":20000,\"message\":\"success\",\"data\":{},\"settings\":{},\"ad_slot_conf_list\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
-^https?:\/\/xs\.gdt\.qq\.com\/style_factory\/module_list(?:\?.*)?$ data-type=text data="{\"modules\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
-^https?:\/\/xs\.gdt\.qq\.com\/style_factory\/template_list(?:\?.*)?$ data-type=text data="{\"ret\":0,\"msg\":\"success\",\"templates\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
-^https?:\/\/xs\.gdt\.qq\.com\/style_factory\/(?:\?.*)?$ data-type=text data="{\"ret\":0,\"msg\":\"success\",\"modules\":[],\"templates\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
-^https?:\/\/business\.msstatic\.com\/dsp\/public\/sdkconfig\.xml(?:\?.*)?$ data-type=text data="<?xml version=\"1.0\" encoding=\"UTF-8\"?><config><offlineCache><length>0</length></offlineCache><companies></companies></config>" status-code=200 header="Content-Type:text/xml; charset=utf-8"
-^https?:\/\/diy-front\.cdn\.huya\.com\/zt\/frontpage\/16\/huyaprivacy2\.html(?:\?.*)?$ data-type=text data="{\"need_show_dialog\":\"0\",\"key_privacy_window_content\":\"\",\"keyword\":\"\",\"clickurl\":\"\"}" status-code=200 header="Content-Type:application/json; charset=utf-8"
-^https?:\/\/fileserver\.cdn\.huya\.com\/ladder_app_navigate\/[a-f0-9]{32}\.png(?:\?.*)?$ data-type=tiny-gif status-code=200
-^https?:\/\/fileserver\.cdn\.huya\.com\/ladder_normalUpload\/(?:160076e8203549a88c95cd670da1a876|7c86fdb01ffd41c19651e19338c67de0|995ba281e6e2470c9448182cc715dbf9|985b76e646a74f5686225c4de3bf1e6a|67d77b530925468cb6ca67c7f3f122ce|c7a8734dd38a482288606eed0824d65f)\.png(?:\?.*)?$ data-type=tiny-gif status-code=200
+^https?:\/\/sf[36]-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/renderer\/package\.json\?(?:[^#]*&)?aid=5000546(?:&|$) data-type=text data="{\"resources\":[],\"templates\":[],\"data\":{},\"code\":0,\"message\":\"success\"}" status-code=200 header="Content-Type:application/json; charset=utf-8"
