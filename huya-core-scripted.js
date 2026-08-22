@@ -1,7 +1,7 @@
 /*
  * Huya iOS Ad Clean helper for Surge
  * Standalone companion for huya-core-scripted.sgmodule.
- * Scope: neutralize ad SDK/config/log responses observed in Huya iOS 13.3.0 HAR captures.
+ * Scope: neutralize ad SDK/config/log responses observed in Huya iOS 13.3.x-13.4.20 HAR captures.
  */
 
 (function () {
@@ -118,8 +118,11 @@
 
   function isHuyaGdtExappRequest() {
     const body = ($request && $request.body) || "";
-    const hasSlot = /(?:^|&)posid=(?:3026774105282411|3096015588382074|4076515691155523|6076318568786637)(?:&|$)/.test(body);
-    const hasApp = /hostappid%22%3A%221112179873|hostappid"?\s*[:=]\s*"?1112179873|com\.yy\.kiwi/i.test(body);
+    const queryIndex = url.indexOf("?");
+    const query = queryIndex === -1 ? "" : url.slice(queryIndex + 1);
+    const requestData = body && query ? body + "&" + query : body || query;
+    const hasSlot = /(?:^|&)posid=(?:3026774105282411|3096015588382074|4076515691155523|6076318568786637)(?:&|$)/.test(requestData);
+    const hasApp = /hostappid%22%3A%221112179873|hostappid"?\s*[:=]\s*"?1112179873|com\.yy\.kiwi/i.test(requestData);
     return hasSlot && hasApp;
   }
 
