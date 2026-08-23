@@ -12,6 +12,8 @@ const C = {
   repo: process.env.SGTM_REPO || '/Users/aa/Documents/ubl-sync',
   branch: process.env.SGTM_BRANCH || 'ios',
   output: process.env.SGTM_OUTPUT || 'sgtm-presntp-host.sgmodule',
+  profile: process.env.SGTM_PROFILE || '/Users/aa/Library/Application Support/Surge/Profiles/sd11.conf',
+  surgeCli: '/Applications/Surge.app/Contents/Applications/surge-cli',
   interval: 30 * 60 * 1000,
 };
 
@@ -85,6 +87,13 @@ function select(results) {
   return selected.length ? selected : [sorted[0].ip];
 }
 
+function previousAddresses() {
+  const file = path.join(C.repo, C.output);
+  if (!fs.existsSync(file)) return [];
+  const match = fs.readFileSync(file, 'utf8').match(/^sgtm\.presntp\.uk\s*=\s*(.+)$/m);
+  return match ? match[1].split(',').map((x) => x.trim()).filter(Boolean) : [];
+}
+
 function moduleText(addresses, results) {
   return ['#!name=SGTM PRESNTP Dynamic Host', '#!desc=本地服务每30分钟通过 ping.pe 丽水联通 CN_113 测速后更新。', '#!system=mac', '#!update-interval=1800', '', '[General]', 'use-local-host-item-for-proxy = true', 'always-real-ip = %APPEND% ' + C.host, '', '[Host]', C.host + ' = ' + addresses.join(', '), '', '# updated=' + new Date().toISOString(), '# results=' + JSON.stringify(results), ''].join('\n');
 }
@@ -99,12 +108,36 @@ function publish(text) {
   log('published ' + C.output + ' to origin/' + C.branch);
 }
 
+function applyLocalProfile(addresses) {
+  if (!fs.existsSync(C.profile)) return;
+  const hostLine = C.host + ' = ' + addresses.join(', ');
+  const lines = fs.readFileSync(C.profile, 'utf8').split(/\r?\n/);
+  let replaced = false;
+  const updated = lines.map((line) => {
+    if (/^\s*(?:#\s*)?sgtm\.presntp\.uk\b/.test(line)) {
+      replaced = true;
+      return hostLine;
+    }
+    return line;
+  });
+  if (!replaced) throw new Error('SGTM Host placeholder missing from active profile');
+  const text = updated.join('\n');
+  if (text === fs.readFileSync(C.profile, 'utf8')) return;
+  fs.writeFileSync(C.profile, text);
+  execFileSync(C.surgeCli, ['--check', C.profile], { stdio: 'inherit' });
+  execFileSync(C.surgeCli, ['reload'], { stdio: 'inherit' });
+  execFileSync(C.surgeCli, ['flush', 'dns'], { stdio: 'inherit' });
+  log('updated active Surge profile: ' + hostLine);
+}
+
 async function once() {
   const ips = await candidates();
   log('candidates: ' + ips.join(', '));
   const results = await measure(ips);
-  const selected = select(results);
+  const selected = results.length ? select(results) : previousAddresses();
+  if (!selected.length) throw new Error('all probes failed and no previous addresses exist');
   log('selected: ' + selected.join(', ') + ' results=' + JSON.stringify(results));
+  applyLocalProfile(selected);
   const text = moduleText(selected, results);
   if (process.argv.includes('--no-push')) fs.writeFileSync(path.join(C.repo, C.output), text);
   else publish(text);
