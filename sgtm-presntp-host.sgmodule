@@ -8,7 +8,7 @@ use-local-host-item-for-proxy = true
 always-real-ip = %APPEND% sgtm.presntp.uk
 
 [Host]
-sgtm.presntp.uk = 34.92.37.175, 35.241.99.116, 34.92.205.240
+sgtm.presntp.uk = 35.241.99.116, 34.96.231.181, 34.92.80.203
 
-# updated=2026-08-23T08:05:11.172Z
-# results=[{"ip":"34.92.80.203","latencyMs":34.69},{"ip":"34.92.116.62","latencyMs":34.61},{"ip":"35.220.244.94","latencyMs":36.68},{"ip":"34.92.205.240","latencyMs":32.65},{"ip":"34.96.192.190","latencyMs":38.54},{"ip":"34.96.231.181","latencyMs":34.55},{"ip":"35.241.99.116","latencyMs":32.37},{"ip":"34.92.109.210","latencyMs":34.42},{"ip":"34.92.95.182","latencyMs":35.64},{"ip":"34.92.37.175","latencyMs":31.21}]
+# updated=2026-08-23T08:09:11.391Z
+# results=[{"ip":"34.92.116.62","latencyMs":34.92},{"ip":"35.220.179.79","latencyMs":37.39},{"ip":"34.96.231.181","latencyMs":34.44},{"ip":"34.96.192.190","latencyMs":35.14},{"ip":"34.92.109.210","latencyMs":34.75},{"ip":"35.220.244.94","latencyMs":36.6},{"ip":"34.92.95.182","latencyMs":35.48},{"ip":"34.92.80.203","latencyMs":34.45},{"ip":"35.241.99.116","latencyMs":33.22}]
