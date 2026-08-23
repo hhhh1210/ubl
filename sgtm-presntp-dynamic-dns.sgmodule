@@ -1,0 +1,7 @@
+#!name=SGTM PRESNTP Dynamic DNS
+#!desc=每30分钟解析并通过 ping.pe 丽水联通 CN_113 测速，临时剔除高延迟 IP；DNS 请求仅返回低延迟地址。
+#!system=mac
+
+[Script]
+SGTM DNS lookup = type=dns,script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/sgtm-presntp-dynamic-dns.js,script-update-interval=86400,argument=mode=dns,timeout=10
+SGTM latency refresh = type=cron,cronexp="0 */30 * * * *",script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/sgtm-presntp-dynamic-dns.js,script-update-interval=86400,argument=mode=cron,timeout=55
