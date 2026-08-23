@@ -86,7 +86,7 @@ function select(results) {
 }
 
 function moduleText(addresses, results) {
-  return ['#!name=SGTM PRESNTP Dynamic Host', '#!desc=本地服务每30分钟通过 ping.pe 丽水联通 CN_113 测速后更新。', '#!system=mac', '#!update-interval=1800', '', '[General]', 'use-local-host-item-for-proxy = true', '', '[Host]', C.host + ' = ' + addresses.join(', '), '', '# updated=' + new Date().toISOString(), '# results=' + JSON.stringify(results), ''].join('\n');
+  return ['#!name=SGTM PRESNTP Dynamic Host', '#!desc=本地服务每30分钟通过 ping.pe 丽水联通 CN_113 测速后更新。', '#!system=mac', '#!update-interval=1800', '', '[General]', 'use-local-host-item-for-proxy = true', 'always-real-ip = %APPEND% ' + C.host, '', '[Host]', C.host + ' = ' + addresses.join(', '), '', '# updated=' + new Date().toISOString(), '# results=' + JSON.stringify(results), ''].join('\n');
 }
 
 function publish(text) {

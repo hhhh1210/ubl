@@ -5,6 +5,7 @@
 
 [General]
 use-local-host-item-for-proxy = true
+always-real-ip = %APPEND% sgtm.presntp.uk
 
 [Host]
 sgtm.presntp.uk = 34.92.37.175, 34.92.205.240, 35.241.99.116
