@@ -35,7 +35,9 @@ function doneDns(addresses) {
   const result = Array.isArray(addresses) && addresses.length ? addresses : undefined;
   // Never return an empty DNS-script result: Surge treats that as illegal.
   // The fallback resolver keeps the hostname usable until the first cron refresh.
-  $done(result ? { addresses: result, ttl: 60 } : { server: '223.5.5.5' });
+  // Surge Mac 6.4.4 accepts the singular address field reliably; use the
+  // fastest retained address for the actual lookup.
+  $done(result ? { address: result[0], ttl: 60 } : { server: '223.5.5.5' });
 }
 
 function listARecords(payload) {
