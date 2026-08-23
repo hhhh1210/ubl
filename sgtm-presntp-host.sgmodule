@@ -1,0 +1,13 @@
+#!name=SGTM PRESNTP Dynamic Host
+#!desc=本地服务每30分钟通过 ping.pe 丽水联通 CN_113 测速后更新。
+#!system=mac
+#!update-interval=1800
+
+[General]
+use-local-host-item-for-proxy = true
+
+[Host]
+sgtm.presntp.uk = 34.92.37.175, 35.241.99.116, 34.92.205.240
+
+# updated=2026-08-23T07:40:11.206Z
+# results=[{"ip":"34.92.116.62","latencyMs":34.44},{"ip":"34.92.109.210","latencyMs":34.64},{"ip":"35.241.99.116","latencyMs":32.53},{"ip":"35.220.179.79","latencyMs":36.49},{"ip":"34.92.37.175","latencyMs":31.43},{"ip":"34.92.95.182","latencyMs":35.29},{"ip":"34.92.205.240","latencyMs":32.75},{"ip":"34.96.231.181","latencyMs":34.24}]
