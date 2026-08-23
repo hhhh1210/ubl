@@ -33,7 +33,7 @@ function writeState(state) {
 
 function doneDns(addresses) {
   const result = Array.isArray(addresses) && addresses.length ? addresses : undefined;
-  $done(result ? { address: result } : {});
+  $done(result ? { addresses: result, ttl: 60 } : {});
 }
 
 function listARecords(payload) {
