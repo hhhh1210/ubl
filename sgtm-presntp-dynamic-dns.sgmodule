@@ -3,8 +3,8 @@
 #!system=mac
 
 [Script]
-sgtm-dns-resolver = type=dns,script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/sgtm-presntp-dynamic-dns.js,script-update-interval=86400,argument=mode=dns,timeout=10
-SGTM latency refresh = type=cron,cronexp="0 */30 * * * *",script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/sgtm-presntp-dynamic-dns.js,script-update-interval=86400,argument=mode=cron,timeout=55
+sgtm-dns-resolver = type=dns,script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/sgtm-presntp-dynamic-dns.js?v=20260823-2,script-update-interval=86400,argument=mode=dns,timeout=10,debug=true
+SGTM latency refresh = type=cron,cronexp="0 */30 * * * *",script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/sgtm-presntp-dynamic-dns.js?v=20260823-2,script-update-interval=86400,argument=mode=cron,timeout=55
 
 [Host]
 sgtm.presntp.uk = script:sgtm-dns-resolver

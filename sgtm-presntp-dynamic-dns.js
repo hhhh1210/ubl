@@ -33,7 +33,9 @@ function writeState(state) {
 
 function doneDns(addresses) {
   const result = Array.isArray(addresses) && addresses.length ? addresses : undefined;
-  $done(result ? { addresses: result, ttl: 60 } : {});
+  // Never return an empty DNS-script result: Surge treats that as illegal.
+  // The fallback resolver keeps the hostname usable until the first cron refresh.
+  $done(result ? { addresses: result, ttl: 60 } : { server: '223.5.5.5' });
 }
 
 function listARecords(payload) {
@@ -246,7 +248,7 @@ const mode = argument.includes('mode=cron') ? 'cron' : 'dns';
 if (mode === 'cron') {
   refresh();
 } else if (String($domain || '').toLowerCase() !== CONFIG.host) {
-  $done({});
+  $done({ server: '223.5.5.5' });
 } else if (Array.isArray(state.addresses) && state.addresses.length && age <= CONFIG.stateMaxAgeSeconds) {
   doneDns(state.addresses);
 } else {
