@@ -10,5 +10,5 @@ always-real-ip = %APPEND% sgtm.presntp.uk
 [Host]
 sgtm.presntp.uk = 35.241.99.116, 34.96.231.181, 34.92.80.203
 
-# updated=2026-08-23T08:09:11.391Z
-# results=[{"ip":"34.92.116.62","latencyMs":34.92},{"ip":"35.220.179.79","latencyMs":37.39},{"ip":"34.96.231.181","latencyMs":34.44},{"ip":"34.96.192.190","latencyMs":35.14},{"ip":"34.92.109.210","latencyMs":34.75},{"ip":"35.220.244.94","latencyMs":36.6},{"ip":"34.92.95.182","latencyMs":35.48},{"ip":"34.92.80.203","latencyMs":34.45},{"ip":"35.241.99.116","latencyMs":33.22}]
+# updated=2026-08-23T08:39:58.101Z
+# results=[]
