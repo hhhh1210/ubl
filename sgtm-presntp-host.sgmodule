@@ -8,7 +8,7 @@ use-local-host-item-for-proxy = true
 always-real-ip = %APPEND% sgtm.presntp.uk
 
 [Host]
-sgtm.presntp.uk = 35.241.99.159, 34.92.186.52, 34.92.221.91
+sgtm.presntp.uk = 35.241.99.159, 34.92.4.181, 34.92.186.52
 
-# updated=2026-08-28T09:46:53.258Z
-# results=[{"ip":"34.92.221.91","latencyMs":50.47},{"ip":"35.241.99.159","latencyMs":32.31},{"ip":"34.92.186.52","latencyMs":37.38},{"ip":"34.92.86.248","latencyMs":57.8},{"ip":"34.92.64.210","latencyMs":57.43}]
+# updated=2026-08-28T10:17:08.676Z
+# results=[{"ip":"34.92.186.52","latencyMs":37.18},{"ip":"34.92.4.181","latencyMs":34.66},{"ip":"34.92.86.248","latencyMs":53.73},{"ip":"34.92.221.91","latencyMs":68.61},{"ip":"35.241.99.159","latencyMs":32.34}]
