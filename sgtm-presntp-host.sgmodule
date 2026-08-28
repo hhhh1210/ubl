@@ -1,5 +1,5 @@
 #!name=SGTM PRESNTP Dynamic Host
-#!desc=本地服务每30分钟通过 ping.pe 丽水联通 CN_113 测速后更新。
+#!desc=仅保留 Google/AWS IP，每30分钟通过 ping.pe 丽水联通 CN_113 测速后更新。
 #!system=mac
 #!update-interval=1800
 
@@ -8,7 +8,7 @@ use-local-host-item-for-proxy = true
 always-real-ip = %APPEND% sgtm.presntp.uk
 
 [Host]
-sgtm.presntp.uk = 34.92.37.175, 34.92.205.240, 34.96.231.181
+sgtm.presntp.uk = 35.241.99.159, 34.92.186.52, 34.92.221.91
 
-# updated=2026-08-23T09:40:54.321Z
-# results=[{"ip":"34.92.116.62","latencyMs":34.54},{"ip":"34.92.80.203","latencyMs":34.52},{"ip":"34.92.95.182","latencyMs":35.24},{"ip":"34.96.192.190","latencyMs":38.53},{"ip":"35.220.244.94","latencyMs":36.79},{"ip":"34.96.231.181","latencyMs":34.38},{"ip":"34.92.109.210","latencyMs":34.75},{"ip":"34.92.205.240","latencyMs":33.23},{"ip":"34.92.37.175","latencyMs":32.23}]
+# updated=2026-08-28T09:16:35.829Z
+# results=[{"ip":"34.92.64.210","latencyMs":57.57},{"ip":"34.92.86.248","latencyMs":60},{"ip":"34.92.221.91","latencyMs":50.07},{"ip":"34.92.186.52","latencyMs":36.97},{"ip":"35.241.99.159","latencyMs":32.53}]
