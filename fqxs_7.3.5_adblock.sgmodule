@@ -1,0 +1,63 @@
+#!name=番茄小说 7.3.5 去广告（Surge iOS）
+#!desc=基于 7.3.5.34 IPA 的待实机验证版。Surge iOS 5.10+；需启用脚本、重写与已信任证书的 MITM。先停用旧番茄模块。不解锁 VIP/付费章节，不伪造广告奖励。共享广告 SDK 拦截可能影响其他 App。
+#!author=Local IPA analysis
+#!requirement=SYSTEM = 'iOS'
+#!date=2026-09-06
+#!version=20260906-2
+
+# 静态基线：com.dragon.read / 7.3.5.34。主程序 cryptid=1；静态验证不等于实机广告已清除。
+# TNC：ad/ads.zijieapi.com -> ads5-normal.zijieapi.com；api.fqnovel.com -> api5-normal.fqnovel.com。
+# 字段/路由：AdContext、ad_url_data、non_std_ad_id、chapter_middle_ad_config、batch_full。
+# growth_incentive task/prefetch.json：task/page、v_lab/get_ab_info、resource_plan。
+# 不清空整个 settings/AB/商城，不改 watch_done、task/done、钱包或会员权限。
+# 脚本只处理已识别字段；加密正文、离线广告、未知字段可能继续存在。
+# force-http-engine-hosts 只影响明文 HTTP，不能破解 TLS 或证书锁定。
+# 主配置 [MITM] auto-quic-block 保持默认 true（Surge iOS 5.8+）；模块仅追加 hostname。
+# 官方文档：https://manual.nssurge.com/profile/module.html
+# 官方文档：https://manual.nssurge.com/scripting/overview.html
+# 官方文档：https://manual.nssurge.com/scripting/http-request.html
+
+[Rule]
+# 广告专用域名仅在连接层拒绝，不再同时配置 Map Local 或请求脚本。
+DOMAIN,ad.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads3-normal.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads3-normal-lf.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads3-normal-hl.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads3-normal-lq.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads5-normal.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads5-normal-lf.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads5-normal-hl.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads5-normal-lq.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pangolin-sdk-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pangolin-sdk-toutiao1.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pangolin-sdk-toutiao-b.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pangolin-dsp-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,panplayable-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN,p3-ad-sign.byteimg.com,REJECT,extended-matching,pre-matching
+DOMAIN,p6-ad-sign.byteimg.com,REJECT,extended-matching,pre-matching
+DOMAIN,p9-ad-sign.byteimg.com,REJECT,extended-matching,pre-matching
+DOMAIN,open.e.kuaishou.com,REJECT,extended-matching,pre-matching
+DOMAIN,open.e.kuaishou.cn,REJECT,extended-matching,pre-matching
+DOMAIN,sdk.e.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,sdkquic.e.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,v2mi.gdt.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,mobads.baidu.com,REJECT,extended-matching,pre-matching
+
+[URL Rewrite]
+# 只阻断明确广告资源路径，不按 ad/monetize 子串扫掉正常阅读或 VIP 页面。
+^https?:\/\/lf-cdn-tos\.bytescm\.com\/obj\/static\/ad\/ - reject
+^https?:\/\/(?:reading(?:-(?:hl|lq))?\.snssdk\.com\/reading_offline|lf-fe\.fqnovelstatic\.com\/obj\/novel-fanqie-fe\/novel-dragon\/feoffline)\/drlynx_monetize_game\/game-popular-play-card\/ - reject
+^https?:\/\/(?:lf-sourcecdn-tos\.bytegecko\.com|lf-sourcecdn-tos\.bytegoofy\.com)\/obj\/byte-gurd-source\/growth\/luckycat\/lynx\/growth_incentive-monorepo_novel-popup\/(?:ad-reward-modal|watch-ad-reward-modal)\/ - reject
+
+[Script]
+# 本地合成无广告数据，不伪造看完广告、奖励或免费会员。
+FQXS735 Ad Request = type=http-request, pattern=^https?:\/\/(?:api(?:-(?:hl|lq)|[35]-normal(?:-[a-z0-9-]+)?)?\.fqnovel\.com\/luckycat\/novel\/v1\/task\/(?:get_ad_info|get_single_ad_info|get_excitation_info)\/?(?:\?[^#]*)?$|i(?:-(?:hl|lq))?\.snssdk\.com\/video\/play\/[^?#]*\?(?:[^#]*&)?ad_id=0*[1-9]\d*(?:&[^#]*)?$), script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/fqxs-7.3.5-network-cut.js?v=20260906-2, script-update-interval=86400, timeout=3, engine=jsc
+# 共享 snssdk settings 在脚本内额外校验 aid=1967/caller_name=novelapp。
+FQXS735 Settings = type=http-response, pattern=^https?:\/\/(?:(?:is|ib|i(?:-(?:hl|lq))?)\.snssdk\.com\/service\/settings\/v[23]|(?:api(?:-(?:hl|lq)|[35]-normal(?:-[a-z0-9-]+)?)?\.fqnovel\.com|reading(?:-(?:hl|lq))?\.snssdk\.com)\/(?:reading\/ugc\/ab\/config\/v\d+|luckycat\/novel\/v1\/v_lab\/get_ab_info))\/?(?:\?[^#]*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/fqxs-7.3.5-reader-clean.js?v=20260906-2, script-update-interval=86400, requires-body=true, max-size=1048576, timeout=5, engine=auto
+# 同时覆盖 reading 原始主机和 api 区域节点，保留正常正文与普通任务。
+FQXS735 Reader Data = type=http-response, pattern=^https?:\/\/(?:api(?:-(?:hl|lq)|[35]-normal(?:-[a-z0-9-]+)?)?\.fqnovel\.com|reading(?:-(?:hl|lq))?\.snssdk\.com)\/(?:reading\/reader\/batch_full\/v\d+|reading\/commerceapi\/commerce\/tab\/v\d+|luckycat\/novel\/v[12]\/(?:task\/page|resource\/(?:resource_plan|resource_detail|detail_popup|popup_show)))\/?(?:\?[^#]*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/ios/fqxs-7.3.5-reader-clean.js?v=20260906-2, script-update-interval=86400, requires-body=true, max-size=2097152, timeout=5, engine=auto
+
+[MITM]
+hostname = %APPEND% api*.fqnovel.com, is.snssdk.com, ib.snssdk.com, i.snssdk.com, i-hl.snssdk.com, i-lq.snssdk.com, reading.snssdk.com, reading-hl.snssdk.com, reading-lq.snssdk.com, lf-cdn-tos.bytescm.com, lf-fe.fqnovelstatic.com, lf-sourcecdn-tos.bytegecko.com, lf-sourcecdn-tos.bytegoofy.com
