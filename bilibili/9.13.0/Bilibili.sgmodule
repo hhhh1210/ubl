@@ -1,0 +1,40 @@
+#!name=哔哩哔哩 9.13.0 广告清理（组合版）
+#!desc=基础开屏/JSON 信息流清理加播放页 Protobuf 广告清理。自动下载配套脚本。需要 Surge iOS 5.14+、重写、脚本、已信任的 MitM 证书及 MitM over HTTP/2。已通过本地测试，未完成 iPhone 实测。
+#!category=去广告
+#!homepage=https://github.com/hhhh1210/ubl/tree/main/bilibili/9.13.0
+
+# 组合版已包含基础与播放页规则，不要重复启用这两个单独模块。
+# 请停用其他同时修改哔哩哔哩接口的模块，包括旧 Bilibili_remove_ads。
+# 广告计费/转化上报拦截仍为单独可选模块。
+
+[Body Rewrite]
+# 开屏素材与展示：清空已存在的广告数组，保留请求 ID 和刷新间隔
+# Evidence: IPA UTF-16LE: 0x2082c862, 0x2082c8a2; SplashListResponse/SplashShowResponse; public anonymous GET success responses 2026-09-24
+http-response-jq ^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$ 'if type == "object" then if .code == 0 and (.data | type) == "object" then (.data |= with_entries(if (.key == "list" or .key == "show" or .key == "keep_ids") and (.value | type) == "array" then .value = [] elif .key == "max_time" and (.value | type) == "number" then .value = 0 else . end)) else . end else . end'
+
+# 首页和竖屏 JSON 信息流：仅删除明确广告卡，保留普通视频/直播/课程/番剧
+# Evidence: Compatibility rule: kokoryh/Sparkle json/handler.ts and Biliverse/ADBlock surge template (pinned commits in report); IPA confirms AdInfo/is_ad models, not this complete route
+http-response-jq ^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$ 'if type == "object" then if .code == 0 and (.data | type) == "object" then (def ad: if type != "object" then false else (.is_ad == true or .is_ad == 1 or .is_ad == "1" or ((.ad_info | type) == "object" and (.ad_info | length) > 0) or ((.card_goto // "") | if type == "string" then test("^(ad_|vertical_ad_)") else false end)) end; if (.data.items | type) == "array" then .data.items |= map(select(ad | not)) else . end) else . end else . end'
+
+
+[Header Rewrite]
+# 路径命中标记不等于一定删掉了广告；仅作用于上述路径。
+http-request (?:^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$|^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$) header-del If-None-Match
+http-request (?:^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$|^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$) header-del If-Modified-Since
+http-response (?:^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$|^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$) header-del ETag
+http-response (?:^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$|^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$) header-del Cache-Control
+http-response (?:^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$|^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$) header-add Cache-Control no-store
+http-response (?:^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$|^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$) header-del X-Bili-AdClean
+http-response (?:^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$|^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$) header-add X-Bili-AdClean 20260924-path-matched
+
+# 请求无 gRPC 消息级压缩；若服务器仍压缩，脚本原样放行。
+http-request ^https://(?:grpc\.biliapi\.net|app\.bilibili\.com|app\.biliapi\.net)(?::443)?/bilibili\.app\.viewunite\.v1\.View/(?:View|RelatesFeed|PlayPause)/?(?:\?.*)?$ header-del grpc-accept-encoding
+http-request ^https://(?:grpc\.biliapi\.net|app\.bilibili\.com|app\.biliapi\.net)(?::443)?/bilibili\.app\.viewunite\.v1\.View/(?:View|RelatesFeed|PlayPause)/?(?:\?.*)?$ header-add grpc-accept-encoding identity
+
+
+[Script]
+Bili913-PlaybackAds = type=http-response, pattern=^https://(?:grpc\.biliapi\.net|app\.bilibili\.com|app\.biliapi\.net)(?::443)?/bilibili\.app\.viewunite\.v1\.View/(?:View|RelatesFeed|PlayPause)/?(?:\?.*)?$, requires-body=true, binary-body-mode=true, max-size=1048576, timeout=5, engine=jsc, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/main/bilibili/9.13.0/bilibili-ad-protobuf.js
+
+
+[MITM]
+hostname = %APPEND% app.bilibili.com, grpc.biliapi.net, app.biliapi.net

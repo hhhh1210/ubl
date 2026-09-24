@@ -1,0 +1,30 @@
+#!name=哔哩哔哩 9.13.0 广告清理（基础）
+#!desc=需要 Surge iOS 5.14+、重写及已信任的 MitM 证书。清理开屏与 JSON 信息流广告；不覆盖全部 Protobuf 广告。根据指定 IPA 明文数据段与公开接口制作，未完成 iPhone 实测。
+#!category=去广告
+
+# 单文件；无远程脚本。与播放页增强模块可同时启用。
+# 仅改 code=0 且 data 为对象的 JSON；未知结构保留。
+# 未整站屏蔽 bilibili.com / cm.bilibili.com / hdslb.com / bilivideo.com。
+# 原有磁盘广告缓存需在 App 内清理后重新启动。
+
+[Body Rewrite]
+# 开屏素材与展示：清空已存在的广告数组，保留请求 ID 和刷新间隔
+# Evidence: IPA UTF-16LE: 0x2082c862, 0x2082c8a2; SplashListResponse/SplashShowResponse; public anonymous GET success responses 2026-09-24
+http-response-jq ^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$ 'if type == "object" then if .code == 0 and (.data | type) == "object" then (.data |= with_entries(if (.key == "list" or .key == "show" or .key == "keep_ids") and (.value | type) == "array" then .value = [] elif .key == "max_time" and (.value | type) == "number" then .value = 0 else . end)) else . end else . end'
+
+# 首页和竖屏 JSON 信息流：仅删除明确广告卡，保留普通视频/直播/课程/番剧
+# Evidence: Compatibility rule: kokoryh/Sparkle json/handler.ts and Biliverse/ADBlock surge template (pinned commits in report); IPA confirms AdInfo/is_ad models, not this complete route
+http-response-jq ^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$ 'if type == "object" then if .code == 0 and (.data | type) == "object" then (def ad: if type != "object" then false else (.is_ad == true or .is_ad == 1 or .is_ad == "1" or ((.ad_info | type) == "object" and (.ad_info | length) > 0) or ((.card_goto // "") | if type == "string" then test("^(ad_|vertical_ad_)") else false end)) end; if (.data.items | type) == "array" then .data.items |= map(select(ad | not)) else . end) else . end else . end'
+
+[Header Rewrite]
+# 路径命中标记不等于一定删掉了广告；仅作用于上述路径。
+http-request (?:^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$|^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$) header-del If-None-Match
+http-request (?:^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$|^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$) header-del If-Modified-Since
+http-response (?:^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$|^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$) header-del ETag
+http-response (?:^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$|^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$) header-del Cache-Control
+http-response (?:^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$|^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$) header-add Cache-Control no-store
+http-response (?:^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$|^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$) header-del X-Bili-AdClean
+http-response (?:^https://app\.bilibili\.com(?::443)?/x/v2/splash/(?:list|show)/?(?:\?.*)?$|^https://app\.bilibili\.com(?::443)?/x/v2/feed/index(?:/(?:relate/)?story)?/?(?:\?.*)?$) header-add X-Bili-AdClean 20260924-path-matched
+
+[MITM]
+hostname = %APPEND% app.bilibili.com

@@ -1,0 +1,16 @@
+#!name=哔哩哔哩 播放页广告清理（增强）
+#!desc=自动下载配套脚本；需开启脚本、MitM、MitM over HTTP/2。清理 View 广告字段、相关推荐广告卡、独立暂停广告响应；未经过 iPhone 实测。压缩或未知格式保留。
+#!category=去广告
+
+# 可与基础模块并用。字段号来自固定版本公开 schema，IPA 确认同名消息/广告模型。
+# 只处理 View、RelatesFeed、PlayPause；不处理播放地址、登录、会员或支付接口。
+[Script]
+Bili913-PlaybackAds = type=http-response, pattern=^https://(?:grpc\.biliapi\.net|app\.bilibili\.com|app\.biliapi\.net)(?::443)?/bilibili\.app\.viewunite\.v1\.View/(?:View|RelatesFeed|PlayPause)/?(?:\?.*)?$, requires-body=true, binary-body-mode=true, max-size=1048576, timeout=5, engine=jsc, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/main/bilibili/9.13.0/bilibili-ad-protobuf.js
+
+[Header Rewrite]
+# 请求无 gRPC 消息级压缩；若服务器仍压缩，脚本原样放行。
+http-request ^https://(?:grpc\.biliapi\.net|app\.bilibili\.com|app\.biliapi\.net)(?::443)?/bilibili\.app\.viewunite\.v1\.View/(?:View|RelatesFeed|PlayPause)/?(?:\?.*)?$ header-del grpc-accept-encoding
+http-request ^https://(?:grpc\.biliapi\.net|app\.bilibili\.com|app\.biliapi\.net)(?::443)?/bilibili\.app\.viewunite\.v1\.View/(?:View|RelatesFeed|PlayPause)/?(?:\?.*)?$ header-add grpc-accept-encoding identity
+
+[MITM]
+hostname = %APPEND% grpc.biliapi.net, app.bilibili.com, app.biliapi.net

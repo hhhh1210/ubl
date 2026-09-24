@@ -1,0 +1,12 @@
+#!name=哔哩哔哩 广告上报拦截（可选）
+#!desc=拦截 IPA 确认的广告计费和转化上报，仅改善隐私，不会单独去除界面广告。需要重写及 cm.bilibili.com MitM。返回本地 code=0，避免已发现的失败重试链。
+#!category=隐私
+
+# IPA UTF-16LE: base 0x20dac592; conversion 0x20dac5d2; fees 0x20dac622.
+# ReportUploader/UploadScheduler 字符串明确存在失败重试；不阻断整个 cm 域名。
+# 此处为合成确认响应，并非抓取到的真实服务器响应；不产生真实计费或奖励。
+[Map Local]
+^https://cm\.bilibili\.com(?::443)?/cm/api/(?:conversion/mobile/v2|fees/wise)/?(?:\?.*)?$ data-type=base64 data="eyJjb2RlIjowLCJtZXNzYWdlIjoiT0sifQ==" status-code=200 header="Content-Type:application/json|Cache-Control:no-store|X-Bili-AdClean:20260924-local-report"
+
+[MITM]
+hostname = %APPEND% cm.bilibili.com
