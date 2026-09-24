@@ -1,0 +1,16 @@
+name: 插件模块跳转到 Surge
+description: 将可莉插件中心的 Loon 导入链接改为 Surge 导入链接
+icon: https://iili.io/BDPVJ1I.png
+homepage: https://hub.kelee.one
+
+body_rewrites:
+  - response_regex:
+      match: '^https://(pluginhub|hub)\.kelee\.one/'
+      find: 'loon://import\?plugin='
+      replace: 'surge:///install-module?url='
+
+mitm:
+  hostnames:
+    includes:
+      - pluginhub.kelee.one
+      - hub.kelee.one
