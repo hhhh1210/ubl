@@ -41,10 +41,16 @@ function getHeader(headers, target) {
 
 function bytesToText(bytes) {
   let out = '';
+  let escaped = '';
   for (let i = 0; i < bytes.length; i++) {
     out += String.fromCharCode(bytes[i] & 0xff);
+    escaped += '%' + ('0' + (bytes[i] & 0xff).toString(16)).slice(-2);
   }
-  return out;
+  try {
+    return decodeURIComponent(escaped);
+  } catch (error) {
+    return out;
+  }
 }
 
 function bodyToText(body) {
@@ -74,7 +80,7 @@ function decodeSafe(text) {
 }
 
 function parseUrl(url) {
-  const match = String(url || '').match(/^https?:\/\/([^/?#:]+)([^?#]*)(?:\?([^#]*))?/i);
+  const match = String(url || '').match(/^https?:\/\/([^/?#:]+)(?::\d+)?([^?#]*)(?:\?([^#]*))?/i);
   if (!match) {
     return { host: '', path: '', query: '' };
   }
@@ -235,7 +241,21 @@ function isActivityEndpoint(urlInfo) {
 
 function isPDataEndpoint(urlInfo) {
   return urlInfo.host === 'api.hongyibo.com.cn' &&
-    /^\/gulfstream\/(?:passenger-center\/v1\/other\/(?:p(?:Data|Layout)|pGetKFlowerActivityInfo|pGetMarketingInfo|pGetKfUnfinishedMsg)|pre-sale\/v1\/other\/(?:pGetIndexInfo|pGetConfig\/kFlowerConfig)|api\/v1\/passenger\/pGetPanelConfig)$/.test(urlInfo.path);
+    /^\/gulfstream\//.test(urlInfo.path);
+}
+
+function isLegacyPDataEndpoint(urlInfo) {
+  return /^\/gulfstream\/(?:passenger-center\/v1\/other\/(?:p(?:Data|Layout)|pGetKFlowerActivityInfo|pGetMarketingInfo|pGetKfUnfinishedMsg)|pre-sale\/v1\/other\/(?:pGetIndexInfo|pGetConfig\/kFlowerConfig)|api\/v1\/passenger\/pGetPanelConfig)$/.test(urlInfo.path);
+}
+
+// The public imk-kf-index bundle uses these Webx read APIs. api.didi.cn is
+// shared, so it additionally requires the product header sent by that SDK.
+function isWebxEndpoint(urlInfo, request) {
+  const path = /^\/webx\/(?:chapter\/(?:product\/init|page\/batch\/config|cover\/config)|page\/config|v[23]\/productInit)\/?$/;
+  if (!path.test(urlInfo.path)) return false;
+  if (urlInfo.host === 'api.huaxz.cn') return true;
+  return urlInfo.host === 'api.didi.cn' &&
+    /^(?:kf-passenger-app|kf-pop-ups|imk-kf-[a-z0-9-]+)$/.test(String(getHeader(request.headers, 'X-Prod-Key')));
 }
 
 function isShieldEndpoint(urlInfo) {
@@ -348,6 +368,37 @@ const BAD_VALUE_RE = /(?:p_startpage|p_home_popup|home_pop_manual|channel_id=130
 const BAD_IDS = new Set(['14', '15', '416', '428', '434', '436', '454', '590', '620']);
 const BAD_COMPONENT_IDS = new Set(['10005', '10006', '14013', '15004']);
 
+// Exact templates from the public kf-pop-ups scripts; model/component names
+// corroborated by the IPA's residual export-trie nodes. No generic popup,
+// coupon, box or alert match: those also describe ride and security controls.
+const MARKETING_NAME_RE = /^(?:KF(?:InserviceSurpriseMySteryBoxModel|InservingMarketingView|ResourceEndMarketingView|SFCInserviceMarketingView|IntegrateResourceInfoView(?:Model)?|EndIntegrateResourceInfoView(?:Model)?|ActivityPopupView(?:Model)?)|one_click_get_coupons_(?:homepage(?:_emotion)?|super_banner|bubbling_retention_popup|driving_(?:emotion|popup)|pay_finish_(?:popup|header))|kf_popcoupon|kf_newcomer_rights_perception_homepage|member_remote_welcome_card|save_package|kf_level_vip_pop|vip_member_day|imk-kf-[a-z0-9-]+)$/i;
+const MARKETING_KEY_RE = /^(?:mystery_?box|my_?stery_?box|blind_?box|surprise_?(?:my_?stery|mystery|blind)_?box|inservice_?surprise_?(?:my_?stery|mystery)_?box|marketing_?(?:popup|dialog|bubble|info|data|resource|resources|banner|card)(?:_?(?:list|info|data))?|(?:inservice|inserving|end|pay_?finish)_?marketing|(?:popup|pop_?up)_?ads?|ad_?(?:banner|popup|dialog|float)|one_click_get_coupons_(?:homepage(?:_emotion)?|super_banner|bubbling_retention_popup|driving_(?:emotion|popup)|pay_finish_(?:popup|header)))$/i;
+const MARKETING_URL_RE = /^https?:\/\/(?:page\.hongyibo\.com\.cn(?::\d+)?\/kf-webx\/pop-ups\/[^/?#]+\.html|prod\.huaxz\.cn(?::\d+)?\/(?:imk-kf-[a-z0-9-]+|kf-steps-upgrade-fission)\/index(?:\.html)?)(?:[?#]|$)/i;
+const DESCRIPTOR_FIELDS = ['resource_name', 'resourceName', 'position_name', 'positionName', 'component_name', 'componentName', 'cname', 'api_tpl_name', 'apiTplName', 'api_com_name', 'apiComName', 'template_name', 'templateName', 'tpl', 'T', 'type', 'name', 'prod_key', 'prodKey'];
+const URL_FIELDS = ['url', 'link', 'landing_url', 'landingUrl', 'jump_url', 'jumpUrl', 'web_url', 'webUrl', 'file_url', 'fileUrl'];
+
+function isMarketingDescriptor(item) {
+  for (const key of DESCRIPTOR_FIELDS) {
+    const text = stringValue(item[key]);
+    if (MARKETING_NAME_RE.test(text) || MARKETING_KEY_RE.test(text)) return true;
+    if (!/^(?:type|name)$/.test(key) && /盲盒|营销弹窗/.test(text)) return true;
+  }
+  // A destination or order title can contain “盲盒”; require an actual
+  // promotion descriptor before using Chinese display text as evidence.
+  if (/盲盒|营销弹窗/.test(stringValue(item.title)) &&
+      ['resource_name', 'resourceName', 'template_name', 'templateName', 'api_tpl_name', 'apiTplName', 'prod_key'].some(key => Boolean(item[key]))) return true;
+  return URL_FIELDS.some(key => MARKETING_URL_RE.test(decodeSafe(stringValue(item[key]))));
+}
+
+function emptyLike(value) {
+  if (Array.isArray(value)) return [];
+  if (value && typeof value === 'object') return {};
+  if (typeof value === 'boolean') return false;
+  if (typeof value === 'number') return 0;
+  if (typeof value === 'string') return '';
+  return value;
+}
+
 function itemText(item) {
   if (!item || typeof item !== 'object') {
     return stringValue(item);
@@ -390,7 +441,7 @@ function itemText(item) {
   return fields.map(stringValue).join(' ');
 }
 
-function isBadItem(item) {
+function isBadItem(item, legacy) {
   if (!item || typeof item !== 'object') {
     return false;
   }
@@ -406,11 +457,14 @@ function isBadItem(item) {
     item.api_com_name ||
     item.apiComName
   );
-  return BAD_IDS.has(resourceId) ||
+  const material = typeof item.material_data === 'string' ? parseJson(item.material_data) : item.material_data;
+  return isMarketingDescriptor(item) ||
+    (material && typeof material === 'object' && !Array.isArray(material) && isMarketingDescriptor(material)) ||
+    BAD_COMPONENT_RE.test(componentName) ||
+    (legacy !== false && (BAD_IDS.has(resourceId) ||
     BAD_IDS.has(unitId) ||
     BAD_COMPONENT_IDS.has(componentId) ||
-    BAD_COMPONENT_RE.test(componentName) ||
-    BAD_VALUE_RE.test(itemText(item));
+    BAD_VALUE_RE.test(itemText(item))));
 }
 
 function patchJsonFlag(object, key, flag, value, state) {
@@ -485,8 +539,10 @@ function cleanStringJson(text, state) {
   if (parsed === undefined) {
     return text;
   }
-  const nestedState = { changed: false };
-  const cleaned = cleanValue(parsed, nestedState);
+  const nestedState = { changed: false, legacy: state.legacy };
+  const bad = isBadItem(parsed, state.legacy);
+  const cleaned = bad ? emptyLike(parsed) : cleanValue(parsed, nestedState);
+  if (bad) nestedState.changed = true;
   if (nestedState.changed) {
     state.changed = true;
     return JSON.stringify(cleaned);
@@ -498,15 +554,20 @@ function cleanArray(array, state) {
   const out = [];
   for (const item of array) {
     if (typeof item === 'string') {
+      const parsed = parseJson(item);
+      if (isBadItem(parsed, state.legacy) || MARKETING_NAME_RE.test(item) || MARKETING_URL_RE.test(decodeSafe(item))) {
+        state.changed = true;
+        continue;
+      }
       const cleaned = cleanStringJson(item, state);
-      if (BAD_VALUE_RE.test(cleaned)) {
+      if (state.legacy !== false && BAD_VALUE_RE.test(cleaned)) {
         state.changed = true;
         continue;
       }
       out.push(cleaned);
       continue;
     }
-    if (isBadItem(item)) {
+    if (isBadItem(item, state.legacy)) {
       state.changed = true;
       continue;
     }
@@ -522,18 +583,26 @@ function cleanObject(object, state) {
   patchToggle(object, state);
   const out = {};
   for (const key of Object.keys(object)) {
+    if (MARKETING_KEY_RE.test(key) || MARKETING_NAME_RE.test(key)) {
+      const empty = emptyLike(object[key]);
+      out[key] = empty;
+      if (JSON.stringify(empty) !== JSON.stringify(object[key])) state.changed = true;
+      continue;
+    }
     if (BAD_KEY_RE.test(key)) {
       state.changed = true;
       continue;
     }
     const value = object[key];
-    if (isBadItem(value)) {
+    if (isBadItem(value, state.legacy)) {
       state.changed = true;
+      // Keep response / component envelopes, even when their data is an ad.
+      if (/^(?:data|result|content|resourceData|material_data)$/.test(key)) out[key] = emptyLike(value);
       continue;
     }
     if (typeof value === 'string') {
       const cleaned = cleanStringJson(value, state);
-      if (BAD_VALUE_RE.test(cleaned) && /^(?:image|img|icon|url|link|landing_url|file_url|fileUrl|material|content|resource_name|resourceName|template_name|templateName|api_tpl_name|apiTplName|tpl|T)$/i.test(key)) {
+      if (state.legacy !== false && BAD_VALUE_RE.test(cleaned) && /^(?:image|img|icon|url|link|landing_url|file_url|fileUrl|material|content|resource_name|resourceName|template_name|templateName|api_tpl_name|apiTplName|tpl|T)$/i.test(key)) {
         out[key] = '';
         state.changed = true;
         continue;
@@ -556,10 +625,24 @@ function cleanValue(value, state) {
   return value;
 }
 
-function cleanJsonPayload(payload) {
-  const state = { changed: false };
+function cleanJsonPayload(payload, legacy) {
+  const state = { changed: false, legacy };
   const cleaned = cleanValue(payload, state);
   return { cleaned, changed: state.changed };
+}
+
+function cleanMarketingResponse(response, reason, marker, legacy) {
+  const status = Number(response.status || response.statusCode || 200);
+  if (status < 200 || status >= 300) return done({});
+  const payload = parseJson(bodyToText(response.body));
+  if (!payload || typeof payload !== 'object') return done({});
+  for (const key of ['errno', 'code', 'ret', 'errcode']) {
+    if (payload[key] !== undefined && Number(payload[key]) !== 0) return done({});
+  }
+  const result = cleanJsonPayload(payload, legacy);
+  if (!result.changed) return done({});
+  console.log(`uBO Huaxiaozhu ad clean: ${reason}`);
+  done({ headers: buildHeaders(response.headers, marker, 'application/json; charset=utf-8'), body: JSON.stringify(result.cleaned) });
 }
 
 try {
@@ -604,25 +687,18 @@ try {
 
   if (handled === false && /(?:^|&)phase=activity(?:&|$)/.test(argument) && isActivityEndpoint(urlInfo)) {
     markApp('activity resource marker refreshed');
-    const payload = parseJson(bodyToText(response.body) || '{}') || {};
-    const result = cleanJsonPayload(payload);
-    if (result.changed) {
-      finishJson('activity marketing resources cleaned', result.cleaned, 'activity-lite-clean-1');
-    } else {
-      done({});
-    }
+    cleanMarketingResponse(response, 'activity marketing resources cleaned', 'activity-marketing-2');
     handled = true;
   }
 
   if (handled === false && /(?:^|&)phase=pdata(?:&|$)/.test(argument) && isPDataEndpoint(urlInfo)) {
     markApp('pData marker refreshed');
-    const payload = parseJson(bodyToText(response.body) || '{}') || {};
-    const result = cleanJsonPayload(payload);
-    if (result.changed) {
-      finishJson('pData marketing resources cleaned', result.cleaned, 'pdata-lite-clean-1');
-    } else {
-      done({});
-    }
+    cleanMarketingResponse(response, 'native marketing and mystery box cleaned', 'pdata-marketing-2', isLegacyPDataEndpoint(urlInfo));
+    handled = true;
+  }
+
+  if (handled === false && /(?:^|&)phase=webx(?:&|$)/.test(argument) && isWebxEndpoint(urlInfo, request)) {
+    cleanMarketingResponse(response, 'Webx marketing resources cleaned', 'webx-marketing-2', false);
     handled = true;
   }
 
