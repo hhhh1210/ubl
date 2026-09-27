@@ -1,15 +1,33 @@
-# 虎牙 13.4.80 广告屏蔽与 SDK 分析
+# 虎牙广告屏蔽：13.3.60 HAR 补漏与 13.4.80 SDK 分析
 
-已完成解密 IPA 静态清点、模块制作、协议样本测试及 Surge 本地验证。**尚未在 iPhone 验证，不能保证所有广告消失。**
+已完成解密 IPA 静态清点、模块制作、真实 HAR 离线回放及 Surge 本地验证。**更新后尚未在 iPhone 验证，不能保证所有广告消失。Loon 必须导入 `.plugin`，不能把 Surge 模块当作原生插件使用。**
 
 ## 使用
 
-1. 在 Surge 更新已导入的虎牙模块，或导入[主模块原地址](https://raw.githubusercontent.com/hhhh1210/ubl/ios/huya-core-scripted.sgmodule)，避免同时启用新旧两份。它保留原模块两个固定提交版本的脚本依赖。
-2. 启用 Surge 模块、脚本、MitM，并确保设备信任 MitM 证书。彻底退出虎牙后重新启动。域名拒绝本身不依赖解密，路径规则及脚本需要 MitM。
-3. 若仍有虎牙自有广告，可另外导入[可选 RPC 模块](https://raw.githubusercontent.com/hhhh1210/ubl/ios/Huya_RPC_Experimental.sgmodule)。模块引用固定 Git 提交的 HTTPS 脚本，Surge 自动下载，无需手动复制脚本。
+1. **Loon：**导入[虎牙原生插件](https://raw.githubusercontent.com/hhhh1210/ubl/ios/huya-core-scripted.plugin)，在插件设置中启用规则、复写和脚本。支持[一键导入](https://www.nsloon.com/openloon/import?plugin=https%3A%2F%2Fraw.githubusercontent.com%2Fhhhh1210%2Fubl%2Fios%2Fhuya-core-scripted.plugin)。插件使用 Loon `[Rewrite]` 和原生脚本语法，没有 Surge `[Map Local]`、`%APPEND%` 或专属参数。
+2. **Surge：**更新原虎牙模块，或导入[主模块原地址](https://raw.githubusercontent.com/hhhh1210/ubl/ios/huya-core-scripted.sgmodule)。避免同时启用新旧两份。两种客户端均需启用 MitM 并信任证书，HTTPS 路径规则/脚本才会生效。域名拒绝本身不依赖解密。退出虎牙后重新启动。
+3. **Surge 可选：**若仍有虎牙自有广告，可另外导入[RPC 模块](https://raw.githubusercontent.com/hhhh1210/ubl/ios/Huya_RPC_Experimental.sgmodule)。模块引用固定 Git 提交的 HTTPS 脚本，Surge 自动下载。它仍为实验功能，本轮未把它移植并默认加入 Loon；HAR 未捕获广告 RPC，实际捕获的 HTTPDNS/账号 WUP 均保留。
 4. 若启用 RPC 模块后直播/首页异常，先关闭该可选模块；若其他 App 的广告奖励或统计受影响，关闭主模块后复测。
 
 主模块的第三方广告域名规则是设备级的，也会影响其他 App 使用的同类 SDK；Surge iOS 不能靠这些规则识别流量属于哪个 App。激励广告会不可用，观看广告换奖励、短剧广告解锁可能失败；没有伪造完成广告或奖励发放。
+
+## 2026-09-27 HAR 补漏
+
+本轮 HAR 由 Loon 导出，共 413 条请求。腾讯 settings、模板请求及 TDataMaster 请求中的客户端版本一致为 **13.3.60 / build 87573**，穿山甲使用 `aid=5000546`；不是前一轮解密 IPA 的 13.4.80，因此保留旧 App ID 匹配。
+
+抓包元数据显示：**拒绝规则命中 0、复写命中 0、脚本命中 0**。广告请求实际走了普通路由，腾讯 `/exapp` 返回 2 条广告，随后有广告图片/视频和动态渲染包成功返回。仅凭这些记录不能断言用户所有配置都未启用，但能确认这一轮请求没有受到已列出的广告规则处理。
+
+具体修复：
+
+- 增加 `pangolin-sdk-toutiao1.com`、`pangolin-sdk-toutiao-b.com`、`toblog.ctobsnssdk.com`、`p.l.qq.com`，补齐备用广告、增长上报和曝光域名。
+- `lf-cdn-tos.bytescm.com/obj/static/ad/play-comp/` 精确阻断试玩广告组件，保留共享 CDN 其他路径。
+- 从腾讯响应中的资源链接补齐 `qzs.gdtimg.com/union/res/union_site/`、AMS 对象存储的 `/ad_client/` 与 `/video/ad_profile/`、广告模板桶 `/hikari/template/`、`/hikari/module/` 和明确的点击奖励 JSON；不封整个 `myqcloud.com`。
+- 原 `/exapp` 请求脚本没有 `requires-body=true`，而 HAR 中虎牙 App ID/广告位放在 POST 表单。Surge 现启用正文读取，限 64 KiB；真实样本约 8.3 KiB。Loon 也明确读取正文。原固定版本 helper 已能识别实际表单，无需扩大 JS 匹配范围。
+- 新增 Loon 原生插件，规则与 Surge 同源生成；在广告专用模板/素材/SDK URL 增加请求阶段拒绝复写，便于在 MitM 已启用时阻断广告资源。
+
+当前主规则为 **23 条域名规则 + 8 条 Surge Map Local**；Loon 为 **23 条域名规则 + 9 条 URL 拒绝复写 + 2 个轻量请求脚本**。继续保留 `120.53.53.53/dns-query`、`cdn.wup.huya.com/launch/queryHttpDns`、账号/登录/认证、隐私页、普通头像封面及共用资源路径。
+
+HAR 也确认 `hc.tdm.qq.com/tdm/v1/route` 与 `receiver.tdm.qq.com/tdm/v1/kv` 属于本客户端 TDataMaster 分析链路；这不能证明它们是可见广告的下发源，本轮没有把全部分析/诊断组件升级为广告封禁目标。
 
 ## 样本与范围
 
@@ -30,7 +48,7 @@
 | 虎牙广告位与渲染组件 | `HYBusinessAd*`、`HYImmersionAd*`、`HYCommonRewardAd*`、`HYLiveEndAd*`、`HYLiveBusinessAd*`、`HYLiveAdx*`、`HYSubscribeAd*`、`HYSMAd`、开屏组件 | 开屏模板 + 可选 `queryAd`、预加载素材和广告位列表 RPC；不是逐个 UI 强行隐藏 |
 | MMA 广告监测 | `MMA_AdViewResult`、`MMA_TaskQueue`、`MMA_SDKConfig`、虎牙 SDK 的 `sdkconfig.xml` 常量 | 精确阻断监测配置 URL 与已确认上报接口；动态下发第三方监测 URL 未穷尽 |
 | RangersAppLog / BDAutoTrack 6.16.9 | Bundle 版本；`BDAutoTrackASA`、`BDAutoTrackALink*`；URL host 构造函数 | `toblog`、`tobapplog`、`alink`、`klink`、`abtest.volceapplog.com` |
-| 腾讯 TDataMaster / TDMIDFA | 嵌入式 Framework 与 IDFA/数据上报能力 | 已清点，但未恢复能安全归为虎牙营销的专用服务端；没有声称完整屏蔽 |
+| 腾讯 TDataMaster / TDMIDFA | 嵌入式 Framework；本轮 HAR 确认 route/kv 分析接口与虎牙 Bundle ID | 已清点，分析接口仍保留；未确认是可见广告下发源，没有声称完整屏蔽 |
 
 RangersAPM、APMInsight、VolcBaseLog、虎牙 MTP/Sentry 是诊断或性能组件，未仅因名称含 report/log 就归为广告。TTSDKPlayer/Volc 视频播放、Unity、腾讯慧眼、FlyVerify 登录认证、微信/QQ 分享等保留。
 
@@ -40,7 +58,7 @@ RangersAPM、APMInsight、VolcBaseLog、虎牙 MTP/Sentry 是诊断或性能组�
 
 - 原 settings/renderer 只识别 `aid=5000546`。`+[HYCSJEnv hyCsjEnvAppID]`（`0x100a31a6c`）的生产分支返回 `5004161`，测试分支返回 `5339764`。新规则覆盖两者，兼容保留旧 ID；未把旧 ID 当作新版提取结论。
 - 原腾讯 `/exapp` 规则限四个历史广告位。新模块保留其 no-fill 行为，并用广告专用域名覆盖其他广告位、预加载和上报路径。
-- 原模块没有处理虎牙自有 WUP 广告与增长归因。现在提供 19 条域名规则、4 条精确 Map Local，以及独立可选 WUP 脚本。
+- 原模块没有处理虎牙自有 WUP 广告与增长归因。首版补充 19 条域名规则、4 条精确 Map Local 与独立可选 WUP 脚本；本次 HAR 补漏扩展为 23 条域名规则、8 条 Map Local 并提供 Loon 插件。
 - `LaunchAlert/7/LaunchAlert.ios.lzc` 来自本版 `InAppConfig.json` 和内置 Lizard 模板目录；未扩展为任意模板或整个 `kiwistatic.huya.com`。
 
 ## RPC 精确匹配与证据
@@ -58,17 +76,20 @@ RangersAPM、APMInsight、VolcBaseLog、虎牙 MTP/Sentry 是诊断或性能组�
 
 仅检查 `wup.huya.com`、`cdn.wup.huya.com`、`wsapi.huya.com` 根路径 POST。主机是样本中存在的业务域，当前实际走哪个 HTTP/QUIC/私有长连接尚未抓包确认。未知服务方法、正常直播/登录/支付、非根路径、压缩/加密/混合批量或未知封装均不处理。
 
-**请求脚本限制：** Surge 会先缓冲匹配请求，再执行脚本。此可选模块设置 1 MiB；超过上限会被 Surge 拒绝，无法由脚本兜底放行。因此未把它默认并入主模块。脚本内部的异常放行只对已交给脚本的请求成立。继承的腾讯 settings 请求脚本也保留原 16 KiB 上限。
+**请求脚本限制：** Surge 会先缓冲匹配请求，再执行脚本。此可选模块设置 1 MiB；超过上限会被 Surge 拒绝，无法由脚本兜底放行。因此未把它默认并入主模块。脚本内部的异常放行只对已交给脚本的请求成立。腾讯 settings 请求保持 16 KiB 上限，exapp 请求新增 64 KiB 上限；Loon 插件不使用 Surge 专属 `max-size` 参数。
 
 ## 已验证与待验证
 
 - `node validate.cjs`：107 项检查通过，覆盖广告 RPC、正常业务保留、错误/截断/重复字段、长度溢出、伪造域名、方法边界、随机畸形样本、90 万字节正常请求、规则范围和脚本依赖。
-- 使用本机 Surge JavaScriptCore：6 个广告/正常业务协议样本通过。
+- `node validate-har.cjs <本地HAR>`：26 项检查通过，覆盖 413 条请求中的 213 条明确广告/增长请求（旧规则匹配 150 条，新增 63 条），124 条功能性请求不匹配。另覆盖响应中 173 个明确广告资源链接。
+- 真实腾讯 settings 请求 6 条及 exapp 请求 1 条可回放为无广告结果，exapp 原 2 个广告项被移除；20 条 HTTPDNS/账号 WUP 请求保持原样。
+- 使用本机 Surge JavaScriptCore：前一轮 6 个合成协议样本通过，本轮 27 个真实 HAR 请求样本通过。
 - 两个模块转换为独立最小配置后通过真实 `surge-cli --check`。仅验证语法与本地脚本行为，没有更改当前 Surge 配置。
-- 仍需 iPhone 冷启动、切后台热启动、首页列表、直播切房/弹幕、关注页/短视频、短剧、登录/支付的实测；本次没有设备流量，未声称零误伤。
+- Loon 根据官方原生语法做结构、正则和离线脚本检查；本机没有 Loon 原生解析器或设备运行环境，未把这些检查当作设备验收。
+- 仍需 iPhone 更新插件后的冷/热启动、首页列表、直播切房/弹幕、关注页/短视频、短剧、登录/支付实测。旧 HAR 不能证明新规则已在设备启用或生效。
 - 原生自绘、缓存素材、服务器动态域名、加密/私有长连接广告可能残留；仅靠 Surge 网络层不能保证清除所有营销 UI。
-- 主模块依赖的两份脚本行保持原样，引用用户原 URL 中的同一固定提交。新增 RPC 模块引用固定 Git 提交的脚本，避免远程脚本与已审阅版本不一致。
+- 主模块继续引用原固定提交的 helper，只修复 exapp 脚本行的正文读取参数。RPC 模块也引用固定 Git 提交。
 
-证据 [sdk-inventory.json](sdk-inventory.json)、[rule-evidence.json](rule-evidence.json)、差异 [changes.patch](changes.patch) 与 [测试结果](validation-results.json) 可供审阅；`private-analysis/` 包含原二进制和详细提取材料，只留本地，不发布到 GitHub 或交付 ZIP。
+证据 [sdk-inventory.json](sdk-inventory.json)、[rule-evidence.json](rule-evidence.json)、差异 [changes.patch](changes.patch)、[协议测试结果](validation-results.json) 与 [HAR 测试结果](har-validation-results.json) 可供审阅。HAR 原文、账号/设备标识、Cookie、请求签名、IP 和提取的私密请求样本仅保存在本地，不发布到 GitHub 或交付 ZIP。
 
-参考：[用户原模块](https://raw.githubusercontent.com/hhhh1210/ubl/ios/huya-core-scripted.sgmodule)、[Surge HTTP 请求脚本说明](https://manual.nssurge.com/scripting/http-request.html)、[脚本路径与运行参数](https://manual.nssurge.com/scripting/overview.html)。
+参考：[用户原模块](https://raw.githubusercontent.com/hhhh1210/ubl/ios/huya-core-scripted.sgmodule)、[Surge HTTP 请求脚本说明](https://manual.nssurge.com/scripting/http-request.html)、[脚本路径与运行参数](https://manual.nssurge.com/scripting/overview.html)、[Loon 插件说明](https://github.com/Loon0x00/LoonManual/blob/master/docs/cn/plugin.md)、[Loon 复写说明](https://github.com/Loon0x00/LoonManual/blob/master/docs/cn/rewrite.md)。

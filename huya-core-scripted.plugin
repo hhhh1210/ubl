@@ -1,0 +1,49 @@
+#!name=虎牙广告屏蔽 - HAR 加强版
+#!desc=针对 13.3.60 实际 HAR，并结合 13.4.80 IPA。屏蔽腾讯/穿山甲广告、备用域及广告素材，保留登录/HTTPDNS/直播共用接口。请启用插件规则、复写、脚本和 MitM。设备级规则影响其他 App 同 SDK；激励广告可能不可用。HAR 回放通过，未做更新后真机验证。
+#!tag=去广告
+#!date=2026-09-27
+
+[Rule]
+DOMAIN-SUFFIX,gdt.qq.com,REJECT
+DOMAIN,tangram.e.qq.com,REJECT
+DOMAIN,sdk.e.qq.com,REJECT
+DOMAIN,sdkreport.e.qq.com,REJECT
+DOMAIN,us.l.qq.com,REJECT
+DOMAIN,c.l.qq.com,REJECT
+DOMAIN,adsmind.gdtimg.com,REJECT
+DOMAIN,adsmind.ugdtimg.com,REJECT
+DOMAIN,pgdt.ugdtimg.com,REJECT
+DOMAIN,pgdt.gtimg.cn,REJECT
+DOMAIN-SUFFIX,pangolin-sdk-toutiao.com,REJECT
+DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT
+DOMAIN,adv-stat.huya.com,REJECT
+DOMAIN,e-stat.huya.com,REJECT
+DOMAIN,toblog.volceapplog.com,REJECT
+DOMAIN,tobapplog.volceapplog.com,REJECT
+DOMAIN,alink.volceapplog.com,REJECT
+DOMAIN,klink.volceapplog.com,REJECT
+DOMAIN,abtest.volceapplog.com,REJECT
+DOMAIN-SUFFIX,pangolin-sdk-toutiao1.com,REJECT
+DOMAIN-SUFFIX,pangolin-sdk-toutiao-b.com,REJECT
+DOMAIN,toblog.ctobsnssdk.com,REJECT
+DOMAIN,p.l.qq.com,REJECT
+
+[Rewrite]
+# Shared-CDN paths only; no whole msstatic/bytescm/myqcloud-domain blocking.
+^https?:\/\/kiwistatic\.huya\.com\/kiwi_lizard\/LaunchAlert\/7\/LaunchAlert\.ios\.lzc(?:\?.*)?$ reject
+^https?:\/\/business\.msstatic\.com\/dsp\/public\/sdkconfig\.xml(?:\?.*)?$ reject
+^https?:\/\/lf-cdn-tos\.bytescm\.com(?::(?:80|443))?\/obj\/static\/ad\/play-comp\/ reject
+^https?:\/\/qzs\.gdtimg\.com(?::(?:80|443))?\/union\/res\/union_site\/ reject
+^https?:\/\/amsweb-cdn-gz-1258344696\.file\.myqcloud\.com(?::(?:80|443))?\/(?:ad_client\/|video\/ad_profile\/) reject
+^https?:\/\/wallpaper-1258344696\.file\.myqcloud\.com(?::(?:80|443))?\/hikari\/(?:(?:template|module)\/|prod\/click_reward\.json(?:\?|$)) reject
+# These SDK URLs are dedicated to ads; reject before upstream template/material loading.
+^https?:\/\/(?:xs|ttc)\.gdt\.qq\.com\/(?:style_factory|picasso|push_ad|dot_ad)\/ reject
+^https?:\/\/(?:[a-z0-9-]+\.)?(?:pangolin-sdk-toutiao(?:1|-b)?\.com|pglstatp-toutiao\.com)(?::(?:80|443))?\/ reject
+^https?:\/\/(?:adsmind\.(?:gdtimg|ugdtimg)\.com|pgdt\.(?:gtimg\.cn|ugdtimg\.com))(?::(?:80|443))?\/ reject
+
+[Script]
+http-request ^https?:\/\/tangram\.e\.qq\.com\/updateSetting(?:\?.*)?$ script-path=https://raw.githubusercontent.com/hhhh1210/ubl/34aca2184b1358566ebb906df1d095ed703b7123/huya-core-scripted.js, argument="phase=gdt-setting-request", requires-body=true, timeout=5, tag=Huya GDT Setting
+http-request ^https?:\/\/us\.l\.qq\.com\/exapp(?:\?.*)?$ script-path=https://raw.githubusercontent.com/hhhh1210/ubl/34aca2184b1358566ebb906df1d095ed703b7123/huya-core-scripted.js, argument="phase=gdt-exapp-request", requires-body=true, timeout=5, tag=Huya GDT NoFill
+
+[MitM]
+hostname = tangram.e.qq.com, us.l.qq.com, xs.gdt.qq.com, ttc.gdt.qq.com, *.pangolin-sdk-toutiao.com, *.pangolin-sdk-toutiao1.com, *.pangolin-sdk-toutiao-b.com, *.pglstatp-toutiao.com, adsmind.gdtimg.com, adsmind.ugdtimg.com, pgdt.gtimg.cn, pgdt.ugdtimg.com, kiwistatic.huya.com, business.msstatic.com, lf-cdn-tos.bytescm.com, qzs.gdtimg.com, amsweb-cdn-gz-1258344696.file.myqcloud.com, wallpaper-1258344696.file.myqcloud.com

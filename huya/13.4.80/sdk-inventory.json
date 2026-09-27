@@ -2989,5 +2989,15 @@
     "Encrypted/custom socket RPC, cached or dynamically downloaded ads are not fully covered.",
     "TDataMaster analytics has no verified endpoint rule.",
     "No iOS real-device validation."
-  ]
+  ],
+  "har_followup": {
+    "app_version": "13.3.60",
+    "app_build": "87573",
+    "csj_aid": "5000546",
+    "gdt_app_id": "1112179873",
+    "tdm_route": "hc.tdm.qq.com/tdm/v1/route",
+    "tdm_report": "receiver.tdm.qq.com/tdm/v1/kv",
+    "tdm_policy": "observed analytics; preserved, not proven to deliver visible ads",
+    "limits": "13.3.60 capture is not runtime proof for 13.4.80 IPA."
+  }
 }

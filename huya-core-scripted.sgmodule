@@ -1,13 +1,13 @@
-#!name=Huya iOS 13.4.80 Ad SDK Block for Surge
-#!desc=基于虎牙 13.4.80 解密 IPA：补齐优量汇/AMS、穿山甲、字节增长归因及虎牙广告上报；更新穿山甲 App ID；保留原轻量脚本。共享第三方广告域名规则也影响其他 App 的同 SDK 广告/统计。直播、登录、支付共用域名不封禁。自有 WUP 广告另见可选 RPC 模块。静态与本地验证，未真机验收。
+#!name=Huya iOS Ad SDK Block - HAR Enhanced
+#!desc=结合 13.3.60 HAR 与 13.4.80 解密 IPA：补齐穿山甲备用域、AppLog 旧域、腾讯曝光和试玩/模板路径；修复腾讯 exapp POST 正文未读取。设备级广告域规则影响其他 App 同类 SDK。自有 WUP 另见可选模块；Loon 请使用同名 .plugin。HAR 回放及本地验证，更新后未真机验收。
 
 [General]
-force-http-engine-hosts = %APPEND% tangram.e.qq.com, us.l.qq.com, api-access.pangolin-sdk-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, kiwistatic.huya.com, business.msstatic.com
+force-http-engine-hosts = %APPEND% tangram.e.qq.com, us.l.qq.com, api-access.pangolin-sdk-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, kiwistatic.huya.com, business.msstatic.com, lf-cdn-tos.bytescm.com, qzs.gdtimg.com, amsweb-cdn-gz-1258344696.file.myqcloud.com, wallpaper-1258344696.file.myqcloud.com
 
 [Script]
 # Preserve the two pinned Lite helpers. Script exceptions pass through; the existing request-body cap still applies.
 uBO Huya iOS GDT Setting Request Clean = type=http-request, pattern=^https?:\/\/tangram\.e\.qq\.com\/updateSetting(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/34aca2184b1358566ebb906df1d095ed703b7123/huya-core-scripted.js, script-update-interval=86400, argument=phase=gdt-setting-request, requires-body=true, max-size=16384, timeout=5, engine=jsc
-uBO Huya iOS GDT Exapp Request NoFill = type=http-request, pattern=^https?:\/\/us\.l\.qq\.com\/exapp(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/34aca2184b1358566ebb906df1d095ed703b7123/huya-core-scripted.js, script-update-interval=86400, argument=phase=gdt-exapp-request, timeout=5, engine=jsc
+uBO Huya iOS GDT Exapp Request NoFill = type=http-request, pattern=^https?:\/\/us\.l\.qq\.com\/exapp(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/34aca2184b1358566ebb906df1d095ed703b7123/huya-core-scripted.js, script-update-interval=86400, argument=phase=gdt-exapp-request, requires-body=true, max-size=65536, timeout=5, engine=jsc
 
 [Rule]
 # These dedicated SDK domains are shared across apps. No process-based app isolation on iOS.
@@ -30,9 +30,13 @@ DOMAIN,tobapplog.volceapplog.com,REJECT
 DOMAIN,alink.volceapplog.com,REJECT
 DOMAIN,klink.volceapplog.com,REJECT
 DOMAIN,abtest.volceapplog.com,REJECT
+DOMAIN-SUFFIX,pangolin-sdk-toutiao1.com,REJECT
+DOMAIN-SUFFIX,pangolin-sdk-toutiao-b.com,REJECT
+DOMAIN,toblog.ctobsnssdk.com,REJECT
+DOMAIN,p.l.qq.com,REJECT
 
 [MITM]
-hostname = %APPEND% tangram.e.qq.com, us.l.qq.com, api-access.pangolin-sdk-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, kiwistatic.huya.com, business.msstatic.com
+hostname = %APPEND% tangram.e.qq.com, us.l.qq.com, api-access.pangolin-sdk-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, kiwistatic.huya.com, business.msstatic.com, lf-cdn-tos.bytescm.com, qzs.gdtimg.com, amsweb-cdn-gz-1258344696.file.myqcloud.com, wallpaper-1258344696.file.myqcloud.com
 
 [Map Local]
 # Exact startup and MMA configuration URLs; unrelated shared CDN assets pass through.
@@ -40,3 +44,7 @@ hostname = %APPEND% tangram.e.qq.com, us.l.qq.com, api-access.pangolin-sdk-touti
 ^https?:\/\/api-access\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/settings\/?\?(?:[^#]*&)?aid=(?:5004161|5339764|5000546)(?:&|$) data-type=text data="{\"code\":20000,\"message\":\"success\",\"data\":{},\"settings\":{},\"ad_slot_conf_list\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
 ^https?:\/\/sf[36]-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/renderer\/package\.json\?(?:[^#]*&)?aid=(?:5004161|5339764|5000546)(?:&|$) data-type=text data="{\"resources\":[],\"templates\":[],\"data\":{},\"code\":0,\"message\":\"success\"}" status-code=200 header="Content-Type:application/json; charset=utf-8"
 ^https?:\/\/business\.msstatic\.com\/dsp\/public\/sdkconfig\.xml(?:\?.*)?$ data-type=text data="" status-code=204
+^https?:\/\/lf-cdn-tos\.bytescm\.com(?::(?:80|443))?\/obj\/static\/ad\/play-comp\/ data-type=text data="" status-code=204
+^https?:\/\/qzs\.gdtimg\.com(?::(?:80|443))?\/union\/res\/union_site\/ data-type=text data="" status-code=204
+^https?:\/\/amsweb-cdn-gz-1258344696\.file\.myqcloud\.com(?::(?:80|443))?\/(?:ad_client\/|video\/ad_profile\/) data-type=text data="" status-code=204
+^https?:\/\/wallpaper-1258344696\.file\.myqcloud\.com(?::(?:80|443))?\/hikari\/(?:(?:template|module)\/|prod\/click_reward\.json(?:\?|$)) data-type=text data="" status-code=204

@@ -93,5 +93,49 @@
     "type": "DOMAIN",
     "host": "abtest.volceapplog.com",
     "evidence": "BDAutoTrack experimentation URL host constants"
+  },
+  {
+    "type": "DOMAIN-SUFFIX",
+    "host": "pangolin-sdk-toutiao1.com",
+    "evidence": "HAR: 36 SDK stats/batch requests, 31 HTTP 200; aid=5000546"
+  },
+  {
+    "type": "DOMAIN-SUFFIX",
+    "host": "pangolin-sdk-toutiao-b.com",
+    "evidence": "HAR: 2 /service/2/app_log/ responses; aid=5000546"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "toblog.ctobsnssdk.com",
+    "evidence": "HAR: 18 AppLog/settings/device registration requests; aid=164362"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "p.l.qq.com",
+    "evidence": "HAR: /p exposure request, also linked in GDT /exapp ad response"
+  },
+  {
+    "type": "PATH",
+    "pattern": "^https?:\\/\\/lf-cdn-tos\\.bytescm\\.com(?::(?:80|443))?\\/obj\\/static\\/ad\\/play-comp\\/",
+    "host": "lf-cdn-tos.bytescm.com",
+    "evidence": "HAR: playable ad manifest and its linked component JS; keep shared CDN non-ad paths"
+  },
+  {
+    "type": "PATH",
+    "pattern": "^https?:\\/\\/qzs\\.gdtimg\\.com(?::(?:80|443))?\\/union\\/res\\/union_site\\/",
+    "host": "qzs.gdtimg.com",
+    "evidence": "HAR: GDT ad detail landing page in /exapp response"
+  },
+  {
+    "type": "PATH",
+    "pattern": "^https?:\\/\\/amsweb-cdn-gz-1258344696\\.file\\.myqcloud\\.com(?::(?:80|443))?\\/(?:ad_client\\/|video\\/ad_profile\\/)",
+    "host": "amsweb-cdn-gz-1258344696.file.myqcloud.com",
+    "evidence": "HAR: GDT splash guide and ad templates referenced in ad responses"
+  },
+  {
+    "type": "PATH",
+    "pattern": "^https?:\\/\\/wallpaper-1258344696\\.file\\.myqcloud\\.com(?::(?:80|443))?\\/hikari\\/(?:(?:template|module)\\/|prod\\/click_reward\\.json(?:\\?|$))",
+    "host": "wallpaper-1258344696.file.myqcloud.com",
+    "evidence": "HAR: template_list/module_list references; preserve unrelated bucket paths"
   }
 ]
