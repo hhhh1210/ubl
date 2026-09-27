@@ -1,51 +1,19 @@
-#!name=Huya iOS Ad SDK Block - Native Splash Fix
-#!desc=Surge 开屏修复版：保留已在抓包生效的腾讯 no-fill；新增虎牙 mobileui/getMSplash 二进制响应清理，清空开屏列表、当前/下次广告编号及摇动开关。仅 HTTP WUP v3；离线缓存/私有长连接不受此响应脚本控制。清理设备广告缓存后复测。设备级 SDK 域名规则影响其他 App；更新后未真机验收。
+#!name=Huya iOS Ad Clean Lite for Surge
+#!desc=虎牙直播 iOS 13.3.x-13.4.20 稳定去广告模块。按 Surge iOS 5.9+ 脚本文档收敛为请求阶段 no-fill 与精确 Map Local，避免响应正文缓冲、共享 SDK 过度屏蔽及 Network Extension 内存压力。
 
 [General]
-force-http-engine-hosts = %APPEND% wup.huya.com, cdn.wup.huya.com, wsapi.huya.com, tangram.e.qq.com, us.l.qq.com, api-access.pangolin-sdk-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, kiwistatic.huya.com, business.msstatic.com, lf-cdn-tos.bytescm.com, qzs.gdtimg.com, amsweb-cdn-gz-1258344696.file.myqcloud.com, wallpaper-1258344696.file.myqcloud.com
+force-http-engine-hosts = %APPEND% tangram.e.qq.com, us.l.qq.com, api-access.pangolin-sdk-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, kiwistatic.huya.com
 
 [Script]
-# Preserve the two pinned Lite helpers. Script exceptions pass through; the existing request-body cap still applies.
+# Only the two Huya-marked request paths execute JavaScript. All failures pass through unchanged.
 uBO Huya iOS GDT Setting Request Clean = type=http-request, pattern=^https?:\/\/tangram\.e\.qq\.com\/updateSetting(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/34aca2184b1358566ebb906df1d095ed703b7123/huya-core-scripted.js, script-update-interval=86400, argument=phase=gdt-setting-request, requires-body=true, max-size=16384, timeout=5, engine=jsc
-uBO Huya iOS GDT Exapp Request NoFill = type=http-request, pattern=^https?:\/\/us\.l\.qq\.com\/exapp(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/34aca2184b1358566ebb906df1d095ed703b7123/huya-core-scripted.js, script-update-interval=86400, argument=phase=gdt-exapp-request, requires-body=true, max-size=65536, timeout=5, engine=jsc
-Huya Native Splash Response Clean = type=http-response, pattern=^https?:\/\/(?:wup\.huya\.com|cdn\.wup\.huya\.com|wsapi\.huya\.com)(?::(?:80|443))?\/(?:mobileui\/getMSplash)?(?:\?[^#]*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/da5569bd27c812886145291fe07a6edcc015b988/huya-splash-response.js, script-update-interval=86400, requires-body=true, binary-body-mode=true, max-size=262144, timeout=5, engine=jsc
-
-[Rule]
-# These dedicated SDK domains are shared across apps. No process-based app isolation on iOS.
-DOMAIN-SUFFIX,gdt.qq.com,REJECT
-DOMAIN,tangram.e.qq.com,REJECT
-DOMAIN,sdk.e.qq.com,REJECT
-DOMAIN,sdkreport.e.qq.com,REJECT
-DOMAIN,us.l.qq.com,REJECT
-DOMAIN,c.l.qq.com,REJECT
-DOMAIN,adsmind.gdtimg.com,REJECT
-DOMAIN,adsmind.ugdtimg.com,REJECT
-DOMAIN,pgdt.ugdtimg.com,REJECT
-DOMAIN,pgdt.gtimg.cn,REJECT
-DOMAIN-SUFFIX,pangolin-sdk-toutiao.com,REJECT
-DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT
-DOMAIN,adv-stat.huya.com,REJECT
-DOMAIN,e-stat.huya.com,REJECT
-DOMAIN,toblog.volceapplog.com,REJECT
-DOMAIN,tobapplog.volceapplog.com,REJECT
-DOMAIN,alink.volceapplog.com,REJECT
-DOMAIN,klink.volceapplog.com,REJECT
-DOMAIN,abtest.volceapplog.com,REJECT
-DOMAIN-SUFFIX,pangolin-sdk-toutiao1.com,REJECT
-DOMAIN-SUFFIX,pangolin-sdk-toutiao-b.com,REJECT
-DOMAIN,toblog.ctobsnssdk.com,REJECT
-DOMAIN,p.l.qq.com,REJECT
+uBO Huya iOS GDT Exapp Request NoFill = type=http-request, pattern=^https?:\/\/us\.l\.qq\.com\/exapp(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/34aca2184b1358566ebb906df1d095ed703b7123/huya-core-scripted.js, script-update-interval=86400, argument=phase=gdt-exapp-request, timeout=5, engine=jsc
 
 [MITM]
-hostname = %APPEND% wup.huya.com, cdn.wup.huya.com, wsapi.huya.com, tangram.e.qq.com, us.l.qq.com, api-access.pangolin-sdk-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, kiwistatic.huya.com, business.msstatic.com, lf-cdn-tos.bytescm.com, qzs.gdtimg.com, amsweb-cdn-gz-1258344696.file.myqcloud.com, wallpaper-1258344696.file.myqcloud.com
+hostname = %APPEND% tangram.e.qq.com, us.l.qq.com, api-access.pangolin-sdk-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, kiwistatic.huya.com
 
 [Map Local]
-# Exact startup and MMA configuration URLs; unrelated shared CDN assets pass through.
+# Exact startup control responses only; ordinary telemetry, SDK reports, app APIs and CDN assets pass through.
 ^https?:\/\/kiwistatic\.huya\.com\/kiwi_lizard\/LaunchAlert\/7\/LaunchAlert\.ios\.lzc(?:\?.*)?$ data-type=text data="" status-code=204
-^https?:\/\/api-access\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/settings\/?\?(?:[^#]*&)?aid=(?:5004161|5339764|5000546)(?:&|$) data-type=text data="{\"code\":20000,\"message\":\"success\",\"data\":{},\"settings\":{},\"ad_slot_conf_list\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
-^https?:\/\/sf[36]-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/renderer\/package\.json\?(?:[^#]*&)?aid=(?:5004161|5339764|5000546)(?:&|$) data-type=text data="{\"resources\":[],\"templates\":[],\"data\":{},\"code\":0,\"message\":\"success\"}" status-code=200 header="Content-Type:application/json; charset=utf-8"
-^https?:\/\/business\.msstatic\.com\/dsp\/public\/sdkconfig\.xml(?:\?.*)?$ data-type=text data="" status-code=204
-^https?:\/\/lf-cdn-tos\.bytescm\.com(?::(?:80|443))?\/obj\/static\/ad\/play-comp\/ data-type=text data="" status-code=204
-^https?:\/\/qzs\.gdtimg\.com(?::(?:80|443))?\/union\/res\/union_site\/ data-type=text data="" status-code=204
-^https?:\/\/amsweb-cdn-gz-1258344696\.file\.myqcloud\.com(?::(?:80|443))?\/(?:ad_client\/|video\/ad_profile\/) data-type=text data="" status-code=204
-^https?:\/\/wallpaper-1258344696\.file\.myqcloud\.com(?::(?:80|443))?\/hikari\/(?:(?:template|module)\/|prod\/click_reward\.json(?:\?|$)) data-type=text data="" status-code=204
+^https?:\/\/api-access\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/settings\/\?(?:[^#]*&)?aid=5000546(?:&|$) data-type=text data="{\"code\":20000,\"message\":\"success\",\"data\":{},\"settings\":{},\"ad_slot_conf_list\":[]}" status-code=200 header="Content-Type:application/json; charset=utf-8"
+^https?:\/\/sf[36]-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/renderer\/package\.json\?(?:[^#]*&)?aid=5000546(?:&|$) data-type=text data="{\"resources\":[],\"templates\":[],\"data\":{},\"code\":0,\"message\":\"success\"}" status-code=200 header="Content-Type:application/json; charset=utf-8"
