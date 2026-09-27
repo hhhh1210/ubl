@@ -137,5 +137,11 @@
     "pattern": "^https?:\\/\\/wallpaper-1258344696\\.file\\.myqcloud\\.com(?::(?:80|443))?\\/hikari\\/(?:(?:template|module)\\/|prod\\/click_reward\\.json(?:\\?|$))",
     "host": "wallpaper-1258344696.file.myqcloud.com",
     "evidence": "HAR: template_list/module_list references; preserve unrelated bucket paths"
+  },
+  {
+    "type": "BINARY_RESPONSE",
+    "service": "mobileui",
+    "method": "getMSplash",
+    "evidence": "HYLaunchViewManager 0x1014830a8; HUYAMSplashRsp tags 0/1/2/5/9; static 13.4.80 schema, no captured getMSplash yet"
   }
 ]

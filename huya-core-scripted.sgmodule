@@ -1,13 +1,14 @@
-#!name=Huya iOS Ad SDK Block - HAR Enhanced
-#!desc=结合 13.3.60 HAR 与 13.4.80 解密 IPA：补齐穿山甲备用域、AppLog 旧域、腾讯曝光和试玩/模板路径；修复腾讯 exapp POST 正文未读取。设备级广告域规则影响其他 App 同类 SDK。自有 WUP 另见可选模块；Loon 请使用同名 .plugin。HAR 回放及本地验证，更新后未真机验收。
+#!name=Huya iOS Ad SDK Block - Native Splash Fix
+#!desc=Surge 开屏修复版：保留已在抓包生效的腾讯 no-fill；新增虎牙 mobileui/getMSplash 二进制响应清理，清空开屏列表、当前/下次广告编号及摇动开关。仅 HTTP WUP v3；离线缓存/私有长连接不受此响应脚本控制。清理设备广告缓存后复测。设备级 SDK 域名规则影响其他 App；更新后未真机验收。
 
 [General]
-force-http-engine-hosts = %APPEND% tangram.e.qq.com, us.l.qq.com, api-access.pangolin-sdk-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, kiwistatic.huya.com, business.msstatic.com, lf-cdn-tos.bytescm.com, qzs.gdtimg.com, amsweb-cdn-gz-1258344696.file.myqcloud.com, wallpaper-1258344696.file.myqcloud.com
+force-http-engine-hosts = %APPEND% wup.huya.com, cdn.wup.huya.com, wsapi.huya.com, tangram.e.qq.com, us.l.qq.com, api-access.pangolin-sdk-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, kiwistatic.huya.com, business.msstatic.com, lf-cdn-tos.bytescm.com, qzs.gdtimg.com, amsweb-cdn-gz-1258344696.file.myqcloud.com, wallpaper-1258344696.file.myqcloud.com
 
 [Script]
 # Preserve the two pinned Lite helpers. Script exceptions pass through; the existing request-body cap still applies.
 uBO Huya iOS GDT Setting Request Clean = type=http-request, pattern=^https?:\/\/tangram\.e\.qq\.com\/updateSetting(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/34aca2184b1358566ebb906df1d095ed703b7123/huya-core-scripted.js, script-update-interval=86400, argument=phase=gdt-setting-request, requires-body=true, max-size=16384, timeout=5, engine=jsc
 uBO Huya iOS GDT Exapp Request NoFill = type=http-request, pattern=^https?:\/\/us\.l\.qq\.com\/exapp(?:\?.*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/34aca2184b1358566ebb906df1d095ed703b7123/huya-core-scripted.js, script-update-interval=86400, argument=phase=gdt-exapp-request, requires-body=true, max-size=65536, timeout=5, engine=jsc
+Huya Native Splash Response Clean = type=http-response, pattern=^https?:\/\/(?:wup\.huya\.com|cdn\.wup\.huya\.com|wsapi\.huya\.com)(?::(?:80|443))?\/(?:mobileui\/getMSplash)?(?:\?[^#]*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/da5569bd27c812886145291fe07a6edcc015b988/huya-splash-response.js, script-update-interval=86400, requires-body=true, binary-body-mode=true, max-size=262144, timeout=5, engine=jsc
 
 [Rule]
 # These dedicated SDK domains are shared across apps. No process-based app isolation on iOS.
@@ -36,7 +37,7 @@ DOMAIN,toblog.ctobsnssdk.com,REJECT
 DOMAIN,p.l.qq.com,REJECT
 
 [MITM]
-hostname = %APPEND% tangram.e.qq.com, us.l.qq.com, api-access.pangolin-sdk-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, kiwistatic.huya.com, business.msstatic.com, lf-cdn-tos.bytescm.com, qzs.gdtimg.com, amsweb-cdn-gz-1258344696.file.myqcloud.com, wallpaper-1258344696.file.myqcloud.com
+hostname = %APPEND% wup.huya.com, cdn.wup.huya.com, wsapi.huya.com, tangram.e.qq.com, us.l.qq.com, api-access.pangolin-sdk-toutiao.com, sf3-fe-tos.pglstatp-toutiao.com, sf6-fe-tos.pglstatp-toutiao.com, kiwistatic.huya.com, business.msstatic.com, lf-cdn-tos.bytescm.com, qzs.gdtimg.com, amsweb-cdn-gz-1258344696.file.myqcloud.com, wallpaper-1258344696.file.myqcloud.com
 
 [Map Local]
 # Exact startup and MMA configuration URLs; unrelated shared CDN assets pass through.

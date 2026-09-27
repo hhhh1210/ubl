@@ -1,0 +1,62 @@
+{
+  "capture_creator": {
+    "version": "5.22.1",
+    "name": "Surge iOS"
+  },
+  "entry_count": 22,
+  "response_count": 15,
+  "app_version": "13.3.60",
+  "observed": {
+    "gdt_exapp_returns_no_fill": true,
+    "gdt_setting_stop_equals_1": true,
+    "both_dedicated_huya_and_general_ubo_modules_are_active": true,
+    "native_getMSplash_not_captured": true,
+    "captured_successful_images_are_room_covers_not_attached_splash": true,
+    "gdt_assets_have_reject_or_map_local_logs": true
+  },
+  "inference": {
+    "cached_or_uncaptured_native_splash": "plausible, supported by IPA cold/hot cache paths; exact screenshot source is not identified",
+    "regression_cause": "cannot attribute more ads or recorded duration to this module from 22 entries"
+  },
+  "ipa_static_evidence": {
+    "version": "13.4.80",
+    "method": {
+      "class": "HYLaunchViewManager",
+      "selector": "querySplashWithSource:callbackInBackground:completion:",
+      "imp": "0x1014830a8",
+      "service": "mobileui",
+      "function": "getMSplash"
+    },
+    "cache_methods": [
+      "saveLastSplashRsp:splashTraceId:",
+      "removeLastSplashRsp",
+      "currentCPTSplash:",
+      "showCacheSplashInMainQueue"
+    ],
+    "cache_key": "kHYFCacheKeySplashRsp",
+    "schema": [
+      {
+        "name": "jcev2_p_1_o_iNextId",
+        "type": "i"
+      },
+      {
+        "name": "jcev2_p_5_o_iCurId",
+        "type": "i"
+      },
+      {
+        "name": "jcev2_p_9_o_iIsEnableShake",
+        "type": "i"
+      },
+      {
+        "name": "jcev2_p_0_o_vInfo__x_VOHUYAMSplash",
+        "type": "@\"NSArray\""
+      },
+      {
+        "name": "jcev2_p_2_o_vContext",
+        "type": "@\"NSData\""
+      }
+    ]
+  },
+  "scope": "HTTP WUP v3 response cleaning only; native schema is from a newer IPA than the HAR app; unknown data passes unchanged",
+  "verification": "splash-validation-results.json"
+}

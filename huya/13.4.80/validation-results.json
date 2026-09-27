@@ -104,7 +104,7 @@
     "Map Local does not overmatch: https://kiwistatic.huya.com/kiwi_lizard/Player/7/Player.ios.lzc",
     "MMA config and verified LaunchAlert remain blocked",
     "existing pinned helpers retained; exapp now receives its POST body",
-    "main module has no shared WUP request-body buffer",
+    "main native splash handling buffers only bounded responses, never shared WUP requests",
     "optional module documents request cap and valid script dependency",
     "Surge actual profile parser: main",
     "Surge actual profile parser: rpc"
