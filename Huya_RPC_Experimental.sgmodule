@@ -1,0 +1,11 @@
+#!name=Huya 13.4.80 Native Ad RPC (Optional)
+#!desc=可选：按解密 IPA 确认的 WUP 广告服务/方法拒绝广告下发及上报。脚本从固定 Git 提交自动下载。会缓冲共用 WUP 请求；超过 1 MiB 的请求被 Surge 拒绝，非 HTTP、加密或未知封装不处理。尚未真机验证，异常时关闭本模块。
+
+[General]
+force-http-engine-hosts = %APPEND% wup.huya.com, cdn.wup.huya.com, wsapi.huya.com
+
+[Script]
+Huya Verified Ad RPC = type=http-request, pattern=^https?:\/\/(?:wup\.huya\.com|cdn\.wup\.huya\.com|wsapi\.huya\.com)(?::(?:80|443))?\/(?:\?[^#]*)?$, script-path=https://raw.githubusercontent.com/hhhh1210/ubl/13eecdcae2ff42e1e9976c28aac9b4467b319a9d/huya-rpc-adblock.js, script-update-interval=86400, requires-body=true, binary-body-mode=true, max-size=1048576, timeout=5, engine=jsc
+
+[MITM]
+hostname = %APPEND% wup.huya.com, cdn.wup.huya.com, wsapi.huya.com

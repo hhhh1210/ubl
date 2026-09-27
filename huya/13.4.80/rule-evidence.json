@@ -1,0 +1,97 @@
+[
+  {
+    "type": "DOMAIN-SUFFIX",
+    "host": "gdt.qq.com",
+    "evidence": "kiwi __cstring: Tencent AMS/GDT serving, click, preload and reporting hosts"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "tangram.e.qq.com",
+    "evidence": "kiwi __cstring; supplied module /updateSetting"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "sdk.e.qq.com",
+    "evidence": "kiwi __cstring: https://sdk.e.qq.com/link_event"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "sdkreport.e.qq.com",
+    "evidence": "kiwi __cstring: /monitor_report"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "us.l.qq.com",
+    "evidence": "kiwi __cstring: https://us.l.qq.com/exapp"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "c.l.qq.com",
+    "evidence": "kiwi __cstring: Tencent ad host"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "adsmind.gdtimg.com",
+    "evidence": "kiwi __cstring: dedicated ad asset host"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "adsmind.ugdtimg.com",
+    "evidence": "kiwi __cstring: dedicated ad asset host"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "pgdt.ugdtimg.com",
+    "evidence": "kiwi __cstring: dedicated ad asset host"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "pgdt.gtimg.cn",
+    "evidence": "kiwi __cstring: dedicated ad asset host"
+  },
+  {
+    "type": "DOMAIN-SUFFIX",
+    "host": "pangolin-sdk-toutiao.com",
+    "evidence": "supplied module SDK host; CSJ 7.6.0 SDK confirmed, obfuscated runtime host selection not recovered"
+  },
+  {
+    "type": "DOMAIN-SUFFIX",
+    "host": "pglstatp-toutiao.com",
+    "evidence": "supplied module renderer hosts; dedicated Pangolin ad assets"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "adv-stat.huya.com",
+    "evidence": "HYAdURLHelper getHTTPServerHost 0x100a2c100"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "e-stat.huya.com",
+    "evidence": "HYAdURLHelper getHTTPServerHost 0x100a2c100"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "toblog.volceapplog.com",
+    "evidence": "BDAutoTrackURLHostItemCN: hostDomain + thirdLevelDomainForURLType:"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "tobapplog.volceapplog.com",
+    "evidence": "BDAutoTrackURLHostItemCN: hostDomain + thirdLevelDomainForURLType:"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "alink.volceapplog.com",
+    "evidence": "BDAutoTrack attribution URL host constants"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "klink.volceapplog.com",
+    "evidence": "BDAutoTrack growth URL host constants"
+  },
+  {
+    "type": "DOMAIN",
+    "host": "abtest.volceapplog.com",
+    "evidence": "BDAutoTrack experimentation URL host constants"
+  }
+]
